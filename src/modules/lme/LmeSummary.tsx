@@ -1,7 +1,10 @@
 import {useMemo} from "react";
 import type {LmeMetric} from "./types";
-function sumWhenComplete(rows:LmeMetric[],field:"productionTonnes"|"importsTonnes"|"exportsTonnes"):number|undefined {
- return rows.length>0&&rows.every(row=>row[field]!==undefined)?rows.reduce((sum,row)=>sum+(row[field]??0),0):undefined;
+function sourceValueWhenUnambiguous(rows:LmeMetric[],field:"productionTonnes"|"importsTonnes"|"exportsTonnes"):number|undefined {
+ const values=rows.map(row=>row[field]);
+ if(!values.length||values.some(value=>value===undefined))return undefined;
+ const unique=[...new Set(values)];
+ return unique.length===1?unique[0]:undefined;
 }
 export default function LmeSummary({rows}:{rows:LmeMetric[]}){
  const summaries=useMemo(()=>{
@@ -14,7 +17,7 @@ export default function LmeSummary({rows}:{rows:LmeMetric[]}){
    const cancelled=complete("cancelledWarrantsTonnes")?latest.reduce((sum,row)=>sum+(row.cancelledWarrantsTonnes??0),0):undefined;
    return {metal,date,regions:latest.length,stock,change:complete("dailyChangeTonnes")?latest.reduce((sum,row)=>sum+(row.dailyChangeTonnes??0),0):undefined,
     livePct:live!==undefined&&stock>0?live/stock*100:undefined,cancelledPct:cancelled!==undefined&&stock>0?cancelled/stock*100:undefined,
-    production:sumWhenComplete(latest,"productionTonnes"),imports:sumWhenComplete(latest,"importsTonnes"),exports:sumWhenComplete(latest,"exportsTonnes")};
+    production:sourceValueWhenUnambiguous(latest,"productionTonnes"),imports:sourceValueWhenUnambiguous(latest,"importsTonnes"),exports:sourceValueWhenUnambiguous(latest,"exportsTonnes")};
   }).sort((a,b)=>a.metal.localeCompare(b.metal));
  },[rows]);
  if(!rows.length)return null;
