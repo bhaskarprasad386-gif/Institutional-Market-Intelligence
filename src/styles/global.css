@@ -33,3 +33,5 @@
 .payoff-chart svg{display:block;width:100%;min-width:540px;height:auto}
 @media(max-width:850px){.payoff-leg{grid-template-columns:repeat(2,minmax(0,1fr))}.payoff-leg>strong{grid-column:1/-1}.payoff-leg .payoff-remove{grid-column:1/-1}.payoff-summary{grid-template-columns:1fr}}
 @media(max-width:600px){.payoff-controls{grid-template-columns:1fr}}
+
+.lme-metrics{border:2px solid #526982;border-radius:10px}
