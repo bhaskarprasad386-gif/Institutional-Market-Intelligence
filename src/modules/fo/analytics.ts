@@ -8,8 +8,9 @@ export function calculateFoMetrics(row:FuturesObservation):FoMetrics {
   const basis=row.futuresClose-row.spotClose;
   const costOfCarryAnnualizedPct=daysToExpiry>0?((row.futuresClose/row.spotClose)-1)*365/daysToExpiry*100:undefined;
   const oiChange=row.previousOpenInterest===undefined?undefined:row.openInterest-row.previousOpenInterest;
+  const priceChangePct=row.previousFuturesClose!==undefined&&row.previousFuturesClose>0?(row.futuresClose/row.previousFuturesClose-1)*100:undefined;
   const oiChangePct=row.previousOpenInterest && row.previousOpenInterest>0 && oiChange!==undefined?oiChange/row.previousOpenInterest*100:undefined;
-  return {symbol:row.symbol,tradeDate:row.tradeDate,expiryDate:row.expiryDate,futuresClose:row.futuresClose,spotClose:row.spotClose,openInterest:row.openInterest,oiChange,oiChangePct,priceChangePct:undefined,basis,costOfCarryAnnualizedPct,daysToExpiry};
+  return {symbol:row.symbol,tradeDate:row.tradeDate,expiryDate:row.expiryDate,futuresClose:row.futuresClose,spotClose:row.spotClose,openInterest:row.openInterest,oiChange,oiChangePct,priceChangePct,basis,costOfCarryAnnualizedPct,daysToExpiry};
 }
 /** Rollover share is next-expiry OI / (near-expiry OI + next-expiry OI). */
 export function calculateRolloverPct(symbol:string,tradeDate:string,nearExpiry:string,nextExpiry:string,nearOi:number,nextOi:number):RolloverMetric {
