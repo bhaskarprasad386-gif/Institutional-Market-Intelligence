@@ -9,7 +9,9 @@ function versusGuidance(actual?: number, guidance?: number): number | undefined 
   return (actual / guidance - 1) * 100;
 }
 
-/** Evaluates only explicitly supplied observations; no price history is inferred. */
+/** Reports return against a published entry only when an explicitly dated observed price is supplied.
+ * A single observation cannot prove that a target or stop-loss was touched historically.
+ */
 export function evaluateRecommendation(row: BrokerRecommendation): RecommendationEvaluation {
   const observedReturnPct = row.observedPrice !== undefined && row.publishedEntry !== undefined && row.publishedEntry > 0
     ? (row.observedPrice / row.publishedEntry - 1) * 100 : undefined;
@@ -17,13 +19,8 @@ export function evaluateRecommendation(row: BrokerRecommendation): Recommendatio
     ? (row.targetPrice / row.publishedEntry - 1) * 100 : undefined;
   const stopLossReturnPct = row.publishedStopLoss !== undefined && row.publishedEntry !== undefined && row.publishedEntry > 0
     ? (row.publishedStopLoss / row.publishedEntry - 1) * 100 : undefined;
-  const targetHit = row.observedPrice !== undefined && row.targetPrice !== undefined &&
-    (row.rating === "SELL" ? row.observedPrice <= row.targetPrice : row.observedPrice >= row.targetPrice);
-  const stopLossHit = row.observedPrice !== undefined && row.publishedStopLoss !== undefined &&
-    (row.rating === "SELL" ? row.observedPrice >= row.publishedStopLoss : row.observedPrice <= row.publishedStopLoss);
-  const evaluationStatus = targetHit ? "target_hit" : stopLossHit ? "stop_loss_hit" :
-    observedReturnPct !== undefined ? "observed_price_only" : "not_evaluated";
-  return { ...row, targetReturnPct, stopLossReturnPct, observedReturnPct, targetHit, stopLossHit, evaluationStatus };
+  return { ...row, targetReturnPct, stopLossReturnPct, observedReturnPct,
+    evaluationStatus: observedReturnPct !== undefined ? "observed_price_only" : "not_evaluated" };
 }
 
 export function calculateCompanyResultMetrics(row: CompanyResult): CompanyResultMetric {
