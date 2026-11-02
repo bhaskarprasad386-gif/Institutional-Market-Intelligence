@@ -1,0 +1,18 @@
+import {useMemo} from "react";
+import type {InventoryExchange,LmeMetric} from "./types";
+type Movement={exchange:InventoryExchange;date:string;previousDate:string;stock:number;previousStock:number;change:number;changePct:number};
+function dayNumber(date:string){return Date.parse(date+"T00:00:00Z");}
+export default function LmeCrossExchange({rows}:{rows:LmeMetric[]}){
+ const groups=useMemo(()=>{
+  type Snapshot={exchange:InventoryExchange;metal:LmeMetric["metal"];date:string;stock:number};
+  const byDate=new Map<string,Snapshot>();
+  for(const row of rows){const exchange=row.exchange??"LME";const key=[exchange,row.metal,row.reportDate].join("|");const current=byDate.get(key);if(current)current.stock+=row.totalInventoryTonnes;else byDate.set(key,{exchange,metal:row.metal,date:row.reportDate,stock:row.totalInventoryTonnes});}
+  const histories=new Map<string,Snapshot[]>();
+  for(const item of byDate.values()){const key=item.exchange+"|"+item.metal;const list=histories.get(key)??[];list.push(item);histories.set(key,list);}
+  const movements=new Map<string,Movement[]>();
+  for(const [key,history] of histories){history.sort((a,b)=>a.date.localeCompare(b.date));if(history.length<2)continue;const current=history[history.length-1],previous=history[history.length-2];if(previous.stock<=0)continue;const [exchange,metal]=key.split("|") as [InventoryExchange,LmeMetric["metal"]];const list=movements.get(metal)??[];list.push({exchange,date:current.date,previousDate:previous.date,stock:current.stock,previousStock:previous.stock,change:current.stock-previous.stock,changePct:(current.stock-previous.stock)/previous.stock*100});movements.set(metal,list);}
+  return [...movements.entries()].map(([metal,list])=>{const dates=list.map(x=>dayNumber(x.date));const aligned=dates.length>=2&&Math.max(...dates)-Math.min(...dates)<=3*86400000;const hasDrop=list.some(x=>x.change<0),hasBuild=list.some(x=>x.change>0);return {metal,list:list.sort((a,b)=>a.exchange.localeCompare(b.exchange)),aligned,possibleRedistribution:aligned&&hasDrop&&hasBuild};}).sort((a,b)=>a.metal.localeCompare(b.metal));
+ },[rows]);
+ if(!rows.length)return null;
+ return <section className="lme-cross-exchange"><h3>Cross-exchange inventory movement monitor</h3><p className="muted">Compares each exchange's latest two imported reporting dates for the same metal. Opposite movements within 3 calendar days are flagged as possible redistribution only—not proof that the same physical metal was transferred.</p>{!groups.length?<p className="muted">At least two dated inventory observations per exchange and metal are required to calculate movement.</p>:groups.map(group=><div className="lme-cross-metal" key={group.metal}><div className="lme-cross-title"><strong>{group.metal}</strong><span className={group.possibleRedistribution?"lme-cross-flag":"lme-cross-neutral"}>{group.possibleRedistribution?"Opposite exchange movements · possible redistribution":group.aligned?"No opposite movement detected":"Dates not aligned / insufficient comparison"}</span></div><div className="table-wrap"><table><thead><tr><th>Exchange</th><th>Previous date</th><th>Latest date</th><th>Previous stock t</th><th>Latest stock t</th><th>Net change t</th><th>Change %</th><th>Direction</th></tr></thead><tbody>{group.list.map(m=><tr key={m.exchange}><td><strong>{m.exchange}</strong></td><td>{m.previousDate}</td><td>{m.date}</td><td>{m.previousStock.toLocaleString(undefined,{maximumFractionDigits:2})}</td><td>{m.stock.toLocaleString(undefined,{maximumFractionDigits:2})}</td><td>{m.change.toLocaleString(undefined,{maximumFractionDigits:2})}</td><td>{m.changePct.toFixed(2)}%</td><td>{m.change>0?"Stock inflow":m.change<0?"Stock draw":"Flat"}</td></tr>)}</tbody></table></div></div>)}</section>;
+}
