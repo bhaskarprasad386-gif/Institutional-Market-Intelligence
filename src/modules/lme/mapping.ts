@@ -5,6 +5,7 @@ const aliases: Record<string,string[]> = {
  warehouseRegion:["region","warehouse_region","location","warehouse","warehouse_location","country","warehouse_country"],
  totalInventoryTonnes:["total_inventory_tonnes","total_inventory","inventory","stock_tonnes","total_stock","total_stock_tonnes","closing_stock","closing_stock_tonnes","closing_stocks","stocks","stock"],
  onWarrantTonnes:["on_warrant","on_warrant_tonnes","live_warrants","live_warrants_t","live_warrants_tonnes","warrants_live"],
+ offWarrantTonnes:["off_warrant","off_warrant_tonnes","off_warrant_stock","off_warrant_stock_tonnes","shadow_stock","shadow_stock_tonnes"],
  cancelledWarrantsTonnes:["cancelled_warrants","cancelled_warrants_t","cancelled_warrants_tonnes","cancelled","cancelled_warrant","cancelled_warrants_stock"],
  dailyChangeTonnes:["daily_change","daily_change_tonnes","change","net_change","stock_change","stock_change_tonnes","daily_stock_change","daily_stock_change_tonnes","change_in_stocks"],
  openingStockTonnes:["opening_stock","opening_stock_tonnes","opening_stocks","opening_inventory"],
@@ -38,7 +39,7 @@ export function mapLmeRows(input:Record<string,unknown>[],defaultExchange:"LME"|
   const exchangeRaw=norm(get(raw,"exchange")??defaultExchange).replace(/_/g,"");
   const exchangeMap:Record<string,"LME"|"COMEX"|"SHFE"|"MCX"|"OTHER">={lme:"LME",comex:"COMEX",cme:"COMEX",cmecomex:"COMEX",comexcme:"COMEX",shfe:"SHFE",shanghai:"SHFE",shanghaifutures:"SHFE",shanghaifuturesexchange:"SHFE",shfeshanghai:"SHFE",mcx:"MCX",other:"OTHER"};
   const exchange=exchangeMap[exchangeRaw];
-  const fields=["totalInventoryTonnes","onWarrantTonnes","cancelledWarrantsTonnes","dailyChangeTonnes","openingStockTonnes","deliveredInTonnes","deliveredOutTonnes","productionTonnes","importsTonnes","exportsTonnes","cashPrice","threeMonthPrice"] as const;
+  const fields=["totalInventoryTonnes","onWarrantTonnes","offWarrantTonnes","cancelledWarrantsTonnes","dailyChangeTonnes","openingStockTonnes","deliveredInTonnes","deliveredOutTonnes","productionTonnes","importsTonnes","exportsTonnes","cashPrice","threeMonthPrice"] as const;
   const parsed=Object.fromEntries(fields.map(key=>[key,numeric(get(raw,key))])) as Record<typeof fields[number],{value?:number;invalid:boolean}>;
   const reject=(reason:string)=>rejected.push({row:index+2,reason});
   if(!exchange){reject("Unsupported exchange; use LME, COMEX, SHFE, MCX or OTHER");return;}
@@ -49,11 +50,12 @@ export function mapLmeRows(input:Record<string,unknown>[],defaultExchange:"LME"|
   const invalidField=fields.find(key=>parsed[key].invalid);if(invalidField){reject(`Invalid numeric value in ${invalidField}`);return;}
   const nonNegative:typeof fields[number][]=["onWarrantTonnes","cancelledWarrantsTonnes","openingStockTonnes","deliveredInTonnes","deliveredOutTonnes","productionTonnes","importsTonnes","exportsTonnes"];
   if(nonNegative.some(key=>parsed[key].value!==undefined&&parsed[key].value!<0)){reject("Inventory and flow quantities cannot be negative (daily change may be negative)");return;}
-  const live=parsed.onWarrantTonnes.value,cancelled=parsed.cancelledWarrantsTonnes.value;
+  const live=parsed.onWarrantTonnes.value,off=parsed.offWarrantTonnes.value,cancelled=parsed.cancelledWarrantsTonnes.value;
   if(live!==undefined&&live>total){reject("Live / on-warrant stock exceeds total inventory");return;}
+  if(off!==undefined&&off<0){reject("Off-warrant stock cannot be negative");return;}
   if(cancelled!==undefined&&cancelled>total){reject("Cancelled warrants exceed total inventory");return;}
   if(live!==undefined&&cancelled!==undefined&&live+cancelled>total+1e-8){reject("Live plus cancelled warrants exceed total inventory");return;}
   if(parsed.cashPrice.value!==undefined&&parsed.cashPrice.value<=0||parsed.threeMonthPrice.value!==undefined&&parsed.threeMonthPrice.value<=0){reject("Cash and 3M prices must be positive when supplied");return;}
-  rows.push({exchange,metal,reportDate,warehouseRegion:String(get(raw,"warehouseRegion")??"").trim()||undefined,totalInventoryTonnes:total,onWarrantTonnes:live,cancelledWarrantsTonnes:cancelled,dailyChangeTonnes:parsed.dailyChangeTonnes.value,openingStockTonnes:parsed.openingStockTonnes.value,deliveredInTonnes:parsed.deliveredInTonnes.value,deliveredOutTonnes:parsed.deliveredOutTonnes.value,productionTonnes:parsed.productionTonnes.value,importsTonnes:parsed.importsTonnes.value,exportsTonnes:parsed.exportsTonnes.value,cashPrice:parsed.cashPrice.value,threeMonthPrice:parsed.threeMonthPrice.value});
+  rows.push({exchange,metal,reportDate,warehouseRegion:String(get(raw,"warehouseRegion")??"").trim()||undefined,totalInventoryTonnes:total,onWarrantTonnes:live,offWarrantTonnes:off,cancelledWarrantsTonnes:cancelled,dailyChangeTonnes:parsed.dailyChangeTonnes.value,openingStockTonnes:parsed.openingStockTonnes.value,deliveredInTonnes:parsed.deliveredInTonnes.value,deliveredOutTonnes:parsed.deliveredOutTonnes.value,productionTonnes:parsed.productionTonnes.value,importsTonnes:parsed.importsTonnes.value,exportsTonnes:parsed.exportsTonnes.value,cashPrice:parsed.cashPrice.value,threeMonthPrice:parsed.threeMonthPrice.value});
  });return {rows,rejected};
 }
