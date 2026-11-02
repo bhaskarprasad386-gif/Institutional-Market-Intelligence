@@ -1,10 +1,10 @@
 import type { HistoricalPriceBar, HistoricalRecommendationEvaluation, RecommendationEvaluation } from "./types";
 type ForwardPoint = { day1?: number; day5?: number; day10?: number };
 function forwardReturns(r:RecommendationEvaluation,bars:HistoricalPriceBar[]):ForwardPoint {
- if(r.publishedEntry===undefined||r.publishedEntry<=0)return {};
+ const entry=r.publishedEntry;\n if(entry===undefined||entry<=0)return {};
  const ordered=bars.filter(b=>b.symbol.toUpperCase()===r.symbol.toUpperCase()&&b.tradeDate>r.publishedDate).sort((a,b)=>a.tradeDate.localeCompare(b.tradeDate));
  const direction=r.rating==="SELL"?-1:1;
- const at=(n:number)=>ordered.length>=n&&ordered[n-1].close>0?direction*(ordered[n-1].close/r.publishedEntry-1)*100:undefined;
+ const at=(n:number)=>ordered.length>=n&&ordered[n-1].close>0?direction*(ordered[n-1].close/entry-1)*100:undefined;
  return {day1:at(1),day5:at(5),day10:at(10)};
 }
 type Group={broker:string;rating:string;target:number;stop:number;ambiguous:number;open:number;insufficient:number;missing:number;returns:{day1:number[];day5:number[];day10:number[]}};
