@@ -35,3 +35,32 @@ export function calculateCompanyResultMetrics(row: CompanyResult): CompanyResult
     patVsGuidancePct: versusGuidance(row.pat, row.guidancePat)
   };
 }
+
+import type { HistoricalPriceBar, HistoricalRecommendationEvaluation } from "./types";
+
+/** Uses daily OHLC after publication. If target and stop are both crossed in one bar,
+ * ordering is unknowable from daily OHLC, so it is explicitly marked ambiguous.
+ */
+export function evaluateRecommendationPath(
+  recommendation: BrokerRecommendation,
+  bars: HistoricalPriceBar[]
+): HistoricalRecommendationEvaluation {
+  const ordered = bars.filter(bar => bar.symbol.toUpperCase() === recommendation.symbol.toUpperCase() &&
+    bar.tradeDate > recommendation.publishedDate)
+    .sort((left, right) => left.tradeDate.localeCompare(right.tradeDate));
+  const base = { broker: recommendation.broker, symbol: recommendation.symbol, rating: recommendation.rating,
+    publishedDate: recommendation.publishedDate, barsChecked: ordered.length, entryPrice: recommendation.publishedEntry };
+  if (recommendation.publishedEntry === undefined || recommendation.targetPrice === undefined && recommendation.publishedStopLoss === undefined)
+    return { ...base, evaluation: "missing_entry_or_levels" };
+  if (!ordered.length) return { ...base, evaluation: "insufficient_price_history" };
+  for (const bar of ordered) {
+    const targetTouched = recommendation.targetPrice !== undefined &&
+      (recommendation.rating === "SELL" ? bar.low <= recommendation.targetPrice : bar.high >= recommendation.targetPrice);
+    const stopTouched = recommendation.publishedStopLoss !== undefined &&
+      (recommendation.rating === "SELL" ? bar.high >= recommendation.publishedStopLoss : bar.low <= recommendation.publishedStopLoss);
+    if (targetTouched && stopTouched) return { ...base, evaluation: "both_same_day_ambiguous", firstEventDate: bar.tradeDate };
+    if (targetTouched) return { ...base, evaluation: "target_hit", firstEventDate: bar.tradeDate };
+    if (stopTouched) return { ...base, evaluation: "stop_loss_hit", firstEventDate: bar.tradeDate };
+  }
+  return { ...base, evaluation: "open_no_hit" };
+}
