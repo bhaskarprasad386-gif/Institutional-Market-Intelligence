@@ -55,3 +55,23 @@ export interface CompanyResultMetric extends CompanyResult {
   ebitdaVsGuidancePct?: number;
   patVsGuidancePct?: number;
 }
+
+export interface HistoricalPriceBar {
+  symbol: string;
+  tradeDate: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  source?: string;
+}
+export interface HistoricalRecommendationEvaluation {
+  broker: string;
+  symbol: string;
+  rating: BrokerRating;
+  publishedDate: string;
+  evaluation: "target_hit" | "stop_loss_hit" | "both_same_day_ambiguous" | "open_no_hit" | "insufficient_price_history" | "missing_entry_or_levels";
+  firstEventDate?: string;
+  barsChecked: number;
+  entryPrice?: number;
+}
