@@ -50,6 +50,7 @@ export function restoreWorkspace(rows: Row[]) {
     recommendations,
     companyResults: companyRows.map(calculateCompanyResultMetrics),
     historicalEvaluations,
+    priceBars,
     optionHistoryRows: optionRows,
     optionMetrics: calculatedOptions.metrics,
     optionSummaries: calculatedOptions.summaries,
