@@ -18,7 +18,7 @@ export interface RecommendationEvaluation extends BrokerRecommendation {
   observedReturnPct?: number;
   targetHit?: boolean;
   stopLossHit?: boolean;
-  evaluationStatus: "not_evaluated" | "observed_price_only" | "target_hit" | "stop_loss_hit";
+  evaluationStatus: "not_evaluated" | "observed_price_only";
 }
 export interface CompanyResult {
   symbol: string;
