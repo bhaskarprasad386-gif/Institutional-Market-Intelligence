@@ -1,5 +1,5 @@
 import {useMemo} from "react";
-import type {BaseMetal,LmeMetric} from "./types";
+import type {LmeMetric} from "./types";
 function sumWhenComplete(rows:LmeMetric[],field:"productionTonnes"|"importsTonnes"|"exportsTonnes"):number|undefined {
  return rows.length>0&&rows.every(row=>row[field]!==undefined)?rows.reduce((sum,row)=>sum+(row[field]??0),0):undefined;
 }
