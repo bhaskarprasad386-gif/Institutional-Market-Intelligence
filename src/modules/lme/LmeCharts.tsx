@@ -1,5 +1,5 @@
 import {useMemo,useState} from "react";
-import type {BaseMetal,LmeMetric} from "./types";
+import type {BaseMetal,InventoryExchange,LmeMetric} from "./types";
 type Point={date:string;inventory:number;live?:number;cancelled?:number;livePct?:number;cancelledPct?:number};
 function LineChart({title,points,series}:{title:string;points:Point[];series:{key:"inventory"|"live"|"cancelled"|"livePct"|"cancelledPct";label:string;color:string}[]}){
  const width=760,height=260,left=66,right=20,top=20,bottom=42,plotW=width-left-right,plotH=height-top-bottom;
@@ -15,13 +15,13 @@ function LineChart({title,points,series}:{title:string;points:Point[];series:{ke
  <div className="option-chart-legend">{series.map(s=><span key={s.key}><i style={{background:s.color}}/>{s.label}</span>)}</div></div>;
 }
 export default function LmeCharts({rows}:{rows:LmeMetric[]}){
- const exchanges=useMemo(()=>[...new Set(rows.map(r=>r.exchange??"LME"))].sort(),[rows]);const [selectedExchange,setSelectedExchange]=useState("LME");const activeExchange=exchanges.includes(selectedExchange)?selectedExchange:(exchanges[0]??"LME");
+ const exchanges=useMemo<InventoryExchange[]>(()=>[...new Set(rows.map(r=>r.exchange??"LME"))].sort(),[rows]);const [selectedExchange,setSelectedExchange]=useState<InventoryExchange>("LME");const activeExchange=exchanges.includes(selectedExchange)?selectedExchange:(exchanges[0]??"LME");
  const metals=useMemo(()=>[...new Set(rows.filter(r=>(r.exchange??"LME")===activeExchange).map(r=>r.metal))].sort(),[rows,activeExchange]);const [selected,setSelected]=useState<BaseMetal | "">("");
  const active:BaseMetal | ""=metals.includes(selected as BaseMetal)?selected as BaseMetal:(metals[0]??"");
  const points=useMemo(()=>{const map=new Map<string,LmeMetric[]>();for(const row of rows.filter(r=>(r.exchange??"LME")===activeExchange&&r.metal===active)){const group=map.get(row.reportDate)??[];group.push(row);map.set(row.reportDate,group);}
  return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([date,group])=>{const allLive=group.every(r=>r.onWarrantTonnes!==undefined),allCancelled=group.every(r=>r.cancelledWarrantsTonnes!==undefined);const total=group.reduce((n,r)=>n+r.totalInventoryTonnes,0),live=allLive?group.reduce((n,r)=>n+(r.onWarrantTonnes??0),0):undefined,cancelled=allCancelled?group.reduce((n,r)=>n+(r.cancelledWarrantsTonnes??0),0):undefined;return {date,inventory:total,live,cancelled,livePct:live!==undefined&&total>0?live/total*100:undefined,cancelledPct:cancelled!==undefined&&total>0?cancelled/total*100:undefined};});},[rows,active,activeExchange]);
  if(!rows.length)return null;
- return <div className="option-charts"><div className="option-chart-toolbar"><div><h3>Exchange Inventory Trends</h3><p className="muted">Daily history aggregated only within the selected exchange and imported warehouse regions; partial warrant series are omitted, not filled with zero.</p></div><label>Exchange<select value={activeExchange} onChange={e=>setSelectedExchange(e.target.value)}>{exchanges.map(x=><option key={x} value={x}>{x}</option>)}</select></label><label>Metal<select value={active} onChange={e=>setSelected(e.target.value as BaseMetal)}>{metals.map(m=><option key={m} value={m}>{m}</option>)}</select></label></div><div className="option-chart-grid">
+ return <div className="option-charts"><div className="option-chart-toolbar"><div><h3>Exchange Inventory Trends</h3><p className="muted">Daily history aggregated only within the selected exchange and imported warehouse regions; partial warrant series are omitted, not filled with zero.</p></div><label>Exchange<select value={activeExchange} onChange={e=>setSelectedExchange(e.target.value as InventoryExchange)}>{exchanges.map(x=><option key={x} value={x}>{x}</option>)}</select></label><label>Metal<select value={active} onChange={e=>setSelected(e.target.value as BaseMetal)}>{metals.map(m=><option key={m} value={m}>{m}</option>)}</select></label></div><div className="option-chart-grid">
  <LineChart title="Total inventory and warrant tonnes" points={points} series={[{key:"inventory",label:"Total stock (t)",color:"#36a3a5"},{key:"live",label:"Live / on-warrant (t)",color:"#df9a43"},{key:"cancelled",label:"Cancelled warrants (t)",color:"#a78bfa"}]}/>
  <LineChart title="Warrant share of total stock" points={points} series={[{key:"livePct",label:"Live / on-warrant %",color:"#36a3a5"},{key:"cancelledPct",label:"Cancelled warrants %",color:"#df9a43"}]}/>
  </div></div>;
