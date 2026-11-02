@@ -18,7 +18,15 @@ function greeks(spot:number,strike:number,days:number,ivPct:number,type:OptionTy
  const thetaAnnual=type==="CE"?-(spot*pdf*sigma)/(2*root)-rate*strike*discount*normalCdf(d2):-(spot*pdf*sigma)/(2*root)+rate*strike*discount*normalCdf(-d2);
  return {delta,gamma,thetaPerDay:thetaAnnual/365,vegaPerVolPoint:vega};
 }
-export function calculateOptionMetrics(rows:OptionObservation[],ratePct=0):{metrics:OptionMetric[];summaries:OptionExpirySummary[]} {
+export function calculateOptionMetrics(rows:OptionObservation[],ratePct=0,historicalRows:OptionObservation[]=[]):{metrics:OptionMetric[];summaries:OptionExpirySummary[]} {
+ const ivHistory=new Map<string,Map<string,number[]>>();
+ for(const item of [...historicalRows,...rows]){
+  if(item.ivPct===undefined)continue;
+  const key=[item.underlying,item.expiryDate,item.strike,item.optionType].join("|");
+  const dates=ivHistory.get(key)??new Map<string,number[]>();
+  const values=dates.get(item.tradeDate)??[];
+  values.push(item.ivPct);dates.set(item.tradeDate,values);ivHistory.set(key,dates);
+ }
  const metrics=rows.map(row=>{
   const daysToExpiry=Math.max(0,Math.ceil((Date.parse(row.expiryDate+"T00:00:00Z")-Date.parse(row.tradeDate+"T00:00:00Z"))/DAY_MS));
   const moneynessPct=(row.spotPrice-row.strike)/row.spotPrice*100;
@@ -27,9 +35,17 @@ export function calculateOptionMetrics(rows:OptionObservation[],ratePct=0):{metr
   const timeValue=row.ltp===undefined||intrinsicValue===undefined?undefined:Math.max(0,row.ltp-intrinsicValue);
   const oiChange=row.previousOpenInterest===undefined?undefined:row.openInterest-row.previousOpenInterest;
   const oiChangePct=row.previousOpenInterest!==undefined&&row.previousOpenInterest>0&&oiChange!==undefined?oiChange/row.previousOpenInterest*100:undefined;
+  const priceChangePct=row.previousLtp!==undefined&&row.previousLtp>0&&row.ltp!==undefined?(row.ltp-row.previousLtp)/row.previousLtp*100:undefined;
+  const priceOiSignal:OptionMetric["priceOiSignal"]=oiChange===undefined||priceChangePct===undefined||oiChange===0||priceChangePct===0?"INSUFFICIENT_DATA":
+   priceChangePct>0&&oiChange>0?"LONG_BUILD_UP":priceChangePct<0&&oiChange>0?"SHORT_BUILD_UP":
+   priceChangePct>0&&oiChange<0?"SHORT_COVERING":priceChangePct<0&&oiChange<0?"LONG_UNWINDING":"MIXED";
+  const historyKey=[row.underlying,row.expiryDate,row.strike,row.optionType].join("|");
+  const historyDates=ivHistory.get(historyKey);
+  const dailyIv=historyDates?[...historyDates.entries()].filter(([date])=>date<=row.tradeDate).map(([,values])=>values.reduce((a,b)=>a+b,0)/values.length):[];
+  const ivPercentile=row.ivPct!==undefined&&dailyIv.length>=2?dailyIv.filter(value=>value<=row.ivPct!).length/dailyIv.length*100:undefined;
   const volumeOiRatio=row.volume===undefined||row.openInterest<=0?undefined:row.volume/row.openInterest;
   const greek=row.ivPct!==undefined?greeks(row.spotPrice,row.strike,daysToExpiry,row.ivPct,row.optionType,ratePct):{};
-  return {...row,daysToExpiry,moneynessPct,moneyness,intrinsicValue,timeValue,oiChange,oiChangePct,volumeOiRatio,...greek,
+  return {...row,daysToExpiry,moneynessPct,moneyness,intrinsicValue,timeValue,oiChange,oiChangePct,priceChangePct,priceOiSignal,ivPercentile,volumeOiRatio,...greek,
    unusualActivity:(oiChangePct!==undefined&&Math.abs(oiChangePct)>=50)||(volumeOiRatio!==undefined&&volumeOiRatio>=2)};
  });
  const groups=new Map<string,OptionObservation[]>();
