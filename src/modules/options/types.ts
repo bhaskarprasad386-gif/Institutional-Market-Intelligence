@@ -9,6 +9,7 @@ export interface OptionObservation {
   spotPrice: number;
   openInterest: number;
   previousOpenInterest?: number;
+  previousLtp?: number;
   volume?: number;
   ltp?: number;
   bid?: number;
@@ -23,6 +24,9 @@ export interface OptionMetric extends OptionObservation {
   timeValue?: number;
   oiChange?: number;
   oiChangePct?: number;
+  priceChangePct?: number;
+  priceOiSignal: "LONG_BUILD_UP" | "SHORT_BUILD_UP" | "SHORT_COVERING" | "LONG_UNWINDING" | "MIXED" | "INSUFFICIENT_DATA";
+  ivPercentile?: number;
   volumeOiRatio?: number;
   delta?: number;
   gamma?: number;
