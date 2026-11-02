@@ -2,7 +2,7 @@ import * as XLSX from "xlsx";
 
 export interface TabularPreview { headers: string[]; rows: Record<string, unknown>[]; totalRows: number; }
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
-const MAX_PREVIEW_ROWS = 100;
+const MAX_PREVIEW_ROWS = 100;\nconst MAX_IMPORT_ROWS = 50000;
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
