@@ -13,7 +13,8 @@ export default function App() {
   const [marketDate, setMarketDate] = useState("");
   const [exchange, setExchange] = useState<Exchange>("NSE");
   const [foFile, setFoFile] = useState<File | null>(null);
-  const [foMetrics, setFoMetrics] = useState<FoMetrics[]>([]);\n  const [rolloverMetrics, setRolloverMetrics] = useState<RolloverMetric[]>([]);
+  const [foMetrics, setFoMetrics] = useState<FoMetrics[]>([]);
+  const [rolloverMetrics, setRolloverMetrics] = useState<RolloverMetric[]>([]);
   const [imports, setImports] = useState<ImportRecord[]>([]);
   const [message, setMessage] = useState("कोई file import नहीं हुई है।");
   const [busy, setBusy] = useState(false);
