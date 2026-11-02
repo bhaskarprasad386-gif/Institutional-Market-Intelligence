@@ -1,7 +1,7 @@
 import {useMemo,useState} from "react";
 import type {FoMetrics} from "../fo/types";
 import type {OptionMetric} from "../options/types";
-import type {RecommendationEvaluation,CompanyResultMetric} from "../research/types";
+import type {RecommendationEvaluation,CompanyResultMetric,HistoricalPriceBar} from "../research/types";
 import type {InstitutionalFlowMetric} from "../flows/types";
 type Props={futures:FoMetrics[];options:OptionMetric[];recommendations:RecommendationEvaluation[];results:CompanyResultMetric[];flows:InstitutionalFlowMetric[];priceBars:HistoricalPriceBar[]};
 type Signal={symbol:string;score:number;coverage:number;reasons:string[];risk:string;asOfDate:string};
