@@ -4,7 +4,7 @@ import { readTabularFile, validatePreview, type TabularPreview } from "../data/t
 import { mapEquityEodRows, type Exchange } from "../data/eodMapping";
 import { mapFuturesRows } from "../modules/fo/mapping";
 import { calculateFoMetrics, calculateRolloverFromRows, classifyPriceOi } from "../modules/fo/analytics";
-import type { FoMetrics, RolloverMetric } from "../modules/fo/types";\nimport type { FuturesObservation } from "../modules/fo/types";
+import type { FoMetrics, RolloverMetric } from "../modules/fo/types";
 
 export default function App() {
   const [file, setFile] = useState<File | null>(null);
