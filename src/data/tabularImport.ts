@@ -2,7 +2,6 @@ import * as XLSX from "xlsx";
 
 export interface TabularPreview { headers: string[]; rows: Record<string, unknown>[]; totalRows: number; }
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
-const MAX_PREVIEW_ROWS = 100;
 const MAX_IMPORT_ROWS = 50000;
 
 function parseCsv(text: string): string[][] {
@@ -48,7 +47,8 @@ export async function readTabularFile(file: File): Promise<TabularPreview> {
   if (new Set(headers).size !== headers.length) throw new Error("Duplicate column headers मिले।");
   const data = matrix.slice(1).filter(row => row.some(v => String(v ?? "").trim() !== ""));
   if (!data.length) throw new Error("File में कोई data row नहीं मिली।");
-  const rows = data.slice(0, MAX_PREVIEW_ROWS).map(row => Object.fromEntries(headers.map((h, i) => [h, row[i] ?? ""])));
+  if (data.length > MAX_IMPORT_ROWS) throw new Error("एक file में अधिकतम 50,000 rows स्वीकार हैं।");
+  const rows = data.map(row => Object.fromEntries(headers.map((h, i) => [h, row[i] ?? ""])));
   return { headers, rows, totalRows: data.length };
 }
 
