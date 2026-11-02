@@ -53,14 +53,16 @@ export function evaluateRecommendationPath(
   if (recommendation.publishedEntry === undefined || recommendation.targetPrice === undefined && recommendation.publishedStopLoss === undefined)
     return { ...base, evaluation: "missing_entry_or_levels" };
   if (!ordered.length) return { ...base, evaluation: "insufficient_price_history" };
-  for (const bar of ordered) {
+  for (let index = 0; index < ordered.length; index++) {
+    const bar = ordered[index];
+    const checked = index + 1;
     const targetTouched = recommendation.targetPrice !== undefined &&
       (recommendation.rating === "SELL" ? bar.low <= recommendation.targetPrice : bar.high >= recommendation.targetPrice);
     const stopTouched = recommendation.publishedStopLoss !== undefined &&
       (recommendation.rating === "SELL" ? bar.high >= recommendation.publishedStopLoss : bar.low <= recommendation.publishedStopLoss);
-    if (targetTouched && stopTouched) return { ...base, evaluation: "both_same_day_ambiguous", firstEventDate: bar.tradeDate };
-    if (targetTouched) return { ...base, evaluation: "target_hit", firstEventDate: bar.tradeDate };
-    if (stopTouched) return { ...base, evaluation: "stop_loss_hit", firstEventDate: bar.tradeDate };
+    if (targetTouched && stopTouched) return { ...base, barsChecked: checked, evaluation: "both_same_day_ambiguous", firstEventDate: bar.tradeDate };
+    if (targetTouched) return { ...base, barsChecked: checked, evaluation: "target_hit", firstEventDate: bar.tradeDate };
+    if (stopTouched) return { ...base, barsChecked: checked, evaluation: "stop_loss_hit", firstEventDate: bar.tradeDate };
   }
   return { ...base, evaluation: "open_no_hit" };
 }

@@ -22,6 +22,7 @@ import { mapLmeRows } from "../modules/lme/mapping";
 import { calculateLmeMetrics } from "../modules/lme/analytics";
 import type { LmeMetric } from "../modules/lme/types";
 import OpportunityScanner from "../modules/opportunities/OpportunityScanner";
+import BrokerScorecard from "../modules/research/BrokerScorecard";
 
 export default function App() {
   const [file, setFile] = useState<File | null>(null);
@@ -140,6 +141,7 @@ export default function App() {
       <label className="file-picker">Select historical daily OHLC CSV / Excel<input type="file" accept=".csv,.xlsx,.xls" onChange={e=>setPriceHistoryFile(e.target.files?.[0]??null)}/></label>
       <button disabled={!priceHistoryFile||!source.trim()||!marketDate||!recommendations.length||busy} onClick={async()=>{if(!priceHistoryFile)return;setBusy(true);try{const parsed=await readTabularFile(priceHistoryFile);const mapped=mapHistoricalPriceRows(parsed.rows);const bars:HistoricalPriceBar[]=mapped.rows.filter(row=>row.tradeDate<=marketDate);if(!bars.length){setMessage(`No valid OHLC rows; ${mapped.rejected.length} rejected. Required: symbol, date, open, high, low, close.`);return;}const saved=await saveImportedRows(bars as unknown as Record<string,unknown>[],priceHistoryFile.name,source,marketDate);setImports(current=>[saved,...current].slice(0,20));const evaluations=recommendations.map(row=>evaluateRecommendationPath(row,bars));setHistoricalEvaluations(evaluations);setMessage(`Historical evaluation: ${bars.length} OHLC rows saved; ${mapped.rejected.length + mapped.rows.length-bars.length} rejected/date-filtered. Imported / unverified.`);setPriceHistoryFile(null);}catch(error){setMessage(error instanceof Error?error.message:"Historical OHLC import failed.");}finally{setBusy(false);}}}>Import OHLC and evaluate recommendations</button>
       {historicalEvaluations.length>0&&<div className="table-wrap"><table><thead><tr><th>Broker</th><th>Symbol</th><th>Rating</th><th>Published</th><th>Outcome</th><th>First event date</th><th>Bars checked</th></tr></thead><tbody>{historicalEvaluations.map((r,i)=><tr key={r.broker+r.symbol+i}><td>{r.broker}</td><td>{r.symbol}</td><td>{r.rating}</td><td>{r.publishedDate}</td><td>{r.evaluation.replaceAll("_"," ")}</td><td>{r.firstEventDate??"—"}</td><td>{r.barsChecked}</td></tr>)}</tbody></table></div>}
+      <BrokerScorecard evaluations={historicalEvaluations}/>
       <h2>Company Results & Guidance</h2>
       <p className="muted">Import published financials and prior-period / guidance values when available. Growth and actual-versus-guidance calculations appear only when both input values exist. Values and management commentary remain source-attributed, not independently verified.</p>
       <label className="file-picker">Select company results CSV / Excel<input type="file" accept=".csv,.xlsx,.xls" onChange={e=>setResultsFile(e.target.files?.[0]??null)}/></label>
