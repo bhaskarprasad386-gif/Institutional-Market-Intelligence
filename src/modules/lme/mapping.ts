@@ -9,7 +9,7 @@ const aliases: Record<string,string[]> = {
  openingStockTonnes:["opening_stock","opening_stock_tonnes","opening_stocks","opening_inventory"],
  deliveredInTonnes:["delivered_in","delivered_in_tonnes","deliveries_in","arrivals","inbound"],
  deliveredOutTonnes:["delivered_out","delivered_out_tonnes","deliveries_out","withdrawals","outbound"],
- productionTonnes:["production","production_tonnes","mine_production"],importsTonnes:["imports","imports_tonnes","import_tonnes"],exportsTonnes:["exports","exports_tonnes","export_tonnes"]
+ productionTonnes:["production","production_tonnes","mine_production"],importsTonnes:["imports","imports_tonnes","import_tonnes"],exportsTonnes:["exports","exports_tonnes","export_tonnes"],cashPrice:["cash_price","cash","cash_settlement","cash_official","cash_usd_tonne"],threeMonthPrice:["3m","3_month","three_month","3m_price","three_month_price","3_month_price","three_month_settlement","3m_official","3m_usd_tonne"]
 };
 function norm(value:unknown):string{return String(value??"").replace(/^\uFEFF/,"").trim().toLowerCase().replace(/&/g,"and").replace(/[\s\-()%./]+/g,"_").replace(/_+/g,"_").replace(/^_|_$/g,"");}
 function get(row:Record<string,unknown>,key:string):unknown{const names=Object.keys(row);for(const alias of aliases[key]??[]){const found=names.find(name=>norm(name)===norm(alias));if(found!==undefined)return row[found];}return undefined;}
@@ -34,7 +34,7 @@ export function mapLmeRows(input:Record<string,unknown>[]):{rows:LmeObservation[
  const rows:LmeObservation[]=[],rejected:{row:number;reason:string}[]=[];
  input.forEach((raw,index)=>{
   const metal=metalMap[norm(get(raw,"metal")).replace(/_/g,"")],reportDate=parseDate(get(raw,"reportDate"));
-  const fields=["totalInventoryTonnes","onWarrantTonnes","cancelledWarrantsTonnes","dailyChangeTonnes","openingStockTonnes","deliveredInTonnes","deliveredOutTonnes","productionTonnes","importsTonnes","exportsTonnes"] as const;
+  const fields=["totalInventoryTonnes","onWarrantTonnes","cancelledWarrantsTonnes","dailyChangeTonnes","openingStockTonnes","deliveredInTonnes","deliveredOutTonnes","productionTonnes","importsTonnes","exportsTonnes","cashPrice","threeMonthPrice"] as const;
   const parsed=Object.fromEntries(fields.map(key=>[key,numeric(get(raw,key))])) as Record<typeof fields[number],{value?:number;invalid:boolean}>;
   const reject=(reason:string)=>rejected.push({row:index+2,reason});
   if(!metal){reject("Unsupported or missing metal (Aluminium, Copper, Zinc, Nickel, Lead, Tin)");return;}
@@ -47,7 +47,7 @@ export function mapLmeRows(input:Record<string,unknown>[]):{rows:LmeObservation[
   const live=parsed.onWarrantTonnes.value,cancelled=parsed.cancelledWarrantsTonnes.value;
   if(live!==undefined&&live>total){reject("Live / on-warrant stock exceeds total inventory");return;}
   if(cancelled!==undefined&&cancelled>total){reject("Cancelled warrants exceed total inventory");return;}
-  if(live!==undefined&&cancelled!==undefined&&live+cancelled>total+1e-8){reject("Live plus cancelled warrants exceed total inventory");return;}
-  rows.push({metal,reportDate,warehouseRegion:String(get(raw,"warehouseRegion")??"").trim()||undefined,totalInventoryTonnes:total,onWarrantTonnes:live,cancelledWarrantsTonnes:cancelled,dailyChangeTonnes:parsed.dailyChangeTonnes.value,openingStockTonnes:parsed.openingStockTonnes.value,deliveredInTonnes:parsed.deliveredInTonnes.value,deliveredOutTonnes:parsed.deliveredOutTonnes.value,productionTonnes:parsed.productionTonnes.value,importsTonnes:parsed.importsTonnes.value,exportsTonnes:parsed.exportsTonnes.value});
+  if(live!==undefined&&cancelled!==undefined&&live+cancelled>total+1e-8){reject("Live plus cancelled warrants exceed total inventory");return;}\n  if(parsed.cashPrice.value!==undefined&&parsed.cashPrice.value<=0||parsed.threeMonthPrice.value!==undefined&&parsed.threeMonthPrice.value<=0){reject("Cash and 3M prices must be positive when supplied");return;}
+  rows.push({metal,reportDate,warehouseRegion:String(get(raw,"warehouseRegion")??"").trim()||undefined,totalInventoryTonnes:total,onWarrantTonnes:live,cancelledWarrantsTonnes:cancelled,dailyChangeTonnes:parsed.dailyChangeTonnes.value,openingStockTonnes:parsed.openingStockTonnes.value,deliveredInTonnes:parsed.deliveredInTonnes.value,deliveredOutTonnes:parsed.deliveredOutTonnes.value,productionTonnes:parsed.productionTonnes.value,importsTonnes:parsed.importsTonnes.value,exportsTonnes:parsed.exportsTonnes.value,cashPrice:parsed.cashPrice.value,threeMonthPrice:parsed.threeMonthPrice.value});
  });return {rows,rejected};
 }
