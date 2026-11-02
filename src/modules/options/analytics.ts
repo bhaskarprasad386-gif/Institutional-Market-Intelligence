@@ -22,13 +22,14 @@ export function calculateOptionMetrics(rows:OptionObservation[],ratePct=0):{metr
  const metrics=rows.map(row=>{
   const daysToExpiry=Math.max(0,Math.ceil((Date.parse(row.expiryDate+"T00:00:00Z")-Date.parse(row.tradeDate+"T00:00:00Z"))/DAY_MS));
   const moneynessPct=(row.spotPrice-row.strike)/row.spotPrice*100;
+  const moneyness=Math.abs(row.spotPrice-row.strike)<=row.spotPrice*0.001?"ATM":((row.optionType==="CE"&&row.spotPrice>row.strike)||(row.optionType==="PE"&&row.spotPrice<row.strike)?"ITM":"OTM");
   const intrinsicValue=row.ltp===undefined?undefined:Math.max(0,row.optionType==="CE"?row.spotPrice-row.strike:row.strike-row.spotPrice);
   const timeValue=row.ltp===undefined||intrinsicValue===undefined?undefined:Math.max(0,row.ltp-intrinsicValue);
   const oiChange=row.previousOpenInterest===undefined?undefined:row.openInterest-row.previousOpenInterest;
   const oiChangePct=row.previousOpenInterest!==undefined&&row.previousOpenInterest>0&&oiChange!==undefined?oiChange/row.previousOpenInterest*100:undefined;
   const volumeOiRatio=row.volume===undefined||row.openInterest<=0?undefined:row.volume/row.openInterest;
   const greek=row.ivPct!==undefined?greeks(row.spotPrice,row.strike,daysToExpiry,row.ivPct,row.optionType,ratePct):{};
-  return {...row,daysToExpiry,moneynessPct,intrinsicValue,timeValue,oiChange,oiChangePct,volumeOiRatio,...greek,
+  return {...row,daysToExpiry,moneynessPct,moneyness,intrinsicValue,timeValue,oiChange,oiChangePct,volumeOiRatio,...greek,
    unusualActivity:(oiChangePct!==undefined&&Math.abs(oiChangePct)>=50)||(volumeOiRatio!==undefined&&volumeOiRatio>=2)};
  });
  const groups=new Map<string,OptionObservation[]>();
@@ -47,10 +48,15 @@ export function calculateOptionMetrics(rows:OptionObservation[],ratePct=0):{metr
    if(maxPainPayout===undefined||payout<maxPainPayout){maxPainPayout=payout;maxPainStrike=candidate;}
   }
   const spot=group[0]?.spotPrice;
+  const nearestIvRow=group.filter(x=>x.ivPct!==undefined).sort((a,b)=>Math.abs(a.strike-spot)-Math.abs(b.strike-spot))[0];
+  const atmIvPct=nearestIvRow?.ivPct;
+  const daysToExpiry=Math.max(0,Math.ceil((Date.parse(expiryDate+"T00:00:00Z")-Date.parse(tradeDate+"T00:00:00Z"))/DAY_MS));
+  const expectedMovePct=atmIvPct!==undefined?atmIvPct*Math.sqrt(daysToExpiry/365):undefined;
+  const expectedMovePoints=expectedMovePct!==undefined?spot*expectedMovePct/100:undefined;
   const near=group.filter(x=>Math.abs(x.strike-spot)<=Math.max(1,spot*0.01));
   const ceIv=near.filter(x=>x.optionType==="CE"&&x.ivPct!==undefined).sort((a,b)=>Math.abs(a.strike-spot)-Math.abs(b.strike-spot))[0]?.ivPct;
   const peIv=near.filter(x=>x.optionType==="PE"&&x.ivPct!==undefined).sort((a,b)=>Math.abs(a.strike-spot)-Math.abs(b.strike-spot))[0]?.ivPct;
-  summaries.push({underlying,tradeDate,expiryDate,callOi,putOi,pcrOi:callOi>0?putOi/callOi:undefined,callVolume,putVolume,pcrVolume:callVolume>0?putVolume/callVolume:undefined,maxPainStrike,maxPainPayout,atmIvSkewPct:ceIv!==undefined&&peIv!==undefined?peIv-ceIv:undefined});
+  summaries.push({underlying,tradeDate,expiryDate,callOi,putOi,pcrOi:callOi>0?putOi/callOi:undefined,callVolume,putVolume,pcrVolume:callVolume>0?putVolume/callVolume:undefined,maxPainStrike,maxPainPayout,atmIvSkewPct:ceIv!==undefined&&peIv!==undefined?peIv-ceIv:undefined,atmIvPct,expectedMovePct,expectedMovePoints});
  }
  return {metrics,summaries};
 }
