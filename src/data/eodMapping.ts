@@ -52,7 +52,7 @@ function dateValue(value: unknown): string | undefined {
   if (compact) return `${compact[3]}-${compact[2]}-${compact[1]}`;
   return undefined;
 }
-export function mapEquityEodRows(input: Record<string, unknown>[], exchange: Exchange): MappingResult {
+export function mapEquityEodRows(input: Record<string, unknown>[], exchange: Exchange, expectedMarketDate?: string): MappingResult {
   const rows: EodEquityRow[] = [];
   const rejected: MappingResult["rejected"] = [];
   input.forEach((raw, index) => {
