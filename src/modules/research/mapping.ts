@@ -16,7 +16,7 @@ const aliases: Record<string, string[]> = {
  previousEbitda:["previous_ebitda","prior_ebitda"],previousPat:["previous_pat","prior_pat"],
  previousEps:["previous_eps","prior_eps"],guidanceRevenue:["guidance_revenue","revenue_guidance"],
  guidanceEbitda:["guidance_ebitda","ebitda_guidance"],guidancePat:["guidance_pat","pat_guidance"],
- guidanceText:["guidance_text","management_guidance"],managementCommentary:["management_commentary","commentary","management_notes"],open:["open","opening_price","opnpric"],high:["high","high_price","hghpric"],low:["low","low_price","lwpric"]
+ guidanceText:["guidance_text","management_guidance"],managementCommentary:["management_commentary","commentary","management_notes"],open:["open","opening_price","opnpric"],high:["high","high_price","hghpric"],low:["low","low_price","lwpric"],close:["close","close_price","clspric"]
 };
 const norm=(s:string)=>s.toLowerCase().replace(/[ _-]/g,"");
 function get(row:Raw,key:keyof typeof aliases):unknown {
