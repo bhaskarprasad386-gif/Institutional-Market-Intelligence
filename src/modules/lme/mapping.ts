@@ -2,7 +2,7 @@ import type { BaseMetal,LmeObservation } from "./types";
 const aliases:Record<string,string[]>={
  metal:["metal","commodity","base_metal","product"],reportDate:["date","report_date","trade_date","as_of_date"],
  warehouseRegion:["region","warehouse_region","location"],
- totalInventoryTonnes:["total_inventory","inventory","stock_tonnes","total_stock","closing_stock"],
+ totalInventoryTonnes:["total_inventory_tonnes","total_inventory","inventory","stock_tonnes","total_stock","closing_stock"],
  onWarrantTonnes:["on_warrant","on_warrant_tonnes","live_warrants"],
  cancelledWarrantsTonnes:["cancelled_warrants","cancelled_warrants_tonnes","cancelled"],
  dailyChangeTonnes:["daily_change","change","net_change","stock_change"],
