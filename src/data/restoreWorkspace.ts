@@ -25,10 +25,18 @@ export function restoreWorkspace(rows: Row[]) {
   const optionRows = rows.filter(row => has(row,"underlying","tradeDate","expiryDate","strike","optionType","spotPrice","openInterest") && num(row,"strike")) as unknown as OptionObservation[];
   const lmeRows = rows.filter(row => has(row,"metal","reportDate","totalInventoryTonnes") && num(row,"totalInventoryTonnes")) as unknown as LmeObservation[];
 
-  const latestDate = futures.reduce((latest,row) => row.tradeDate > latest ? row.tradeDate : latest, "");
-  const latestFutures = latestDate ? futures.filter(row => row.tradeDate === latestDate) : [];
-  const latestOptionDate = optionRows.reduce((latest,row) => row.tradeDate > latest ? row.tradeDate : latest, "");
-  const latestOptions = latestOptionDate ? optionRows.filter(row => row.tradeDate === latestOptionDate) : [];
+  const latestDateBySymbol = new Map<string,string>();
+  for (const row of futures) {
+    const prior = latestDateBySymbol.get(row.symbol);
+    if (!prior || row.tradeDate > prior) latestDateBySymbol.set(row.symbol,row.tradeDate);
+  }
+  const latestFutures = futures.filter(row => latestDateBySymbol.get(row.symbol) === row.tradeDate);
+  const latestOptionDateByUnderlying = new Map<string,string>();
+  for (const row of optionRows) {
+    const prior = latestOptionDateByUnderlying.get(row.underlying);
+    if (!prior || row.tradeDate > prior) latestOptionDateByUnderlying.set(row.underlying,row.tradeDate);
+  }
+  const latestOptions = optionRows.filter(row => latestOptionDateByUnderlying.get(row.underlying) === row.tradeDate);
   const calculatedOptions = calculateOptionMetrics(latestOptions,0,optionRows);
 
   const recommendations = brokerRows.map(evaluateRecommendation);
