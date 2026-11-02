@@ -7,13 +7,13 @@ export interface EodEquityRow {
 }
 export interface MappingResult { rows: EodEquityRow[]; rejected: { rowNumber: number; reason: string }[]; }
 const aliases: Record<string, string[]> = {
-  symbol:["symbol","tckrsymb","sc_name","security name","security"], series:["series","sctysrs","sc_group"],
+  symbol:["symbol","tckrsymb","sc_code","sc_name","security name","security"], series:["series","sctysrs","sc_group"],
   tradeDate:["date1","trddt","trad_dt","trade_date","date"], open:["open","opnpric","open price"],
   high:["high","hghpric","high price"], low:["low","lwpric","low price"], close:["close","clspric","close price"],
   previousClose:["prevclose","prvsclsgpric","previous close"], last:["last","lastpric","last price"],
   volume:["tottrdqty","ttltradgvol","no_of_shrs","volume","total traded quantity"],
   tradedValue:["tottrdval","ttltrfval","net_turnov","traded value"],
-  trades:["totaltrades","ttlnbofntrsexctd","no_trades","trades"]
+  trades:["totaltrades","ttlnboftxsexctd","no_trades","trades"]
 };
 const key=(s:string)=>s.toLowerCase().replace(/[ _-]/g,"");
 function field(row:Record<string,unknown>,name:keyof typeof aliases):unknown {
