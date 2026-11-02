@@ -1,5 +1,6 @@
 import type { BaseMetal, LmeObservation } from "./types";
 const aliases: Record<string,string[]> = {
+ exchange:["exchange","exchange_code","market","venue"],
  metal:["metal","commodity","base_metal","product","metal_name"], reportDate:["date","report_date","trade_date","as_of_date","stock_date","reporting_date"],
  warehouseRegion:["region","warehouse_region","location","warehouse","warehouse_location","country","warehouse_country"],
  totalInventoryTonnes:["total_inventory_tonnes","total_inventory","inventory","stock_tonnes","total_stock","total_stock_tonnes","closing_stock","closing_stock_tonnes","closing_stocks","stocks","stock"],
@@ -30,13 +31,17 @@ function parseDate(value:unknown):string|undefined{
  m=s.match(/^(\d{1,2})[-/ ]([A-Za-z]{3,9})[-/ ](\d{4})$/);if(m){const month=new Date(`${m[2]} 1, 2000`).getMonth()+1;return isoDate(Number(m[3]),month,Number(m[1]));}return undefined;
 }
 const metalMap:Record<string,BaseMetal>={aluminium:"ALUMINIUM",aluminum:"ALUMINIUM",copper:"COPPER",zinc:"ZINC",nickel:"NICKEL",lead:"LEAD",tin:"TIN"};
-export function mapLmeRows(input:Record<string,unknown>[]):{rows:LmeObservation[];rejected:{row:number;reason:string}[]}{
+export function mapLmeRows(input:Record<string,unknown>[],defaultExchange:"LME"|"COMEX"|"SHFE"|"MCX"|"OTHER"="LME"):{rows:LmeObservation[];rejected:{row:number;reason:string}[]}{
  const rows:LmeObservation[]=[],rejected:{row:number;reason:string}[]=[];
  input.forEach((raw,index)=>{
   const metal=metalMap[norm(get(raw,"metal")).replace(/_/g,"")],reportDate=parseDate(get(raw,"reportDate"));
+  const exchangeRaw=norm(get(raw,"exchange")??defaultExchange).replace(/_/g,"");
+  const exchangeMap:Record<string,"LME"|"COMEX"|"SHFE"|"MCX"|"OTHER">={lme:"LME",comex:"COMEX",cme:"COMEX",cmecomex:"COMEX",shfe:"SHFE",shanghai:"SHFE",shanghaifutures:"SHFE",mcx:"MCX",other:"OTHER"};
+  const exchange=exchangeMap[exchangeRaw];
   const fields=["totalInventoryTonnes","onWarrantTonnes","cancelledWarrantsTonnes","dailyChangeTonnes","openingStockTonnes","deliveredInTonnes","deliveredOutTonnes","productionTonnes","importsTonnes","exportsTonnes","cashPrice","threeMonthPrice"] as const;
   const parsed=Object.fromEntries(fields.map(key=>[key,numeric(get(raw,key))])) as Record<typeof fields[number],{value?:number;invalid:boolean}>;
   const reject=(reason:string)=>rejected.push({row:index+2,reason});
+  if(!exchange){reject("Unsupported exchange; use LME, COMEX, SHFE, MCX or OTHER");return;}
   if(!metal){reject("Unsupported or missing metal (Aluminium, Copper, Zinc, Nickel, Lead, Tin)");return;}
   if(!reportDate){reject("Invalid report date; use YYYY-MM-DD, DD/MM/YYYY, DD-MMM-YYYY or an Excel date");return;}
   const total=parsed.totalInventoryTonnes.value;
@@ -47,7 +52,8 @@ export function mapLmeRows(input:Record<string,unknown>[]):{rows:LmeObservation[
   const live=parsed.onWarrantTonnes.value,cancelled=parsed.cancelledWarrantsTonnes.value;
   if(live!==undefined&&live>total){reject("Live / on-warrant stock exceeds total inventory");return;}
   if(cancelled!==undefined&&cancelled>total){reject("Cancelled warrants exceed total inventory");return;}
-  if(live!==undefined&&cancelled!==undefined&&live+cancelled>total+1e-8){reject("Live plus cancelled warrants exceed total inventory");return;}\n  if(parsed.cashPrice.value!==undefined&&parsed.cashPrice.value<=0||parsed.threeMonthPrice.value!==undefined&&parsed.threeMonthPrice.value<=0){reject("Cash and 3M prices must be positive when supplied");return;}
-  rows.push({metal,reportDate,warehouseRegion:String(get(raw,"warehouseRegion")??"").trim()||undefined,totalInventoryTonnes:total,onWarrantTonnes:live,cancelledWarrantsTonnes:cancelled,dailyChangeTonnes:parsed.dailyChangeTonnes.value,openingStockTonnes:parsed.openingStockTonnes.value,deliveredInTonnes:parsed.deliveredInTonnes.value,deliveredOutTonnes:parsed.deliveredOutTonnes.value,productionTonnes:parsed.productionTonnes.value,importsTonnes:parsed.importsTonnes.value,exportsTonnes:parsed.exportsTonnes.value,cashPrice:parsed.cashPrice.value,threeMonthPrice:parsed.threeMonthPrice.value});
+  if(live!==undefined&&cancelled!==undefined&&live+cancelled>total+1e-8){reject("Live plus cancelled warrants exceed total inventory");return;}
+  if(parsed.cashPrice.value!==undefined&&parsed.cashPrice.value<=0||parsed.threeMonthPrice.value!==undefined&&parsed.threeMonthPrice.value<=0){reject("Cash and 3M prices must be positive when supplied");return;}
+  rows.push({exchange,metal,reportDate,warehouseRegion:String(get(raw,"warehouseRegion")??"").trim()||undefined,totalInventoryTonnes:total,onWarrantTonnes:live,cancelledWarrantsTonnes:cancelled,dailyChangeTonnes:parsed.dailyChangeTonnes.value,openingStockTonnes:parsed.openingStockTonnes.value,deliveredInTonnes:parsed.deliveredInTonnes.value,deliveredOutTonnes:parsed.deliveredOutTonnes.value,productionTonnes:parsed.productionTonnes.value,importsTonnes:parsed.importsTonnes.value,exportsTonnes:parsed.exportsTonnes.value,cashPrice:parsed.cashPrice.value,threeMonthPrice:parsed.threeMonthPrice.value});
  });return {rows,rejected};
 }
