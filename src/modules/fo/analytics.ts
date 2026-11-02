@@ -24,3 +24,24 @@ export function classifyPriceOi(priceChangePct:number,oiChangePct:number):"long_
   if(priceChangePct<0&&oiChangePct<0)return "long_unwinding";
   return "mixed";
 }
+
+/** Aggregate imported contracts by expiry and calculate rollover from the nearest two expiries only. */
+export function calculateRolloverFromRows(rows: FuturesObservation[]): RolloverMetric[] {
+  const grouped = new Map<string, Map<string, number>>();
+  for (const row of rows) {
+    const key = row.symbol + "|" + row.tradeDate;
+    const expiries = grouped.get(key) ?? new Map<string, number>();
+    expiries.set(row.expiryDate, (expiries.get(row.expiryDate) ?? 0) + row.openInterest);
+    grouped.set(key, expiries);
+  }
+  const result: RolloverMetric[] = [];
+  for (const [key, expiries] of grouped) {
+    const ordered = [...expiries.entries()].filter(([, oi]) => oi >= 0).sort(([a], [b]) => a.localeCompare(b));
+    if (ordered.length < 2) continue;
+    const [nearExpiry, nearOi] = ordered[0];
+    const [nextExpiry, nextOi] = ordered[1];
+    const [symbol, tradeDate] = key.split("|");
+    result.push(calculateRolloverPct(symbol, tradeDate, nearExpiry, nextExpiry, nearOi, nextOi));
+  }
+  return result.sort((a,b)=>a.symbol.localeCompare(b.symbol));
+}
