@@ -29,7 +29,7 @@ export default function App() {
     try {
       const full = await readTabularFile(file);
       if (full.totalRows > 100) { setMessage("एक बार में अधिकतम 100 rows import होंगी। कृपया file को छोटे हिस्सों में बाँटें।"); return; }
-      const mapped = mapEquityEodRows(full.rows, exchange);
+      const mapped = mapEquityEodRows(full.rows, exchange, marketDate);
       if (!mapped.rows.length) { setMessage(`कोई valid EOD row नहीं मिली। Rejected rows: ${mapped.rejected.length}. Header mapping जाँचें।`); return; }
       const result = await saveImportedRows(mapped.rows as unknown as Record<string, unknown>[], file.name, source, marketDate);
       setImports(current => [result, ...current].slice(0, 20));
