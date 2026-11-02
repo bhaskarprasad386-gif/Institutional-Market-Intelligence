@@ -18,6 +18,7 @@ export interface OptionObservation {
 export interface OptionMetric extends OptionObservation {
   daysToExpiry: number;
   moneynessPct: number;
+  moneyness: "ITM" | "ATM" | "OTM";
   intrinsicValue?: number;
   timeValue?: number;
   oiChange?: number;
@@ -42,4 +43,7 @@ export interface OptionExpirySummary {
   maxPainStrike?: number;
   maxPainPayout?: number;
   atmIvSkewPct?: number;
+  atmIvPct?: number;
+  expectedMovePct?: number;
+  expectedMovePoints?: number;
 }
