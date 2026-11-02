@@ -36,7 +36,7 @@ export function mapLmeRows(input:Record<string,unknown>[],defaultExchange:"LME"|
  input.forEach((raw,index)=>{
   const metal=metalMap[norm(get(raw,"metal")).replace(/_/g,"")],reportDate=parseDate(get(raw,"reportDate"));
   const exchangeRaw=norm(get(raw,"exchange")??defaultExchange).replace(/_/g,"");
-  const exchangeMap:Record<string,"LME"|"COMEX"|"SHFE"|"MCX"|"OTHER">={lme:"LME",comex:"COMEX",cme:"COMEX",cmecomex:"COMEX",shfe:"SHFE",shanghai:"SHFE",shanghaifutures:"SHFE",mcx:"MCX",other:"OTHER"};
+  const exchangeMap:Record<string,"LME"|"COMEX"|"SHFE"|"MCX"|"OTHER">={lme:"LME",comex:"COMEX",cme:"COMEX",cmecomex:"COMEX",comexcme:"COMEX",cmecomex:"COMEX",shfe:"SHFE",shanghai:"SHFE",shanghaifutures:"SHFE",shanghaifuturesexchange:"SHFE",shfeshanghai:"SHFE",mcx:"MCX",other:"OTHER"};
   const exchange=exchangeMap[exchangeRaw];
   const fields=["totalInventoryTonnes","onWarrantTonnes","cancelledWarrantsTonnes","dailyChangeTonnes","openingStockTonnes","deliveredInTonnes","deliveredOutTonnes","productionTonnes","importsTonnes","exportsTonnes","cashPrice","threeMonthPrice"] as const;
   const parsed=Object.fromEntries(fields.map(key=>[key,numeric(get(raw,key))])) as Record<typeof fields[number],{value?:number;invalid:boolean}>;
