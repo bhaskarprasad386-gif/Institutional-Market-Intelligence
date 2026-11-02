@@ -22,7 +22,7 @@ export function calculateOptionMetrics(rows:OptionObservation[],ratePct=0):{metr
  const metrics=rows.map(row=>{
   const daysToExpiry=Math.max(0,Math.ceil((Date.parse(row.expiryDate+"T00:00:00Z")-Date.parse(row.tradeDate+"T00:00:00Z"))/DAY_MS));
   const moneynessPct=(row.spotPrice-row.strike)/row.spotPrice*100;
-  const moneyness=Math.abs(row.spotPrice-row.strike)<=row.spotPrice*0.001?"ATM":((row.optionType==="CE"&&row.spotPrice>row.strike)||(row.optionType==="PE"&&row.spotPrice<row.strike)?"ITM":"OTM");
+  const moneyness:OptionMetric["moneyness"]=Math.abs(row.spotPrice-row.strike)<=row.spotPrice*0.001?"ATM":((row.optionType==="CE"&&row.spotPrice>row.strike)||(row.optionType==="PE"&&row.spotPrice<row.strike)?"ITM":"OTM");
   const intrinsicValue=row.ltp===undefined?undefined:Math.max(0,row.optionType==="CE"?row.spotPrice-row.strike:row.strike-row.spotPrice);
   const timeValue=row.ltp===undefined||intrinsicValue===undefined?undefined:Math.max(0,row.ltp-intrinsicValue);
   const oiChange=row.previousOpenInterest===undefined?undefined:row.openInterest-row.previousOpenInterest;
