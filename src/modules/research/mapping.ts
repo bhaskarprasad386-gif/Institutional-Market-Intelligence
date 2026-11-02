@@ -70,3 +70,20 @@ export function mapCompanyResultRows(input:Raw[]):{rows:CompanyResult[];rejected
  });
  return {rows,rejected};
 }
+
+import type { HistoricalPriceBar } from "./types";
+
+export function mapHistoricalPriceRows(input: Raw[], expectedSymbol?: string): { rows: HistoricalPriceBar[]; rejected: Rejection[] } {
+ const rows: HistoricalPriceBar[] = [], rejected: Rejection[] = [];
+ input.forEach((raw,index) => {
+  const symbol=String(get(raw,"symbol")??"").trim(),tradeDate=date(get(raw,"publishedDate"));
+  const open=num(raw.open??raw.OpnPric),high=num(raw.high??raw.HghPric),low=num(raw.low??raw.LwPric),close=num(raw.close??raw.ClsPric);
+  if(!symbol||!tradeDate||open===undefined||high===undefined||low===undefined||close===undefined||
+    Math.min(open,high,low,close)<=0||high<Math.max(open,close,low)||low>Math.min(open,close,high)||
+    (expectedSymbol&&symbol.toUpperCase()!==expectedSymbol.toUpperCase())){
+    rejected.push({rowNumber:index+2,reason:"Invalid symbol/date/OHLC values or symbol mismatch"});return;
+  }
+  rows.push({symbol,tradeDate,open,high,low,close});
+ });
+ return {rows,rejected};
+}
