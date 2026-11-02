@@ -37,3 +37,19 @@ export async function listRecentImports(): Promise<ImportRecord[]> {
   db.close();
   return records;
 }
+
+export async function listAllImportedRows(): Promise<Record<string, unknown>[]> {
+  const db = await openLocalDatabase();
+  try {
+    return await new Promise<Record<string, unknown>[]>((resolve, reject) => {
+      const request = db.transaction("observations", "readonly").objectStore("observations").getAll();
+      request.onsuccess = () => {
+        const observations = request.result as Observation<Record<string, unknown>>[];
+        resolve(observations.map(item => item.value).filter(value => value && typeof value === "object"));
+      };
+      request.onerror = () => reject(request.error ?? new Error("Unable to restore locally saved observations."));
+    });
+  } finally {
+    db.close();
+  }
+}

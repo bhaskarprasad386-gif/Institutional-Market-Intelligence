@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { listRecentImports, saveImportedRows, type ImportRecord } from "../data/importRepository";
+import { listRecentImports, listAllImportedRows, saveImportedRows, type ImportRecord } from "../data/importRepository";
+import { restoreWorkspace } from "../data/restoreWorkspace";
 import { readTabularFile, validatePreview, type TabularPreview } from "../data/tabularImport";
 import { mapEquityEodRows, type Exchange } from "../data/eodMapping";
 import { mapFuturesRows } from "../modules/fo/mapping";
@@ -55,7 +56,26 @@ export default function App() {
   const [imports, setImports] = useState<ImportRecord[]>([]);
   const [message, setMessage] = useState("कोई file import नहीं हुई है।");
   const [busy, setBusy] = useState(false);
-  useEffect(() => { listRecentImports().then(setImports).catch(() => setMessage("Local database उपलब्ध नहीं है।")); }, []);
+  useEffect(() => {
+    let active = true;
+    Promise.all([listRecentImports(), listAllImportedRows()]).then(([recent, rows]) => {
+      if (!active) return;
+      setImports(recent);
+      if (!rows.length) return;
+      try {
+        const restored = restoreWorkspace(rows);
+        setFoMetrics(restored.futures); setRolloverMetrics(restored.rollovers);
+        setSectorMetrics(restored.sectors); setDeliveryRows(restored.deliveries); setFlowMetrics(restored.flows);
+        setRecommendations(restored.recommendations); setCompanyResults(restored.companyResults);
+        setHistoricalEvaluations(restored.historicalEvaluations); setOptionHistoryRows(restored.optionHistoryRows);
+        setOptionMetrics(restored.optionMetrics); setOptionSummaries(restored.optionSummaries); setLmeMetrics(restored.lmeMetrics);
+        setMessage(`Local workspace restored: ${rows.length.toLocaleString()} observations across saved imports. Source status remains imported / unverified.`);
+      } catch (error) {
+        setMessage(error instanceof Error ? `Saved data restore warning: ${error.message}` : "Saved workspace could not be fully restored.");
+      }
+    }).catch(() => { if (active) setMessage("Local database उपलब्ध नहीं है।"); });
+    return () => { active = false; };
+  }, []);
   async function selectFile(next: File | null) {
     setFile(next); setPreview(null);
     if (!next) return;
