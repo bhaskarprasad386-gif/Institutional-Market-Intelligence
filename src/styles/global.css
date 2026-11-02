@@ -15,3 +15,21 @@
 .option-chart-scroll{width:100%;overflow-x:auto}
 .option-chart-scroll svg{display:block;width:100%;min-width:520px;height:auto}
 @media(max-width:850px){.option-chart-grid{grid-template-columns:1fr}}
+
+.strategy-payoff{margin-top:30px;padding:20px;border:2px solid #526982;border-radius:12px;background:#0d1929}
+.strategy-payoff h3{margin:0 0 8px;font-size:20px;font-weight:950;color:#f0f6ff}
+.payoff-controls{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:14px;margin:16px 0}
+.payoff-controls label,.payoff-leg label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:900;color:#eaf3ff}
+.payoff-controls input,.payoff-leg input,.payoff-leg select{min-width:0;width:100%;padding:9px;border:2px solid #657992;border-radius:7px;background:#0b1524;color:#fff;font:inherit}
+.payoff-leg-list{display:grid;gap:10px;margin:14px 0}
+.payoff-leg{display:grid;grid-template-columns:56px repeat(5,minmax(90px,1fr)) auto;align-items:end;gap:10px;padding:12px;border:1px solid #526982;border-radius:9px;background:#111f31}
+.payoff-leg>strong{align-self:center;color:#fff;font-size:13px}
+.payoff-remove{padding:9px 10px;border-color:#a36b6b;background:#552d36}
+.payoff-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+.payoff-summary>div{display:flex;flex-direction:column;gap:7px;padding:12px;border:1px solid #526982;border-radius:8px;background:#142338}
+.payoff-summary span{font-size:11px;color:#b9c8da;font-weight:800}
+.payoff-summary strong{font-size:15px;color:#f3f7fc;overflow-wrap:anywhere}
+.payoff-chart{width:100%;overflow-x:auto;border:1px solid #526982;border-radius:9px;background:#111f31}
+.payoff-chart svg{display:block;width:100%;min-width:540px;height:auto}
+@media(max-width:850px){.payoff-leg{grid-template-columns:repeat(2,minmax(0,1fr))}.payoff-leg>strong{grid-column:1/-1}.payoff-leg .payoff-remove{grid-column:1/-1}.payoff-summary{grid-template-columns:1fr}}
+@media(max-width:600px){.payoff-controls{grid-template-columns:1fr}}
