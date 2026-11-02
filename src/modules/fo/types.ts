@@ -6,6 +6,7 @@ export interface FuturesObservation {
   spotClose: number;
   openInterest: number;
   previousOpenInterest?: number;
+  previousFuturesClose?: number;
   volume?: number;
 }
 export interface FoMetrics {
