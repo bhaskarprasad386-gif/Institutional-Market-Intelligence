@@ -4,7 +4,8 @@ import { openLocalDatabase } from "./storage";
 export interface ImportRecord { id: string; fileName: string; sourceName: string; marketDate: string; importedAt: string; rowCount: number; }
 export async function saveImportedRows(rows: Record<string, unknown>[], fileName: string, sourceName: string, marketDate: string): Promise<ImportRecord> {
   if (!sourceName.trim()) throw new Error("Source name जरूरी है।");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(marketDate) || Number.isNaN(Date.parse(marketDate))) throw new Error("Market date YYYY-MM-DD में दें।");
+  const multiDateMarker = marketDate === "MULTI_DATE_LME" || marketDate === "MULTI_DATE_HISTORY";
+  if (!multiDateMarker && (!/^\d{4}-\d{2}-\d{2}$/.test(marketDate) || Number.isNaN(Date.parse(marketDate)))) throw new Error("Market date YYYY-MM-DD में दें।");
   if (!rows.length) throw new Error("Import करने के लिए rows नहीं हैं।");
   const db = await openLocalDatabase();
   const importedAt = new Date().toISOString();
