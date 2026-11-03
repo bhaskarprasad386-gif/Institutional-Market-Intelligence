@@ -26,12 +26,12 @@ jobs:
           python-version: "3.12"
       - name: Install workbook inspector
         run: python -m pip install --disable-pip-version-check openpyxl
-      - name: Fetch latest public LME warehouse and queue XLSX
+      - name: Fetch and inspect latest public LME warehouse and queue XLSX
         run: python scripts/lme/fetch_public_reports.py
-      - name: Archive unchanged raw workbook and manifest
+      - name: Publish non-sensitive source manifest only
         uses: actions/upload-artifact@v4
         with:
-          name: lme-public-raw-warehouse-queue-${{ github.run_id }}
-          path: lme-raw-output/
+          name: lme-raw-source-manifest-${{ github.run_id }}
+          path: lme-raw-output/manifest.json
           if-no-files-found: error
           retention-days: 30
