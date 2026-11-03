@@ -28,10 +28,10 @@ jobs:
         run: python -m py_compile scripts/lme/daily_collector.py
       - name: Check official sources and download accessible raw reports
         run: python scripts/lme/daily_collector.py
-      - name: Archive raw files and access manifest
+      - name: Publish non-sensitive collection manifest only
         uses: actions/upload-artifact@v4
         with:
-          name: lme-daily-raw-${{ github.run_id }}
-          path: lme-raw-output/
+          name: lme-daily-manifest-${{ github.run_id }}
+          path: lme-raw-output/manifest.json
           if-no-files-found: error
           retention-days: 90
