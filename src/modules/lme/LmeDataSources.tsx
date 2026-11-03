@@ -24,7 +24,7 @@ export default function LmeDataSources() {
       <p><strong>Schedule:</strong> Weekdays at 17:30 India time. The collector checks official LME report pages and downloads matching files only when LME grants access.</p>
       <p><strong>Verified limitation:</strong> The previous unauthenticated Warehouse & Queue request returned HTTP 403. Daily Stocks and Off-Warrant downloads are not confirmed until a collector run reports DOWNLOADED.</p>
       <p><strong>Result states:</strong> DOWNLOADED · ACCESS_REQUIRED · PAGE_FETCHED_NO_REPORT_LINK · FETCH_ERROR. A successful workflow run does not imply a report was downloaded.</p>
-      <p>Raw files are retained as a GitHub Actions artifact for 90 days. They are not committed to the public repository or automatically copied into this browser's IndexedDB archive.</p>
+      <p>Only the non-sensitive collection manifest is retained as a 90-day GitHub Actions artifact. Downloaded raw files are processed temporarily on the runner and are not published, archived, or copied into this browser's IndexedDB; persistent raw-data storage needs a private, LME-authorized destination.</p>
       <a href="https://github.com/bhaskarprasad386-gif/Institutional-Market-Intelligence/actions/workflows/lme-daily-raw-collector.yml" target="_blank" rel="noreferrer">Open daily collector runs ↗</a>
       <span className="lme-source-footnote">Restricted reports still require LME-authorized account access or a licensed feed. No login automation or access-control bypass is used.</span>
     </div>
