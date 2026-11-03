@@ -9,7 +9,7 @@ export function mapFuturesRows(rawRows:Raw[]):{rows:FuturesObservation[];rejecte
  const rows:FuturesObservation[]=[],rejected:{rowNumber:number;reason:string}[]=[];
  rawRows.forEach((r,i)=>{const symbol=String(get(r,"symbol")??"").trim(),tradeDate=date(get(r,"tradeDate")),expiryDate=date(get(r,"expiryDate")),futuresClose=num(get(r,"futuresClose")),spotClose=num(get(r,"spotClose")),openInterest=num(get(r,"openInterest"));
  if(!symbol||!tradeDate||!expiryDate||futuresClose===undefined||spotClose===undefined||openInterest===undefined||futuresClose<=0||spotClose<=0||openInterest<0){rejected.push({rowNumber:i+2,reason:"Required symbol/date/expiry/price/OI field missing or invalid"});return;}
- const explicitPreviousOi=num(get(r,"previousOpenInterest")),changeOi=num(get(r,"changeOpenInterest")),previousOpenInterest=explicitPreviousOi??(changeOi===undefined?undefined:openInterest-changeOi),previousFuturesClose=num(get(r,"previousFuturesClose")),volume=num(get(r,"volume"));
+ const explicitPreviousOi=num(get(r,"previousOpenInterest")),changeOi=num(get(r,"changeOpenInterest")),previousOpenInterest=explicitPreviousOi??(changeOi===undefined?undefined:openInterest-changeOi),previousFuturesClose=num(get(r,"previousFuturesClose")),volume=num(get(r,"volume")),lotSize=num(get(r,"lotSize"));
  rows.push({symbol,tradeDate,expiryDate,futuresClose,spotClose,openInterest,previousOpenInterest,previousFuturesClose,volume,lotSize:lotSize!==undefined&&lotSize>0?lotSize:undefined});
  });return {rows,rejected};
 }
