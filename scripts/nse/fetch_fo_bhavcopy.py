@@ -80,6 +80,7 @@ def fetch_for_date(day):
                     "changeOpenInterest": pick(raw, "ChngInOpnIntrst", "Change in Open Interest"),
                     "previousFuturesClose": pick(raw, "PrvsClsgPric", "Previous Closing Price"),
                     "volume": pick(raw, "TtlTradgVol", "Total Traded Volume"),
+                    "lotSize": pick(raw, "NewBrdLotQty", "Market Lot", "Lot Size"),
                 })
     if not rows:
         raise ValueError(f"NSE archive {stamp} contained no valid FUTIDX/FUTSTK rows")
