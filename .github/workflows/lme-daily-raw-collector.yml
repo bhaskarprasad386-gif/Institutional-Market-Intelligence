@@ -31,7 +31,7 @@ jobs:
       - name: Archive raw files and access manifest
         uses: actions/upload-artifact@v4
         with:
-          name: lme-daily-raw-\${{ github.run_id }}
+          name: lme-daily-raw-${{ github.run_id }}
           path: lme-raw-output/
           if-no-files-found: error
           retention-days: 90
