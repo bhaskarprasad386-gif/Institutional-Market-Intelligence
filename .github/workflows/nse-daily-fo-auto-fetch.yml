@@ -1,0 +1,49 @@
+name: NSE daily F&O auto-fetch and Pages publish
+
+on:
+  schedule:
+    # 19:00 IST, Monday-Friday; NSE EOD reports are usually available after market close.
+    - cron: "30 13 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: nse-daily-data-pages
+  cancel-in-progress: false
+
+jobs:
+  fetch-build-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch official NSE F&O UDiFF EOD bhavcopy
+        run: python scripts/nse/fetch_fo_bhavcopy.py
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Build app with daily NSE data
+        run: npm run build
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - name: Deploy updated daily data and app
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Report published market date
+        run: python -c "import json; d=json.load(open('public/data/nse-fo-latest.json')); print('Published market date:', d['marketDate'], '| rows:', d['rowCount'])"
