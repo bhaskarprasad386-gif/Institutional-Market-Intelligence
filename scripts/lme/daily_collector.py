@@ -60,7 +60,7 @@ def main():
     if suffix==".xlsx" and not zipfile.is_zipfile(io.BytesIO(raw)): raise RuntimeError("Downloaded XLSX failed container validation.")
     digest=hashlib.sha256(raw).hexdigest(); name=re.sub(r"[^A-Za-z0-9._-]+","-",Path(urlparse(final).path).name)[:120] or source["id"]+suffix
     dest=folder/(source["id"]+"-"+name); dest.write_bytes(raw)
-    row.update(status="DOWNLOADED",report_label=label,download_url=final,raw_file_fetched=True,raw_file_name=str(dest.relative_to(OUT)),raw_file_size_bytes=len(raw),raw_file_sha256=digest,content_type=mime,note="Raw report included in this workflow artifact; no market values/signals inferred by collector.")
+    row.update(status="DOWNLOADED",report_label=label,download_url=final,raw_file_fetched=True,raw_file_name=str(dest.relative_to(OUT)),raw_file_size_bytes=len(raw),raw_file_sha256=digest,content_type=mime,note="Raw report downloaded and processed temporarily on the runner; this workflow retains only the non-sensitive manifest. No market values/signals are inferred by the collector.")
   except PermissionError as exc: row.update(status="ACCESS_REQUIRED",raw_file_fetched=False,http_status=str(exc),note="LME requires authorized session or licensed access; no access control bypassed.")
   except Exception as exc: row.update(status="FETCH_ERROR",raw_file_fetched=False,error=str(exc))
   results.append(row); print(json.dumps(row,ensure_ascii=False))
