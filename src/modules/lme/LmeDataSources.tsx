@@ -20,12 +20,13 @@ export default function LmeDataSources() {
     <h3>Official LME raw-data source catalogue</h3>
     <p className="muted">Source coverage and publication lag are shown separately. The app does not bypass LME login, licensing or download controls. After downloading an authorized report, import its original file below—the unchanged file is archived locally before our calculations.</p>
     <div className="lme-fetch-status" role="status">
-      <div className="lme-fetch-status-head"><strong>Automated source check · Warehouse & Queue</strong><span className="lme-access-tag">REGISTERED ACCESS REQUIRED</span></div>
-      <p><strong>Last checked:</strong> 3 Nov 2026 · GitHub Actions runner received HTTP 403 from the official LME report page.</p>
-      <p><strong>Raw report fetched:</strong> No. No inventory values or signals were generated from this attempt.</p>
-      <p>Next step: sign in or register on LME.com, download the authorized XLSX, then import it below. Automated unauthenticated collection will remain disabled until LME provides an authorized access method.</p>
-      <a href="https://github.com/bhaskarprasad386-gif/Institutional-Market-Intelligence/actions/runs/41559009593" target="_blank" rel="noreferrer">View verified collector run ↗</a>
-      <span className="lme-source-footnote">The workflow completed successfully because it recorded the access restriction correctly; that does not mean an XLSX was downloaded.</span>
+      <div className="lme-fetch-status-head"><strong>Automated source check · Daily collector</strong><span className="lme-access-tag">DAILY · WEEKDAYS</span></div>
+      <p><strong>Schedule:</strong> Weekdays at 17:30 India time. The collector checks official LME report pages and downloads matching files only when LME grants access.</p>
+      <p><strong>Verified limitation:</strong> The previous unauthenticated Warehouse & Queue request returned HTTP 403. Daily Stocks and Off-Warrant downloads are not confirmed until a collector run reports DOWNLOADED.</p>
+      <p><strong>Result states:</strong> DOWNLOADED · ACCESS_REQUIRED · PAGE_FETCHED_NO_REPORT_LINK · FETCH_ERROR. A successful workflow run does not imply a report was downloaded.</p>
+      <p>Raw files are retained as a GitHub Actions artifact for 90 days. They are not committed to the public repository or automatically copied into this browser's IndexedDB archive.</p>
+      <a href="https://github.com/bhaskarprasad386-gif/Institutional-Market-Intelligence/actions/workflows/lme-daily-raw-collector.yml" target="_blank" rel="noreferrer">Open daily collector runs ↗</a>
+      <span className="lme-source-footnote">Restricted reports still require LME-authorized account access or a licensed feed. No login automation or access-control bypass is used.</span>
     </div>
     <div className="table-wrap"><table><thead><tr><th>Raw report</th><th>Publication</th><th>Access</th><th>Raw fields</th><th>Official source</th></tr></thead><tbody>
       {sources.map(item => <tr key={item.name}><td><strong>{item.name}</strong></td><td>{item.cadence}</td><td>{item.access}</td><td>{item.fields}</td><td><a href={item.url} target="_blank" rel="noreferrer">Open LME report ↗</a></td></tr>)}
