@@ -91,7 +91,7 @@ export default function App() {
     let active = true;
     const loadDailyNse = async () => {
       try {
-        const response = await fetch(`${import.meta.env.BASE_URL}data/nse-fo-latest.json`, { cache: "no-store" });
+        const response = await fetch("data/nse-fo-latest.json", { cache: "no-store" });
         if (!response.ok) throw new Error(`Daily NSE dataset unavailable (HTTP ${response.status}).`);
         const data = await response.json() as { marketDate: string; retrievedAt: string; source: string; rowCount: number; rows: Record<string, unknown>[] };
         if (!Array.isArray(data.rows) || !data.marketDate) throw new Error("NSE daily dataset format is invalid.");
