@@ -8,6 +8,7 @@ export interface FuturesObservation {
   previousOpenInterest?: number;
   previousFuturesClose?: number;
   volume?: number;
+  lotSize?: number;
 }
 export interface FoMetrics {
   symbol: string; tradeDate: string; expiryDate: string;
@@ -15,4 +16,13 @@ export interface FoMetrics {
   oiChange?: number; oiChangePct?: number; priceChangePct?: number;
   basis: number; costOfCarryAnnualizedPct?: number; daysToExpiry: number;
 }
-export interface RolloverMetric { symbol: string; tradeDate: string; nearExpiry: string; nextExpiry: string; nearOi: number; nextOi: number; rolloverPct: number; }
+export type RolloverFlag = "HIGH" | "NORMAL" | "INSUFFICIENT_PEERS" | "ROLL_CREDIT";
+export interface RolloverMetric {
+  symbol: string; tradeDate: string; nearExpiry: string; nextExpiry: string;
+  nearOi: number; nextOi: number; rolloverPct: number;
+  nearFuturesClose: number; nextFuturesClose: number;
+  rolloverCostPoints: number; rolloverCostPct: number;
+  lotSize?: number; rolloverCostPerLot?: number;
+  rolloverPctFlag: RolloverFlag; rolloverCostFlag: RolloverFlag;
+  peerCount: number;
+}
