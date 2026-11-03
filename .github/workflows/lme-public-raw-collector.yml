@@ -3,8 +3,8 @@ name: LME public raw report collector
 on:
   workflow_dispatch:
   schedule:
-    # LME warehouse/queue reports are published on the 10th or next business day.
-    - cron: "30 10 11 * *"
+    # Run after the 10th-day publication window, allowing for weekends / holidays.
+    - cron: "30 10 15 * *"
 
 permissions:
   contents: read
