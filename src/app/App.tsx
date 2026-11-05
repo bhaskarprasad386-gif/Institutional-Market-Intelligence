@@ -133,7 +133,7 @@ export default function App() {
         const rows = datasets.flat();
         if (!active) return;
         setRolloverHistoryRows(rows);
-        setRolloverHistoryStatus(dates.length + " archived sessions · " + rows.length.toLocaleString() + " futures observations · latest 120 sessions");
+        setRolloverHistoryStatus(dates.length + " archived sessions · " + rows.length.toLocaleString() + " futures observations · newest available sessions (maximum 120)");
       } catch (error) {
         if (active) setRolloverHistoryStatus(error instanceof Error ? "History unavailable · " + error.message : "History unavailable.");
       }
