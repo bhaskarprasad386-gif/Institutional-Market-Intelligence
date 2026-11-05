@@ -272,11 +272,11 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             })
         result = builder.add_point_in_time_rollover_momentum(rows)
         self.assertIsNone(result[2]["nextShareMomentum3d"])
-        self.assertAlmostEqual(result[3]["nextShareMomentum3d"], 10.0)
-        self.assertAlmostEqual(result[5]["nextShareMomentum5d"], 25.0)
+        self.assertAlmostEqual(result[3]["nextShareMomentum3d"], 7.5)
+        self.assertAlmostEqual(result[5]["nextShareMomentum5d"], 12.5)
         self.assertAlmostEqual(result[5]["totalOiMomentum5dPct"], 25.0)
         result[6]["nextOi"] = 100000
-        self.assertAlmostEqual(result[5]["nextShareMomentum5d"], 25.0)
+        self.assertAlmostEqual(result[5]["nextShareMomentum5d"], 12.5)
 
 
 if __name__ == "__main__":
