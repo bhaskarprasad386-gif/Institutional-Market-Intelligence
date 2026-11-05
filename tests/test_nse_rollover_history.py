@@ -134,6 +134,13 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             self.assertIn("20", outcomes["stats"]["LONG_BUILD_UP_5D"]["costSensitivity"])
             self.assertEqual(outcomes["costSensitivityAssumptions"].startswith("Hypothetical"), True)
             self.assertIn("INSUFFICIENT_HISTORY", outcomes["holdoutVolatilityRegimeStats"])
+            cohort = outcomes["rolloverConditionStats"]["development"]["ALL_DIRECTIONAL"]
+            self.assertIn("byVolatilityRegime", cohort)
+            self.assertIn("INSUFFICIENT_HISTORY", cohort["byVolatilityRegime"])
+            self.assertEqual(
+                cohort["byVolatilityRegime"]["INSUFFICIENT_HISTORY"]["LONG_BUILD_UP_5D"]["evaluatedSignals"],
+                1,
+            )
             self.assertTrue((root / "rollover-metrics.json").exists())
 
 

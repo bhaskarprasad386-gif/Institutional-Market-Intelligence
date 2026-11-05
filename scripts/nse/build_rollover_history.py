@@ -424,7 +424,13 @@ def build():
             "HIGH_BOTH_SHARE_DOWN_COST_FALLING": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] < 0],
         }
         return {
-            name: {"signalCount": len(selected), "stats": summarize(selected)["overall"]}
+            name: {
+                "signalCount": len(selected),
+                "stats": summarize(selected)["overall"],
+                # Regime labels use only prior symbol-session spot returns.
+                # Keep the same cohort definitions across holdout and each fold.
+                "byVolatilityRegime": summarize(selected)["byVolatilityRegime"],
+            }
             for name, selected in cohorts.items()
         }
 
