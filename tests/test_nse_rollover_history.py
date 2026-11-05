@@ -115,5 +115,42 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             self.assertIn("INSUFFICIENT_HISTORY", outcomes["holdoutVolatilityRegimeStats"])
             self.assertTrue((root / "rollover-metrics.json").exists())
 
+
+    def test_forward_returns_use_each_symbols_own_sessions_and_cost_sensitivity_thresholds(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            dates = [f"2026-02-{day:02d}" for day in range(1, 13)]
+            index_dates = [{"marketDate": day, "path": f"{day}.json"} for day in reversed(dates)]
+            (root / "index.json").write_text(json.dumps({"count": len(dates), "dates": index_dates}))
+            for i, day in enumerate(dates):
+                rows = []
+                # ABC trades every archived session; XYZ trades only on even-indexed sessions.
+                for symbol, include in (("ABC", True), ("XYZ", i % 2 == 0)):
+                    if not include:
+                        continue
+                    spot = 100.6 if symbol == "XYZ" and i == 10 else 100.0
+                    for expiry, offset in (("2026-03-26", 0), ("2026-04-30", 2)):
+                        rows.append({
+                            "symbol": symbol, "tradeDate": day, "expiryDate": expiry,
+                            "futuresClose": str(100 + i + offset),
+                            "previousFuturesClose": str(99 + i + offset),
+                            "spotClose": str(spot), "openInterest": "100",
+                            "changeOpenInterest": "10", "volume": "100", "lotSize": "25",
+                        })
+                (root / f"{day}.json").write_text(json.dumps({"marketDate": day, "rows": rows}))
+            with patch.object(builder, "ROOT", root), patch.object(builder, "OUTPUT", root / "rollover-metrics.json"), patch.object(builder, "OUTCOMES_OUTPUT", root / "rollover-outcomes.json"):
+                builder.build()
+            outcomes = json.loads((root / "rollover-outcomes.json").read_text())
+            xyz = next(x for x in outcomes["outcomes"] if x["symbol"] == "XYZ" and x["signalDate"] == dates[0])
+            # XYZ's sixth observation is global session 11, not session 6.
+            self.assertAlmostEqual(xyz["return5dPct"], 0.6)
+            self.assertEqual(xyz["outcome5d"], "UP")
+            self.assertEqual(xyz["correct5d"], True)
+            self.assertEqual(xyz["costSensitivity"] if "costSensitivity" in xyz else None, None)
+            long_stats = outcomes["stats"]["LONG_BUILD_UP_5D"]["costSensitivity"]
+            self.assertEqual(long_stats["10"]["netDirectionalHits"], 1)
+            self.assertEqual(long_stats["20"]["netDirectionalHits"], 0)
+            self.assertEqual(long_stats["30"]["netDirectionalHits"], 0)
+
 if __name__ == "__main__":
     unittest.main()
