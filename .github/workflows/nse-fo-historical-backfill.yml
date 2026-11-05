@@ -33,7 +33,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: Download and validate NSE historical F&O sessions
-        run: python scripts/nse/backfill_fo_history.py --start-date "${{ inputs.start_date }}" --end-date "${{ inputs.end_date }}"
+        env:
+          START_DATE: ${{ inputs.start_date }}
+          END_DATE: ${{ inputs.end_date }}
+        run: python scripts/nse/backfill_fo_history.py --start-date "$START_DATE" --end-date "$END_DATE"
       - name: Commit validated dated history
         run: |
           git config user.name "github-actions[bot]"
