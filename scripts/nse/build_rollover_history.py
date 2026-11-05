@@ -62,9 +62,17 @@ def build():
             if near_price <= 0:
                 continue
             points = next_price - near_price
-            near_lot = near["lots"][0] if near["lots"] else None
-            next_lot = nxt["lots"][0] if nxt["lots"] else None
-            lot_size = near_lot if near_lot and near_lot == next_lot else None
+            # A per-lot cost is valid only when each expiry bucket has exactly
+            # one source lot size and both selected expiries agree.
+            near_lots = set(near["lots"])
+            next_lots = set(nxt["lots"])
+            lot_size = (
+                next(iter(near_lots))
+                if len(near_lots) == 1
+                and len(next_lots) == 1
+                and near_lots == next_lots
+                else None
+            )
             metrics.append({
                 "symbol": symbol, "tradeDate": market_date,
                 "nearExpiry": near_expiry, "nextExpiry": next_expiry,
