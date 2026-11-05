@@ -46,7 +46,7 @@ export default function App() {
   const [positionalRolloverMetrics, setPositionalRolloverMetrics] = useState<RolloverMetric[]>([]);
   const [rolloverOutcomeStats, setRolloverOutcomeStats] = useState<Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number; costSensitivity?: Record<string, { assumedRoundTripCostBps: number; netDirectionalHits: number; netPrecisionPct: number | null }> }>>({});
   const [rolloverHoldoutStats, setRolloverHoldoutStats] = useState<Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number; costSensitivity?: Record<string, { assumedRoundTripCostBps: number; netDirectionalHits: number; netPrecisionPct: number | null }> }>>({});
-  const [rolloverVolatilityStats, setRolloverVolatilityStats] = useState<Record<string, Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null }>>>({});  const [rolloverOutcomeStatus, setRolloverOutcomeStatus] = useState("Outcome validation loading…");
+  const [rolloverVolatilityStats, setRolloverVolatilityStats] = useState<Record<string, Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null }>>>({});\n  const [rolloverOutcomeStatus, setRolloverOutcomeStatus] = useState("Outcome validation loading…");
   const [rolloverHistoryStatus, setRolloverHistoryStatus] = useState("Historical archive loading…");
   const [historicalRollover, setHistoricalRollover] = useState<Map<string, HistoricalRolloverContext>>(new Map());
   const [sectorFile, setSectorFile] = useState<File | null>(null);
