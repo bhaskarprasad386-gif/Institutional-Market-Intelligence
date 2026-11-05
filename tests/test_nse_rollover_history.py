@@ -214,5 +214,32 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(development, rows)
         self.assertEqual(purged, 0)
 
+
+    def test_walk_forward_folds_are_chronological_non_overlapping_and_purged(self):
+        days = [f"2026-01-{day:02d}" for day in range(1, 31)]
+        rows = [
+            {"symbol": "ABC", "signalDate": day, "nextBuildUp": "LONG_BUILD_UP"}
+            for day in days
+        ]
+        folds = builder.build_walk_forward_folds(rows, {"ABC": days})
+        self.assertGreaterEqual(len(folds), 2)
+        self.assertEqual(folds[0]["testStartDate"], days[18])
+        for index, fold in enumerate(folds):
+            self.assertGreaterEqual(fold["developmentSignalsAfterPurge"], 0)
+            self.assertGreaterEqual(fold["purgedDevelopmentSignals"], 0)
+            self.assertTrue(all(fold["testStartDate"] <= row["signalDate"] <= fold["testEndDate"] for row in fold["testRows"]))
+            if index:
+                self.assertGreater(fold["testStartDate"], folds[index - 1]["testEndDate"])
+        # The first development signal is purged when its 20-session endpoint
+        # reaches the first test observation.
+        first = folds[0]
+        self.assertNotEqual(first["developmentSignalsAfterPurge"], len(rows[:18]))
+
+    def test_walk_forward_requires_minimum_out_of_sample_history(self):
+        days = [f"2026-01-{day:02d}" for day in range(1, 12)]
+        rows = [{"symbol": "ABC", "signalDate": day} for day in days]
+        self.assertEqual(builder.build_walk_forward_folds(rows, {"ABC": days}), [])
+
+
 if __name__ == "__main__":
     unittest.main()
