@@ -203,7 +203,7 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(result, (None, "INSUFFICIENT_HISTORY"))
 
 
-    def test_no_holdout_partition_keeps_mature_research_rows_in_development(self):
+    def test_no_holdout_partition_keeps_cycle_rows_in_development(self):
         rows = [
             {"symbol": "ABC", "signalDate": "2026-01-05"},
             {"symbol": "XYZ", "signalDate": "2026-01-06"},
