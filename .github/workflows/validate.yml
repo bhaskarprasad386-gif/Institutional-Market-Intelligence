@@ -22,6 +22,39 @@ jobs:
         run: python scripts/nse/build_rollover_history.py
       - name: Validate generated walk-forward artifact
         run: python -c "import json; d=json.load(open('public/data/nse-fo-history/rollover-outcomes.json')); w=d['walkForward']; assert w['status'] in ('AVAILABLE', 'INSUFFICIENT_HISTORY'); assert isinstance(w['folds'], list); assert w['foldCount']==len(w['folds']); assert isinstance(w['stats'], dict); print('Walk-forward artifact:', w['status'], 'folds:', w['foldCount'], 'evaluated test signals:', w['evaluatedTestSignals'])"
+      - name: Export walk-forward research summary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          source = json.loads(Path("public/data/nse-fo-history/rollover-outcomes.json").read_text())
+          walk = source["walkForward"]
+          summary = {
+              "source": source["source"],
+              "sessions": source["sessions"],
+              "rawOutcomeCount": source["rawOutcomeCount"],
+              "cycleSignalCount": source["cycleSignalCount"],
+              "holdoutStartDate": source["holdoutStartDate"],
+              "purgedDevelopmentSignals": source["purgedDevelopmentSignals"],
+              "developmentStats": source["developmentStats"],
+              "holdoutStats": source["holdoutStats"],
+              "walkForward": walk,
+          }
+          Path("rollover-walk-forward-summary.json").write_text(json.dumps(summary, indent=2))
+          for name, stats in (("DEVELOPMENT", source["developmentStats"]), ("HOLDOUT", source["holdoutStats"]), ("WALK_FORWARD", walk["stats"])):
+              print(name)
+              for key, value in stats.items():
+                  print(key, "evaluated=", value["evaluatedSignals"], "correct=", value["correctSignals"], "precision=", value["precisionPct"], "net20bps=", value["costSensitivity"]["20"]["netPrecisionPct"])
+          for fold in walk["folds"]:
+              print("FOLD", fold["fold"], fold["testStartDate"], fold["testEndDate"], "test_dates=", fold["testSignalDates"], "purged=", fold["purgedDevelopmentSignals"])
+          PY
+      - name: Upload walk-forward research summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollover-walk-forward-summary
+          path: rollover-walk-forward-summary.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
