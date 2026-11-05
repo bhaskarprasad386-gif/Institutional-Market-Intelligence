@@ -1,5 +1,6 @@
 import type {HistoricalRolloverContext,RolloverMetric} from "./types";
-type OutcomeStat={evaluatedSignals:number;correctSignals:number;precisionPct:number|null;flatExcluded:number};\ntype Props={rows:RolloverMetric[];historical?:Map<string,HistoricalRolloverContext>;historyStatus?:string;outcomeStats?:Record<string,OutcomeStat>;outcomeStatus?:string};
+type OutcomeStat={evaluatedSignals:number;correctSignals:number;precisionPct:number|null;flatExcluded:number};
+type Props={rows:RolloverMetric[];historical?:Map<string,HistoricalRolloverContext>;historyStatus?:string;outcomeStats?:Record<string,OutcomeStat>;outcomeStatus?:string};
 function historyLabel(status:HistoricalRolloverContext["rolloverPctStatus"]):string{return status==="INSUFFICIENT_HISTORY"?"Need 5 cycles":status;}
 function buildLabel(value:RolloverMetric["nearBuildUp"]):string{return value?value.replaceAll("_"," "):"—";}
 const key=(r:RolloverMetric)=>r.symbol+"|"+r.nearExpiry+"|"+r.nextExpiry;
