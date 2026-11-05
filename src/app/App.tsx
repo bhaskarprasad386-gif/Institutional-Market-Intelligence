@@ -4,8 +4,8 @@ import { restoreWorkspace } from "../data/restoreWorkspace";
 import { readTabularFile, validatePreview, type TabularPreview } from "../data/tabularImport";
 import { mapEquityEodRows, type Exchange } from "../data/eodMapping";
 import { mapFuturesRows } from "../modules/fo/mapping";
-import { calculateFoMetrics, calculateRolloverFromRows, classifyPriceOi } from "../modules/fo/analytics";
-import type { FoMetrics, RolloverMetric } from "../modules/fo/types";
+import { calculateFoMetrics, calculateRolloverFromRows, calculateHistoricalRolloverContext, classifyPriceOi } from "../modules/fo/analytics";
+import type { FoMetrics, RolloverMetric, FuturesObservation, HistoricalRolloverContext } from "../modules/fo/types";
 import RolloverAnalysis from "../modules/fo/RolloverAnalysis";
 import { calculateSectorMetrics, calculateInstitutionalFlow, validateDeliveryObservation } from "../modules/flows/analytics";
 import { mapSectorRows, mapDeliveryRows, mapInstitutionalFlowRows } from "../modules/flows/mapping";
@@ -42,6 +42,9 @@ export default function App() {
   const [foMetrics, setFoMetrics] = useState<FoMetrics[]>([]);
   const nseAutoLoadedRef = useRef(false);
   const [rolloverMetrics, setRolloverMetrics] = useState<RolloverMetric[]>([]);
+  const [rolloverHistoryRows, setRolloverHistoryRows] = useState<FuturesObservation[]>([]);
+  const [rolloverHistoryStatus, setRolloverHistoryStatus] = useState("Historical archive loading…");
+  const [historicalRollover, setHistoricalRollover] = useState<Map<string, HistoricalRolloverContext>>(new Map());
   const [sectorFile, setSectorFile] = useState<File | null>(null);
   const [deliveryFile, setDeliveryFile] = useState<File | null>(null);
   const [flowFile, setFlowFile] = useState<File | null>(null);
@@ -111,6 +114,36 @@ export default function App() {
     void loadDailyNse();
     return () => { active = false; };
   }, []);
+  useEffect(() => {
+    let active = true;
+    const loadRolloverHistory = async () => {
+      try {
+        const indexResponse = await fetch("data/nse-fo-history/index.json", { cache: "no-store" });
+        if (!indexResponse.ok) throw new Error("NSE rollover history index unavailable (HTTP " + indexResponse.status + ").");
+        const index = await indexResponse.json() as { dates?: { marketDate: string; path: string }[] };
+        const dates = Array.isArray(index.dates) ? index.dates.slice(0, 120) : [];
+        if (!dates.length) throw new Error("No dated NSE history archive is published yet.");
+        const datasets = await Promise.all(dates.map(async item => {
+          const response = await fetch("data/nse-fo-history/" + item.path, { cache: "no-store" });
+          if (!response.ok) throw new Error("Archive " + item.marketDate + " unavailable (HTTP " + response.status + ").");
+          const data = await response.json() as { marketDate: string; rows: Record<string, unknown>[] };
+          if (!Array.isArray(data.rows)) throw new Error("Invalid archive rows for " + item.marketDate + ".");
+          return mapFuturesRows(data.rows).rows.filter(row => row.tradeDate === item.marketDate);
+        }));
+        const rows = datasets.flat();
+        if (!active) return;
+        setRolloverHistoryRows(rows);
+        setRolloverHistoryStatus(dates.length + " archived sessions · " + rows.length.toLocaleString() + " futures observations · newest available sessions (maximum 120)");
+      } catch (error) {
+        if (active) setRolloverHistoryStatus(error instanceof Error ? "History unavailable · " + error.message : "History unavailable.");
+      }
+    };
+    void loadRolloverHistory();
+    return () => { active = false; };
+  }, []);
+  useEffect(() => {
+    if (rolloverMetrics.length) setHistoricalRollover(calculateHistoricalRolloverContext(rolloverMetrics, rolloverHistoryRows));
+  }, [rolloverMetrics, rolloverHistoryRows]);
   async function selectFile(next: File | null) {
     setFile(next); setPreview(null);
     if (!next) return;
@@ -149,7 +182,7 @@ export default function App() {
       <div className="notice" role="status">{busy ? "Processing…" : message}</div>
       {preview && <><div className="preview-head"><strong>Raw preview · {preview.totalRows} rows</strong><span>{preview.headers.length} columns</span></div><div className="table-wrap"><table><thead><tr>{preview.headers.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{preview.rows.slice(0,8).map((row,i)=><tr key={i}>{preview.headers.map(h=><td key={h}>{String(row[h] ?? "")}</td>)}</tr>)}</tbody></table></div><button disabled={busy || !source.trim() || !marketDate} onClick={()=>void importFile()}>Validate and import EOD rows</button></>}
     </section>
-    <section className="panel"><p className="eyebrow">F&O INTELLIGENCE · BATCH 3</p><h2>Futures OI / Cost of Carry Import</h2><p className="muted">Official NSE F&O UDiFF Common Bhavcopy रोज़ अपने-आप fetch होता है। नीचे का scanner latest published market date से auto-populate होता है; manual CSV/XLSX केवल fallback है। यह EOD data है, live feed नहीं।</p><div className="notice" role="status">{nseAutoStatus}</div><label className="file-picker">Select futures CSV / Excel<input type="file" accept=".csv,.xlsx,.xls" onChange={e=>setFoFile(e.target.files?.[0]??null)}/></label><button disabled={!foFile||!source.trim()||!marketDate||busy} onClick={async()=>{if(!foFile)return;setBusy(true);try{const parsed=await readTabularFile(foFile);const mapped=mapFuturesRows(parsed.rows);const valid=mapped.rows.filter(row=>row.tradeDate===marketDate);const rejected=mapped.rejected.length+mapped.rows.length-valid.length;if(!valid.length){setMessage("कोई valid futures row नहीं मिली; headers और selected market date जाँचें।");return;}const metrics=valid.map(calculateFoMetrics);const saved=await saveImportedRows(valid as unknown as Record<string,unknown>[],foFile.name,source,marketDate);setImports(current=>[saved,...current].slice(0,20));setFoMetrics(metrics);setRolloverMetrics(calculateRolloverFromRows(valid));setMessage(`F&O import: ${valid.length} rows saved; ${rejected} rejected (including date mismatch). Status: Imported / unverified.`);setFoFile(null);}catch(error){setMessage(error instanceof Error?error.message:"F&O import failed.");}finally{setBusy(false);}}}>Validate and import futures data</button>{foMetrics.length>0&&<><h3>Calculated futures metrics</h3><div className="table-wrap"><table><thead><tr><th>Symbol</th><th>Expiry</th><th>Futures − Spot</th><th>Price change %</th><th>Build-up signal</th><th>Annualized CoC %</th><th>OI</th><th>OI change %</th><th>Days to expiry</th></tr></thead><tbody>{foMetrics.slice(0,50).map((m,i)=><tr key={m.symbol+i}><td>{m.symbol}</td><td>{m.expiryDate}</td><td>{m.basis.toFixed(2)}</td><td>{m.priceChangePct?.toFixed(2)??"—"}</td><td>{m.priceChangePct!==undefined&&m.oiChangePct!==undefined?classifyPriceOi(m.priceChangePct,m.oiChangePct).replaceAll("_"," "):"Insufficient history"}</td><td>{m.costOfCarryAnnualizedPct?.toFixed(2)??"—"}</td><td>{m.openInterest.toLocaleString()}</td><td>{m.oiChangePct?.toFixed(2)??"—"}</td><td>{m.daysToExpiry}</td></tr>)}</tbody></table></div>{rolloverMetrics.length>0&&<RolloverAnalysis rows={rolloverMetrics} />}</>}</section>
+    <section className="panel"><p className="eyebrow">F&O INTELLIGENCE · BATCH 3</p><h2>Futures OI / Cost of Carry Import</h2><p className="muted">Official NSE F&O UDiFF Common Bhavcopy रोज़ अपने-आप fetch होता है। नीचे का scanner latest published market date से auto-populate होता है; manual CSV/XLSX केवल fallback है। यह EOD data है, live feed नहीं।</p><div className="notice" role="status">{nseAutoStatus}</div><label className="file-picker">Select futures CSV / Excel<input type="file" accept=".csv,.xlsx,.xls" onChange={e=>setFoFile(e.target.files?.[0]??null)}/></label><button disabled={!foFile||!source.trim()||!marketDate||busy} onClick={async()=>{if(!foFile)return;setBusy(true);try{const parsed=await readTabularFile(foFile);const mapped=mapFuturesRows(parsed.rows);const valid=mapped.rows.filter(row=>row.tradeDate===marketDate);const rejected=mapped.rejected.length+mapped.rows.length-valid.length;if(!valid.length){setMessage("कोई valid futures row नहीं मिली; headers और selected market date जाँचें।");return;}const metrics=valid.map(calculateFoMetrics);const saved=await saveImportedRows(valid as unknown as Record<string,unknown>[],foFile.name,source,marketDate);setImports(current=>[saved,...current].slice(0,20));setFoMetrics(metrics);setRolloverMetrics(calculateRolloverFromRows(valid));setMessage(`F&O import: ${valid.length} rows saved; ${rejected} rejected (including date mismatch). Status: Imported / unverified.`);setFoFile(null);}catch(error){setMessage(error instanceof Error?error.message:"F&O import failed.");}finally{setBusy(false);}}}>Validate and import futures data</button>{foMetrics.length>0&&<><h3>Calculated futures metrics</h3><div className="table-wrap"><table><thead><tr><th>Symbol</th><th>Expiry</th><th>Futures − Spot</th><th>Price change %</th><th>Build-up signal</th><th>Annualized CoC %</th><th>OI</th><th>OI change %</th><th>Days to expiry</th></tr></thead><tbody>{foMetrics.slice(0,50).map((m,i)=><tr key={m.symbol+i}><td>{m.symbol}</td><td>{m.expiryDate}</td><td>{m.basis.toFixed(2)}</td><td>{m.priceChangePct?.toFixed(2)??"—"}</td><td>{m.priceChangePct!==undefined&&m.oiChangePct!==undefined?classifyPriceOi(m.priceChangePct,m.oiChangePct).replaceAll("_"," "):"Insufficient history"}</td><td>{m.costOfCarryAnnualizedPct?.toFixed(2)??"—"}</td><td>{m.openInterest.toLocaleString()}</td><td>{m.oiChangePct?.toFixed(2)??"—"}</td><td>{m.daysToExpiry}</td></tr>)}</tbody></table></div>{rolloverMetrics.length>0&&<RolloverAnalysis rows={rolloverMetrics} historical={historicalRollover} historyStatus={rolloverHistoryStatus} />}</>}</section>
     <section className="panel">
       <p className="eyebrow">SECTOR / DELIVERY / INSTITUTIONAL · BATCH 4</p><h2>Sector Rotation, Delivery & Institutional Flows</h2>
       <p className="muted">तीनों datasets user-supplied CSV/Excel से import होते हैं। Sector labels आपकी file से आते हैं; कोई sector mapping या FII/DII value अनुमान से नहीं बनाई जाती। Source और market date ऊपर दिए गए controls से लिए जाते हैं।</p>

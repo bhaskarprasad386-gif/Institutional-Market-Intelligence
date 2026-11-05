@@ -1,18 +1,18 @@
-import type { RolloverMetric } from "./types";
-function flagLabel(flag:RolloverMetric["rolloverPctFlag"]):string {
-  return flag==="HIGH"?"HIGH":flag==="NORMAL"?"Normal":flag==="ROLL_CREDIT"?"Credit":"Need ≥5 symbols";
-}
-export default function RolloverAnalysis({rows}:{rows:RolloverMetric[]}) {
-  if(!rows.length)return null;
-  const highPct=rows.filter(row=>row.rolloverPctFlag==="HIGH").length;
-  const highCost=rows.filter(row=>row.rolloverCostFlag==="HIGH").length;
-  const combined=rows.filter(row=>row.rolloverPctFlag==="HIGH"&&row.rolloverCostFlag==="HIGH");
-  return <section className="rollover-analysis">
-    <div className="rollover-heading"><div><p className="eyebrow">F&O ROLLOVER INTELLIGENCE</p><h3>High Rollover % + High Rollover Cost</h3></div><span>{rows[0].tradeDate}</span></div>
-    <div className="rollover-kpis"><article><span>High rollover %</span><strong>{highPct}</strong></article><article><span>High rollover cost</span><strong>{highCost}</strong></article><article><span>Both conditions</span><strong>{combined.length}</strong></article><article><span>Symbols compared</span><strong>{rows.length}</strong></article></div>
-    <div className="table-wrap"><table><thead><tr><th>Symbol</th><th>Near → Next expiry</th><th>Rollover %</th><th>Rollover % status</th><th>Near / Next future</th><th>Cost points</th><th>Cost %</th><th>Cost / lot</th><th>Cost status</th></tr></thead><tbody>
-      {[...rows].sort((a,b)=>Number((b.rolloverPctFlag==="HIGH"&&b.rolloverCostFlag==="HIGH"))-Number((a.rolloverPctFlag==="HIGH"&&a.rolloverCostFlag==="HIGH"))||b.rolloverPct-a.rolloverPct).map((row,i)=><tr key={row.symbol+row.tradeDate+i}><td><strong>{row.symbol}</strong></td><td>{row.nearExpiry} → {row.nextExpiry}</td><td>{row.rolloverPct.toFixed(2)}%</td><td><span className={row.rolloverPctFlag==="HIGH"?"rollover-high":"rollover-neutral"}>{flagLabel(row.rolloverPctFlag)}</span></td><td>{row.nearFuturesClose.toFixed(2)} / {row.nextFuturesClose.toFixed(2)}</td><td>{row.rolloverCostPoints.toFixed(2)}</td><td>{row.rolloverCostPct.toFixed(3)}%</td><td>{row.rolloverCostPerLot===undefined?"Lot size unavailable":row.rolloverCostPerLot.toFixed(2)}</td><td><span className={row.rolloverCostFlag==="HIGH"?"rollover-high":"rollover-neutral"}>{row.rolloverCostFlag==="ROLL_CREDIT"?"Credit":flagLabel(row.rolloverCostFlag)}</span></td></tr>)}
-    </tbody></table></div>
-    <p className="muted">Rollover % = next-expiry OI ÷ (near + next expiry OI) × 100. Rollover cost = next-expiry futures price − near-expiry futures price; cost % is relative to near futures price. Cost per lot is shown only when the source file supplies a consistent lot size. HIGH means top quartile versus same-date symbols, requiring at least five symbols; otherwise status remains unclassified. Positive cost is contango; negative cost is a rollover credit. These are screening metrics, not standalone buy/sell signals.</p>
-  </section>;
+import type {HistoricalRolloverContext,RolloverMetric} from "./types";
+type Props={rows:RolloverMetric[];historical?:Map<string,HistoricalRolloverContext>;historyStatus?:string};
+function flagLabel(flag:RolloverMetric["rolloverPctFlag"]):string{return flag==="HIGH"?"HIGH":flag==="NORMAL"?"Normal":flag==="ROLL_CREDIT"?"Credit":"Need ≥5 symbols";}
+function historyLabel(status:HistoricalRolloverContext["rolloverPctStatus"]):string{return status==="INSUFFICIENT_HISTORY"?"Need 5 cycles":status;}
+const key=(r:RolloverMetric)=>r.symbol+"|"+r.nearExpiry+"|"+r.nextExpiry;
+export default function RolloverAnalysis({rows,historical,historyStatus}:Props){
+ if(!rows.length)return null;
+ const highPct=rows.filter(r=>r.rolloverPctFlag==="HIGH").length,highCost=rows.filter(r=>r.rolloverCostFlag==="HIGH").length,combined=rows.filter(r=>r.rolloverPctFlag==="HIGH"&&r.rolloverCostFlag==="HIGH");
+ return <section className="rollover-analysis">
+  <div className="rollover-heading"><div><p className="eyebrow">F&O ROLLOVER INTELLIGENCE</p><h3>High Rollover % + High Rollover Cost</h3></div><span>{rows[0].tradeDate}</span></div>
+  <div className="rollover-kpis"><article><span>High rollover % (same date)</span><strong>{highPct}</strong></article><article><span>High rollover cost (same date)</span><strong>{highCost}</strong></article><article><span>Both same-date conditions</span><strong>{combined.length}</strong></article><article><span>Symbols compared</span><strong>{rows.length}</strong></article></div>
+  <p className="muted">Historical archive: {historyStatus??"Loading…"} · Historical percentile uses one closest-DTE observation per prior expiry pair; at least five distinct prior cycles are required.</p>
+  <div className="table-wrap"><table><thead><tr><th>Symbol</th><th>Near → Next expiry</th><th>Rollover %</th><th>Same-date %</th><th>Historical cycles</th><th>Historical rollover %</th><th>Median rollover %</th><th>Cost points</th><th>Cost %</th><th>Cost / lot</th><th>Same-date cost</th><th>Historical cost %</th><th>Median cost %</th></tr></thead><tbody>
+   {[...rows].sort((a,b)=>Number((b.rolloverPctFlag==="HIGH"&&b.rolloverCostFlag==="HIGH"))-Number((a.rolloverPctFlag==="HIGH"&&a.rolloverCostFlag==="HIGH"))||b.rolloverPct-a.rolloverPct).map((r,i)=>{const h=historical?.get(key(r));return <tr key={r.symbol+r.tradeDate+i}><td><strong>{r.symbol}</strong></td><td>{r.nearExpiry} → {r.nextExpiry}</td><td>{r.rolloverPct.toFixed(2)}%</td><td><span className={r.rolloverPctFlag==="HIGH"?"rollover-high":"rollover-neutral"}>{flagLabel(r.rolloverPctFlag)}</span></td><td>{h?.sampleCount??"—"}</td><td>{h?.rolloverPctPercentile===undefined?historyLabel(h?.rolloverPctStatus??"INSUFFICIENT_HISTORY"):h.rolloverPctPercentile.toFixed(0)+"th · "+h.rolloverPctStatus}</td><td>{h?.rolloverPctMedian===undefined?"—":h.rolloverPctMedian.toFixed(2)+"%"}</td><td>{r.rolloverCostPoints.toFixed(2)}</td><td>{r.rolloverCostPct.toFixed(3)}%</td><td>{r.rolloverCostPerLot===undefined?"Lot size unavailable":r.rolloverCostPerLot.toFixed(2)}</td><td><span className={r.rolloverCostFlag==="HIGH"?"rollover-high":"rollover-neutral"}>{r.rolloverCostFlag==="ROLL_CREDIT"?"Credit":flagLabel(r.rolloverCostFlag)}</span></td><td>{h?.rolloverCostPctPercentile===undefined?historyLabel(h?.rolloverCostStatus??"INSUFFICIENT_HISTORY"):h.rolloverCostPctPercentile.toFixed(0)+"th · "+h.rolloverCostStatus}</td><td>{h?.rolloverCostPctMedian===undefined?"—":h.rolloverCostPctMedian.toFixed(3)+"%"}</td></tr>;})}
+  </tbody></table></div>
+  <p className="muted">Rollover % = next-expiry OI ÷ (near + next expiry OI) × 100. Rollover cost = next-expiry futures price − near-expiry futures price; cost % is relative to near futures price. Cost per lot requires a consistent source lot size. Same-date HIGH is top quartile versus peers (minimum five symbols). Historical HIGH/LOW is symbol-specific percentile versus prior expiry pairs (minimum five distinct cycles), matched by closest days-to-expiry; insufficient samples remain unclassified. Positive cost is contango; negative cost is rollover credit. Screening metrics only, not standalone buy/sell signals.</p>
+ </section>;
 }
