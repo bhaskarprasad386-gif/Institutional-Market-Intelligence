@@ -129,6 +129,32 @@ def apply_daily_rollover_flags(metrics):
     return sorted(flagged, key=lambda row: (row["tradeDate"], row["symbol"]))
 
 
+def add_point_in_time_rollover_momentum(metrics):
+    """Attach 3/5-session rollover-share and total-OI momentum without lookahead."""
+    by_symbol = defaultdict(list)
+    for row in metrics:
+        by_symbol[row["symbol"]].append(row)
+    for rows in by_symbol.values():
+        rows.sort(key=lambda row: row["tradeDate"])
+        for index, row in enumerate(rows):
+            for horizon in (3, 5):
+                prior_index = index - horizon
+                share_key = f"nextShareMomentum{horizon}d"
+                oi_key = f"totalOiMomentum{horizon}dPct"
+                if prior_index < 0:
+                    row[share_key] = None
+                    row[oi_key] = None
+                    continue
+                prior = rows[prior_index]
+                current_denominator = row["nearOi"] + row["nextOi"]
+                prior_denominator = prior["nearOi"] + prior["nextOi"]
+                row[share_key] = (row["nextOi"] / current_denominator * 100 - prior["nextOi"] / prior_denominator * 100) if current_denominator > 0 and prior_denominator > 0 else None
+                prior_oi = number(prior.get("totalOi"))
+                current_oi = number(row.get("totalOi"))
+                row[oi_key] = (current_oi / prior_oi - 1) * 100 if prior_oi is not None and current_oi is not None and prior_oi > 0 else None
+    return metrics
+
+
 def build():
     index_path = ROOT / "index.json"
     index = json.loads(index_path.read_text(encoding="utf-8"))
@@ -236,6 +262,7 @@ def build():
             })
 
     metrics = apply_daily_rollover_flags(metrics)
+    metrics = add_point_in_time_rollover_momentum(metrics)
     result = {
         "source": "Derived from complete NSE F&O dated history archive",
         "updatedAt": index.get("updatedAt"),
@@ -281,6 +308,10 @@ def build():
                 "rolloverPct": row["rolloverPct"], "rolloverCostPct": row["rolloverCostPct"],
                 "rolloverPctFlag": row["rolloverPctFlag"], "rolloverCostFlag": row["rolloverCostFlag"],
                 "peerCount": row["peerCount"],
+                "nextShareMomentum3d": row.get("nextShareMomentum3d"),
+                "nextShareMomentum5d": row.get("nextShareMomentum5d"),
+                "totalOiMomentum3dPct": row.get("totalOiMomentum3dPct"),
+                "totalOiMomentum5dPct": row.get("totalOiMomentum5dPct"),
                 "realizedVol20dAnnualizedPct": vol20, "volatilityRegime": vol_regime}
         for horizon in (5, 10, 20):
             future_day = own_sessions[idx + horizon] if idx + horizon < len(own_sessions) else None
@@ -374,6 +405,8 @@ def build():
             "HIGH_ROLLOVER_PCT": [x for x in rows if x.get("rolloverPctFlag") == "HIGH"],
             "HIGH_ROLLOVER_COST": [x for x in rows if x.get("rolloverCostFlag") == "HIGH"],
             "HIGH_BOTH": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH"],
+            "HIGH_BOTH_MOMENTUM_UP": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and (x.get("nextShareMomentum5d") or 0) > 0 and (x.get("totalOiMomentum5dPct") or 0) > 0],
+            "HIGH_BOTH_MOMENTUM_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and (x.get("nextShareMomentum5d") or 0) < 0 and (x.get("totalOiMomentum5dPct") or 0) > 0],
         }
         return {
             name: {"signalCount": len(selected), "stats": summarize(selected)["overall"]}
@@ -382,6 +415,7 @@ def build():
 
     rollover_condition_stats = {
         "flagMethod": "Same-day cross-sectional 75th percentile, matching live scanner; at least 5 total peers and 5 positive-cost peers. No future observations are used.",
+        "momentumMethod": "Point-in-time 3/5 symbol-session change in next-expiry OI share (percentage points) and total near+next+far OI (percent); current day compared only with prior archived symbol sessions.",
         "development": rollover_condition_summary(development),
         "holdout": rollover_condition_summary(holdout),
         "walkForward": rollover_condition_summary(walk_forward_rows),

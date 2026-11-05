@@ -262,5 +262,22 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(builder.build_walk_forward_folds(rows, {"ABC": days}), [])
 
 
+    def test_point_in_time_rollover_momentum_uses_prior_symbol_sessions_only(self):
+        rows = []
+        for index in range(7):
+            rows.append({
+                "symbol": "ABC", "tradeDate": f"2026-01-{index + 1:02d}",
+                "nearOi": 100 - index * 5, "nextOi": 100 + index * 5,
+                "totalOi": 200 + index * 10,
+            })
+        result = builder.add_point_in_time_rollover_momentum(rows)
+        self.assertIsNone(result[2]["nextShareMomentum3d"])
+        self.assertAlmostEqual(result[3]["nextShareMomentum3d"], 10.0)
+        self.assertAlmostEqual(result[5]["nextShareMomentum5d"], 25.0)
+        self.assertAlmostEqual(result[5]["totalOiMomentum5dPct"], 25.0)
+        result[6]["nextOi"] = 100000
+        self.assertAlmostEqual(result[5]["nextShareMomentum5d"], 25.0)
+
+
 if __name__ == "__main__":
     unittest.main()
