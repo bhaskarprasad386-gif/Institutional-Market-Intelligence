@@ -85,5 +85,30 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             self.assertEqual(metric["nearVolume"], 100)
             self.assertEqual(metric["nextVolume"], 80)
 
+
+    def test_builds_forward_outcomes_without_counting_flat_returns_as_directional_hits(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            dates = [f"2026-01-{day:02d}" for day in range(1, 8)]
+            index_dates = [{"marketDate": day, "path": f"{day}.json"} for day in reversed(dates)]
+            (root / "index.json").write_text(json.dumps({"count": len(dates), "dates": index_dates}))
+            for i, day in enumerate(dates):
+                spot = 100 + (2 if i >= 5 else 0)
+                rows = [
+                    {"symbol": "ABC", "tradeDate": day, "expiryDate": "2026-01-29", "futuresClose": str(100+i), "previousFuturesClose": str(99+i), "spotClose": str(spot), "openInterest": "100", "changeOpenInterest": "10", "volume": "100", "lotSize": "25"},
+                    {"symbol": "ABC", "tradeDate": day, "expiryDate": "2026-02-26", "futuresClose": str(102+i), "previousFuturesClose": str(101+i), "spotClose": str(spot), "openInterest": "100", "changeOpenInterest": "10", "volume": "80", "lotSize": "25"},
+                ]
+                (root / f"{day}.json").write_text(json.dumps({"marketDate": day, "rows": rows}))
+            with patch.object(builder, "ROOT", root), patch.object(builder, "OUTPUT", root / "rollover-metrics.json"), patch.object(builder, "OUTCOMES_OUTPUT", root / "rollover-outcomes.json"):
+                result = builder.build()
+            outcomes = json.loads((root / "rollover-outcomes.json").read_text())
+            first = next(x for x in outcomes["outcomes"] if x["signalDate"] == dates[0])
+            self.assertEqual(first["outcome5d"], "UP")
+            self.assertAlmostEqual(first["return5dPct"], 2.0)
+            self.assertTrue(first["correct5d"])
+            self.assertEqual(first["outcome10d"], "PENDING")
+            self.assertEqual(outcomes["stats"]["LONG_BUILD_UP_5D"]["evaluatedSignals"], 2)
+            self.assertTrue((root / "rollover-metrics.json").exists())
+
 if __name__ == "__main__":
     unittest.main()
