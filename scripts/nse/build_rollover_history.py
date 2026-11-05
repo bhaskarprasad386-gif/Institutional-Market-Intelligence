@@ -152,13 +152,22 @@ def build():
 
     # Research-only forward outcomes; never used as same-day signal inputs.
     sessions = sorted({x["marketDate"] for x in dates})
-    session_index = {day: i for i, day in enumerate(sessions)}
-    spot_lookup = {(x["symbol"], x["tradeDate"]): x.get("spotClose") for x in metrics}
+    symbol_sessions = defaultdict(list)
+    spot_lookup = {}
+    for metric in metrics:
+        spot = number(metric.get("spotClose"))
+        if spot is not None and spot > 0:
+            symbol_sessions[metric["symbol"]].append(metric["tradeDate"])
+            spot_lookup[(metric["symbol"], metric["tradeDate"])] = spot
+    for symbol in symbol_sessions:
+        symbol_sessions[symbol] = sorted(set(symbol_sessions[symbol]))
+
     outcomes = []
     threshold_pct = 0.5
     for row in metrics:
         start_price = number(row.get("spotClose"))
-        idx = session_index.get(row["tradeDate"])
+        own_sessions = symbol_sessions.get(row["symbol"], [])
+        idx = own_sessions.index(row["tradeDate"]) if row["tradeDate"] in own_sessions else None
         if start_price is None or start_price <= 0 or idx is None:
             continue
         item = {"symbol": row["symbol"], "signalDate": row["tradeDate"],
@@ -178,8 +187,7 @@ def build():
             ) if ret is not None and abs(ret) >= threshold_pct and item["nextBuildUp"] in ("LONG_BUILD_UP", "SHORT_BUILD_UP") else None
         outcomes.append(item)
 
-    # Count one first directional signal per symbol + near/next expiry cycle.
-    # This prevents daily repeated observations from inflating the sample count.
+    # One first directional observation per symbol and expiry pair.
     cycle_seen = set()
     cycle_outcomes = []
     for item in outcomes:
@@ -193,12 +201,13 @@ def build():
         item["cycleKey"] = "|".join(cycle_key)
         cycle_outcomes.append(item)
 
-    # Chronological 70/30 holdout. The cutoff is based on signal dates only;
-    # no future outcome is used to select signals or define the split.
+    # Chronological 70/30 split, with a 20-session purge before holdout.
     unique_signal_dates = sorted({x["signalDate"] for x in cycle_outcomes})
     split_index = min(len(unique_signal_dates), max(1, int(len(unique_signal_dates) * 0.7)))
     holdout_start = unique_signal_dates[split_index] if split_index < len(unique_signal_dates) else None
-    development = [x for x in cycle_outcomes if holdout_start is None or x["signalDate"] < holdout_start]
+    holdout_index = sessions.index(holdout_start) if holdout_start in sessions else None
+    development_cutoff = sessions[max(0, holdout_index - 20)] if holdout_index is not None and holdout_index >= 20 else holdout_start
+    development = [x for x in cycle_outcomes if development_cutoff is not None and x["signalDate"] < development_cutoff]
     holdout = [x for x in cycle_outcomes if holdout_start is not None and x["signalDate"] >= holdout_start]
 
     def summarize(rows):
@@ -208,21 +217,36 @@ def build():
                 eligible = [x for x in rows if x["nextBuildUp"] == signal]
                 sample = [x for x in eligible if x.get(f"correct{horizon}d") is not None]
                 hits = sum(bool(x[f"correct{horizon}d"]) for x in sample)
-                cost_scenarios = {}\n                for cost_bps in (10, 20, 30):\n                    cost_pct = cost_bps / 100\n                    net_hits = sum(1 for x in sample if (x[f"return{horizon}dPct"] - cost_pct >= threshold_pct if signal == "LONG_BUILD_UP" else x[f"return{horizon}dPct"] + cost_pct <= -threshold_pct))\n                    cost_scenarios[str(cost_bps)] = {\n                        "assumedRoundTripCostBps": cost_bps,\n                        "netDirectionalHits": net_hits,\n                        "netPrecisionPct": round(net_hits / len(sample) * 100, 2) if sample else None,\n                    }\n                summary[f"{signal}_{horizon}D"] = {
+                cost_scenarios = {}
+                for cost_bps in (10, 20, 30):
+                    cost_pct = cost_bps / 100
+                    if signal == "LONG_BUILD_UP":
+                        net_hits = sum(1 for x in sample if x[f"return{horizon}dPct"] - cost_pct >= threshold_pct)
+                    else:
+                        net_hits = sum(1 for x in sample if x[f"return{horizon}dPct"] + cost_pct <= -threshold_pct)
+                    cost_scenarios[str(cost_bps)] = {
+                        "assumedRoundTripCostBps": cost_bps,
+                        "netDirectionalHits": net_hits,
+                        "netPrecisionPct": round(net_hits / len(sample) * 100, 2) if sample else None,
+                    }
+                summary[f"{signal}_{horizon}D"] = {
                     "signals": len(eligible),
                     "evaluatedSignals": len(sample), "correctSignals": hits,
                     "precisionPct": round(hits / len(sample) * 100, 2) if sample else None,
                     "flatExcluded": sum(x.get(f"outcome{horizon}d") == "FLAT" for x in eligible),
                     "pending": sum(x.get(f"outcome{horizon}d") == "PENDING" for x in eligible),
+                    "costSensitivity": cost_scenarios,
                 }
         return summary
 
     OUTCOMES_OUTPUT.write_text(json.dumps({
-        "source": "Point-in-time signals matched to future archived NSE spot closes",
+        "source": "Point-in-time signals matched to symbol-specific future NSE spot closes",
         "thresholdPct": threshold_pct, "horizonsTradingSessions": [5, 10, 20],
         "sessions": len(sessions), "rawOutcomeCount": len(outcomes),
         "cycleSignalCount": len(cycle_outcomes),
-        "holdoutStartDate": holdout_start, "developmentCutoffExclusive": development_cutoff,\n        "developmentPurgeSessions": 20, "costSensitivityAssumptions": "Hypothetical round-trip cost scenarios of 10/20/30 bps; not actual broker charges.",
+        "holdoutStartDate": holdout_start, "developmentCutoffExclusive": development_cutoff,
+        "developmentPurgeSessions": 20,
+        "costSensitivityAssumptions": "Hypothetical round-trip cost scenarios of 10/20/30 bps; not actual broker charges.",
         "stats": summarize(cycle_outcomes),
         "developmentStats": summarize(development),
         "holdoutStats": summarize(holdout),
