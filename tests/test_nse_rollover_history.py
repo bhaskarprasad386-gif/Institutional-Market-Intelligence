@@ -8,6 +8,27 @@ from scripts.nse import build_rollover_history as builder
 
 
 class RolloverHistoryBuilderTests(unittest.TestCase):
+    def test_daily_high_rollover_and_cost_flags_match_live_cross_sectional_thresholds(self):
+        rows = [
+            {"symbol": f"S{i}", "tradeDate": "2026-01-01",
+             "rolloverPct": value, "rolloverCostPct": cost}
+            for i, (value, cost) in enumerate([
+                (10, 0.10), (20, 0.20), (30, 0.30), (40, 0.40), (50, 0.50)
+            ])
+        ]
+        flagged = {row["symbol"]: row for row in builder.apply_daily_rollover_flags(rows)}
+        self.assertEqual(flagged["S2"]["rolloverPctFlag"], "NORMAL")
+        self.assertEqual(flagged["S3"]["rolloverPctFlag"], "HIGH")
+        self.assertEqual(flagged["S3"]["rolloverCostFlag"], "HIGH")
+        self.assertEqual(flagged["S4"]["rolloverPctFlag"], "HIGH")
+        self.assertEqual(flagged["S4"]["rolloverCostFlag"], "HIGH")
+        self.assertEqual(flagged["S4"]["peerCount"], 5)
+
+        insufficient = builder.apply_daily_rollover_flags(rows[:4])
+        self.assertTrue(all(row["rolloverPctFlag"] == "INSUFFICIENT_PEERS" for row in insufficient))
+        self.assertTrue(all(row["rolloverCostFlag"] == "INSUFFICIENT_PEERS" for row in insufficient))
+
+
     def test_builds_metrics_for_every_indexed_session_and_uses_oi_weighted_prices(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
