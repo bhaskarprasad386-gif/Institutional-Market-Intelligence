@@ -4,12 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       start_date:
-        description: "Start date (YYYY-MM-DD), inclusive"
-        required: true
+        description: "Start date (YYYY-MM-DD), inclusive; defaults to the first unarchived UDiFF session"
+        required: false
+        default: "2024-07-13"
         type: string
       end_date:
-        description: "End date (YYYY-MM-DD), inclusive; max 31 calendar days"
-        required: true
+        description: "End date (YYYY-MM-DD), inclusive; leave blank to use today's UTC date"
+        required: false
+        default: ""
         type: string
 
 permissions:
@@ -24,7 +26,7 @@ concurrency:
 jobs:
   backfill-build-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 360
     environment:
       name: github-pages
     steps:
@@ -34,22 +36,65 @@ jobs:
           python-version: "3.12"
       - name: Test historical parser and validation
         run: python -m unittest discover -s tests -p "test_*.py" -v
-      - name: Download and validate NSE historical F&O sessions
+      - name: Backfill all requested dates in safe 31-day batches
         env:
           START_DATE: ${{ inputs.start_date }}
-          END_DATE: ${{ inputs.end_date }}
-        run: python scripts/nse/backfill_fo_history.py --start-date "$START_DATE" --end-date "$END_DATE"
-      - name: Commit validated dated history
+          INPUT_END_DATE: ${{ inputs.end_date }}
+        shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/nse-fo-history/
-          if git diff --cached --quiet; then
-            echo "No new historical sessions to commit."
-          else
-            git commit -m "data: backfill NSE F&O historical sessions [skip ci]"
-            git push
+          set -euo pipefail
+
+          start_date="$(printf '%s' "$START_DATE" | xargs)"
+          end_date="$(printf '%s' "$INPUT_END_DATE" | xargs)"
+          if [[ -z "$end_date" ]]; then
+            end_date="$(date -u +%F)"
           fi
+
+          python - "$start_date" "$end_date" <<'PY'
+          import sys
+          from datetime import date
+          for label, raw in (("start_date", sys.argv[1]), ("end_date", sys.argv[2])):
+              try:
+                  parsed = date.fromisoformat(raw)
+              except ValueError as exc:
+                  raise SystemExit(f"{label} must be YYYY-MM-DD: {raw!r}") from exc
+              if parsed.isoformat() != raw:
+                  raise SystemExit(f"{label} must be strict YYYY-MM-DD: {raw!r}")
+          if date.fromisoformat(sys.argv[2]) < date.fromisoformat(sys.argv[1]):
+              raise SystemExit("end_date must be on or after start_date")
+          PY
+
+          cursor="$start_date"
+          while [[ "$cursor" < "$end_date" || "$cursor" == "$end_date" ]]; do
+            chunk_end="$(python - "$cursor" "$end_date" <<'PY'
+          import sys
+          from datetime import date, timedelta
+          start = date.fromisoformat(sys.argv[1])
+          end = min(start + timedelta(days=30), date.fromisoformat(sys.argv[2]))
+          print(end.isoformat())
+          PY
+          )"
+
+            echo "=== Backfilling $cursor through $chunk_end ==="
+            python scripts/nse/backfill_fo_history.py --start-date "$cursor" --end-date "$chunk_end"
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add public/data/nse-fo-history/
+            if ! git diff --cached --quiet; then
+              git commit -m "data: backfill NSE F&O history $cursor to $chunk_end [skip ci]"
+              git push
+            else
+              echo "No new archive changes for $cursor through $chunk_end."
+            fi
+
+            cursor="$(python - "$chunk_end" <<'PY'
+          import sys
+          from datetime import date, timedelta
+          print((date.fromisoformat(sys.argv[1]) + timedelta(days=1)).isoformat())
+          PY
+          )"
+          done
       - uses: actions/setup-node@v4
         with:
           node-version: 22
