@@ -79,3 +79,21 @@
 .workspace-content>.panel:first-child{margin-top:0}
 .shell>footer{grid-column:1/-1}
 @media(max-width:760px){.shell{grid-template-columns:minmax(0,1fr);row-gap:14px}.shell>header,.strategy-menu,.workspace-content,.shell>footer{grid-column:1;grid-row:auto}.shell>header{margin-bottom:0}.strategy-menu{position:sticky;top:0;z-index:20;flex-direction:row;align-items:center;overflow-x:auto;gap:7px;padding:9px;background:rgba(11,18,32,.97);scrollbar-width:thin}.strategy-menu .eyebrow{display:none}.strategy-menu button{width:auto;flex:0 0 auto;white-space:nowrap;padding:9px 11px}.workspace-content>.panel:first-child{margin-top:0}}
+
+
+/* Collapsible workspace navigation: selected page uses the full content width. */
+.shell.menu-collapsed{grid-template-columns:minmax(0,1fr)}
+.shell.menu-collapsed .workspace-content{grid-column:1/-1}
+.shell.menu-collapsed>footer{grid-column:1/-1}
+.shell>header{align-items:center;flex-wrap:wrap}
+.brand-copy{min-width:0;flex:1}
+.menu-toggle{margin-left:auto;white-space:nowrap;padding:10px 14px;border:2px solid #83c0ff;border-radius:9px;background:#1b3d5c;color:#f4f8ff;font-size:13px;font-weight:900}
+.menu-toggle:hover{background:#28577f}
+@media(max-width:760px){
+ .shell.menu-collapsed{grid-template-columns:minmax(0,1fr)}
+ .shell.menu-collapsed .workspace-content{grid-column:1}
+ .shell.menu-collapsed>footer{grid-column:1}
+ .shell>header{gap:10px}
+ .brand-copy{flex:1 1 calc(100% - 70px)}
+ .menu-toggle{margin-left:0}
+}

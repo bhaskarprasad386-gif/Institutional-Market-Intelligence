@@ -71,6 +71,7 @@ export default function App() {
   const [message, setMessage] = useState("कोई file import नहीं हुई है।");
   const [busy, setBusy] = useState(false);
   const [activeView, setActiveView] = useState("futures");
+  const [menuOpen, setMenuOpen] = useState(true);
   useEffect(() => {
     let active = true;
     Promise.all([listRecentImports(), listAllImportedRows()]).then(([recent, rows]) => {
@@ -160,9 +161,9 @@ export default function App() {
     } catch (error) { setMessage(error instanceof Error ? error.message : "Import असफल रहा।"); }
     finally { setBusy(false); }
   }
-  return <main className="shell">
-    <header><div className="mark">IM</div><div><p className="eyebrow">DATA FOUNDATION · BATCH 2 / 3</p><h1>Institutional Market Intelligence</h1><p className="muted">NSE / BSE EOD data mapping · local-first research workspace</p></div></header>
-    <nav className="strategy-menu" aria-label="Strategy and research menu">
+  return <main className={`shell ${menuOpen ? "menu-open" : "menu-collapsed"}`}>
+    <header><div className="mark">IM</div><div className="brand-copy"><p className="eyebrow">DATA FOUNDATION · BATCH 2 / 3</p><h1>Institutional Market Intelligence</h1><p className="muted">NSE / BSE EOD data mapping · local-first research workspace</p></div><button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="workspace-navigation" onClick={()=>setMenuOpen(open=>!open)}>{menuOpen ? "✕ Hide menu" : "☰ Workspace Menu"}</button></header>
+    {menuOpen && <nav id="workspace-navigation" className="strategy-menu" aria-label="Strategy and research menu">
       <p className="eyebrow">WORKSPACE MENU</p>
       <button className={activeView==="futures"?"active":""} onClick={()=>setActiveView("futures")}>Futures & Rollover</button>
       <button className={activeView==="eod"?"active":""} onClick={()=>setActiveView("eod")}>Equity EOD Import</button>
@@ -172,7 +173,7 @@ export default function App() {
       <button className={activeView==="lme"?"active":""} onClick={()=>setActiveView("lme")}>Global Metals / LME</button>
       <button className={activeView==="opportunities"?"active":""} onClick={()=>setActiveView("opportunities")}>Opportunity Scanner</button>
       <button className={activeView==="history"?"active":""} onClick={()=>setActiveView("history")}>Import History</button>
-    </nav>
+    </nav>}
     <div className="workspace-content">
     {activeView === "eod" && (
     <section className="panel">
