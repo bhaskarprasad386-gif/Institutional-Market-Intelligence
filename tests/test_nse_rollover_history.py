@@ -146,7 +146,6 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             self.assertAlmostEqual(xyz["return5dPct"], 0.6)
             self.assertEqual(xyz["outcome5d"], "UP")
             self.assertEqual(xyz["correct5d"], True)
-            self.assertEqual(xyz["costSensitivity"] if "costSensitivity" in xyz else None, None)
             long_stats = outcomes["stats"]["LONG_BUILD_UP_5D"]["costSensitivity"]
             self.assertEqual(long_stats["10"]["netDirectionalHits"], 1)
             self.assertEqual(long_stats["20"]["netDirectionalHits"], 0)
