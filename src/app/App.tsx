@@ -5,7 +5,7 @@ import { readTabularFile, validatePreview, type TabularPreview } from "../data/t
 import { mapEquityEodRows, type Exchange } from "../data/eodMapping";
 import { mapFuturesRows } from "../modules/fo/mapping";
 import { calculateFoMetrics, calculateRolloverFromRows, calculateHistoricalRolloverContextFromMetrics, classifyPriceOi } from "../modules/fo/analytics";
-import type { FoMetrics, RolloverMetric, FuturesObservation, HistoricalRolloverContext } from "../modules/fo/types";
+import type { FoMetrics, RolloverMetric, HistoricalRolloverContext } from "../modules/fo/types";
 import RolloverAnalysis from "../modules/fo/RolloverAnalysis";
 import { calculateSectorMetrics, calculateInstitutionalFlow, validateDeliveryObservation } from "../modules/flows/analytics";
 import { mapSectorRows, mapDeliveryRows, mapInstitutionalFlowRows } from "../modules/flows/mapping";
