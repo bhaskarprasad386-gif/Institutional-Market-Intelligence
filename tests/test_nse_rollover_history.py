@@ -107,7 +107,9 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             self.assertAlmostEqual(first["return5dPct"], 2.0)
             self.assertTrue(first["correct5d"])
             self.assertEqual(first["outcome10d"], "PENDING")
-            self.assertEqual(outcomes["stats"]["LONG_BUILD_UP_5D"]["evaluatedSignals"], 1)\n            self.assertEqual(outcomes["cycleSignalCount"], 1)\n            self.assertEqual(len(outcomes["cycleOutcomes"]), 1)
+            self.assertEqual(outcomes["stats"]["LONG_BUILD_UP_5D"]["evaluatedSignals"], 1)
+            self.assertEqual(outcomes["cycleSignalCount"], 1)
+            self.assertEqual(len(outcomes["cycleOutcomes"]), 1)
             self.assertTrue((root / "rollover-metrics.json").exists())
 
 if __name__ == "__main__":
