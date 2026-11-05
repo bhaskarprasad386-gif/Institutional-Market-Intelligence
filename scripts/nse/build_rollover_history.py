@@ -74,6 +74,36 @@ def purge_development_signals(cycle_outcomes, symbol_sessions, holdout_start):
             purged += 1
     return development, purged
 
+
+def build_walk_forward_folds(cycle_outcomes, symbol_sessions, minimum_train_fraction=0.6, fold_count=4, minimum_test_dates=5):
+    """Create non-overlapping chronological test folds with per-symbol 20-session purge."""
+    dates = sorted({item["signalDate"] for item in cycle_outcomes})
+    if not dates or fold_count < 1 or not 0 < minimum_train_fraction < 1:
+        return []
+    first_test_idx = max(1, int(len(dates) * minimum_train_fraction))
+    remaining = dates[first_test_idx:]
+    if len(remaining) < minimum_test_dates:
+        return []
+    block_size = max(minimum_test_dates, math.ceil(len(remaining) / fold_count))
+    folds = []
+    for offset in range(0, len(remaining), block_size):
+        test_dates = remaining[offset:offset + block_size]
+        if len(test_dates) < minimum_test_dates:
+            continue
+        test_start, test_end = test_dates[0], test_dates[-1]
+        development, purged = purge_development_signals(cycle_outcomes, symbol_sessions, test_start)
+        test_rows = [item for item in cycle_outcomes if test_start <= item["signalDate"] <= test_end]
+        folds.append({
+            "fold": len(folds) + 1,
+            "testStartDate": test_start,
+            "testEndDate": test_end,
+            "testSignalDates": len(test_dates),
+            "developmentSignalsAfterPurge": len(development),
+            "purgedDevelopmentSignals": purged,
+            "testRows": test_rows,
+        })
+    return folds
+
 def build():
     index_path = ROOT / "index.json"
     index = json.loads(index_path.read_text(encoding="utf-8"))
@@ -306,6 +336,15 @@ def build():
                     }
         return {"overall": summary, "byVolatilityRegime": regime_summary}
 
+    walk_forward_folds = build_walk_forward_folds(cycle_outcomes, symbol_sessions)
+    walk_forward_rows = [item for fold in walk_forward_folds for item in fold["testRows"]]
+    walk_forward_summary = summarize(walk_forward_rows)["overall"]
+    walk_forward_fold_summaries = [
+        {key: value for key, value in fold.items() if key != "testRows"}
+        | {"stats": summarize(fold["testRows"])["overall"]}
+        for fold in walk_forward_folds
+    ]
+
     OUTCOMES_OUTPUT.write_text(json.dumps({
         "source": "Point-in-time signals matched to symbol-specific future NSE spot closes",
         "thresholdPct": threshold_pct, "horizonsTradingSessions": [5, 10, 20],
@@ -318,6 +357,16 @@ def build():
         "developmentStats": summarize(development)["overall"],
         "holdoutStats": summarize(holdout)["overall"],
         "holdoutVolatilityRegimeStats": summarize(holdout)["byVolatilityRegime"],
+        "walkForward": {
+            "status": "AVAILABLE" if walk_forward_folds else "INSUFFICIENT_HISTORY",
+            "method": "Expanding chronological development window; four non-overlapping forward test folds; each fold purges development labels whose symbol-specific 20-session endpoint reaches the test window.",
+            "minimumInitialDevelopmentFraction": 0.6,
+            "minimumTestDatesPerFold": 5,
+            "foldCount": len(walk_forward_folds),
+            "evaluatedTestSignals": len(walk_forward_rows),
+            "stats": walk_forward_summary,
+            "folds": walk_forward_fold_summaries,
+        },
         "outcomes": outcomes, "cycleOutcomes": cycle_outcomes,
     }, separators=(",", ":")), encoding="utf-8")
     print(f"Built {OUTPUT}: {len(dates)} sessions, {len(metrics)} symbol/day rollover metrics")
