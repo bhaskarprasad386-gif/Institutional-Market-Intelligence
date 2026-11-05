@@ -359,7 +359,7 @@ def build():
         "holdoutVolatilityRegimeStats": summarize(holdout)["byVolatilityRegime"],
         "walkForward": {
             "status": "AVAILABLE" if walk_forward_folds else "INSUFFICIENT_HISTORY",
-            "method": "Expanding chronological development window; four non-overlapping forward test folds; each fold purges development labels whose symbol-specific 20-session endpoint reaches the test window.",
+            "method": "Expanding chronological development window; up to four non-overlapping forward test folds; each fold purges development labels whose symbol-specific 20-session endpoint reaches the test window.",
             "minimumInitialDevelopmentFraction": 0.6,
             "minimumTestDatesPerFold": 5,
             "foldCount": len(walk_forward_folds),
