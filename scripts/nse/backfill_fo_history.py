@@ -122,6 +122,15 @@ def main():
                 filename, rows = fetch_legacy(day)
             if not rows or any(r["tradeDate"] != day.isoformat() for r in rows):
                 raise ValueError("Downloaded data failed trade-date validation")
+            for row in rows:
+                try:
+                    settlement = float(str(row["futuresClose"]).replace(",", ""))
+                    open_interest = float(str(row["openInterest"]).replace(",", ""))
+                    expiry = dt.date.fromisoformat(row["expiryDate"])
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise ValueError(f"Invalid futures settlement/OI/expiry row: {exc}") from exc
+                if settlement <= 0 or open_interest < 0 or expiry < day:
+                    raise ValueError("Futures row has non-positive settlement, negative OI, or expiry before trade date")
             save_history(day, filename, rows)
             successes += 1
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError, zipfile.BadZipFile, KeyError) as exc:
