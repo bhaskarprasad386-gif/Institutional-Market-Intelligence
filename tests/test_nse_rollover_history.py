@@ -109,7 +109,7 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             self.assertEqual(first["outcome10d"], "PENDING")
             self.assertEqual(outcomes["stats"]["LONG_BUILD_UP_5D"]["evaluatedSignals"], 1)
             self.assertEqual(outcomes["cycleSignalCount"], 1)
-            self.assertEqual(len(outcomes["cycleOutcomes"]), 1)
+            self.assertEqual(len(outcomes["cycleOutcomes"]), 1)\n            self.assertIn("20", outcomes["stats"]["LONG_BUILD_UP_5D"]["costSensitivity"])\n            self.assertEqual(outcomes["costSensitivityAssumptions"].startswith("Hypothetical"), True)
             self.assertTrue((root / "rollover-metrics.json").exists())
 
 if __name__ == "__main__":
