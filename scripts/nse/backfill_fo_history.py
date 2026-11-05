@@ -28,6 +28,18 @@ def value(row, *names):
     return ""
 
 
+def parse_cli_date(raw, field_name):
+    """Parse a strict YYYY-MM-DD input, tolerating accidental surrounding spaces."""
+    normalized = str(raw or "").strip()
+    try:
+        parsed = dt.date.fromisoformat(normalized)
+    except ValueError as exc:
+        raise ValueError(f"{field_name} must be a valid YYYY-MM-DD date") from exc
+    if parsed.isoformat() != normalized:
+        raise ValueError(f"{field_name} must use YYYY-MM-DD format")
+    return parsed
+
+
 def parse_day(raw):
     raw = str(raw or "").strip()
     for fmt in ("%d-%b-%Y", "%d-%b-%y", "%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
@@ -122,8 +134,8 @@ def main():
     parser.add_argument("--start-date", required=True, help="YYYY-MM-DD")
     parser.add_argument("--end-date", required=True, help="YYYY-MM-DD, inclusive")
     args = parser.parse_args()
-    start = dt.date.fromisoformat(args.start_date)
-    end = dt.date.fromisoformat(args.end_date)
+    start = parse_cli_date(args.start_date, "start-date")
+    end = parse_cli_date(args.end_date, "end-date")
     if end < start:
         raise SystemExit("end-date must be on or after start-date")
     if end > dt.datetime.now(dt.timezone.utc).date():
