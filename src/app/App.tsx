@@ -148,7 +148,8 @@ export default function App() {
         if (!data.developmentStats || !data.holdoutStats || !data.holdoutVolatilityRegimeStats || !Number.isFinite(data.cycleSignalCount)) throw new Error("Outcome validation format is invalid.");
         if (!active) return;
         setRolloverOutcomeStats(data.developmentStats);
-        setRolloverHoldoutStats(data.holdoutStats);\n        setRolloverVolatilityStats(data.holdoutVolatilityRegimeStats);
+        setRolloverHoldoutStats(data.holdoutStats);
+        setRolloverVolatilityStats(data.holdoutVolatilityRegimeStats);
         setRolloverOutcomeStatus(data.cycleSignalCount.toLocaleString() + " unique expiry-cycle signals (" + data.rawOutcomeCount.toLocaleString() + " daily observations) · holdout " + (data.holdoutStartDate ?? "not enough dates") + " · development cutoff " + (data.developmentCutoffExclusive ?? "—") + " · threshold ±" + data.thresholdPct + "% · " + data.costSensitivityAssumptions);
       } catch (error) {
         if (active) setRolloverOutcomeStatus(error instanceof Error ? error.message : "Outcome validation unavailable.");
