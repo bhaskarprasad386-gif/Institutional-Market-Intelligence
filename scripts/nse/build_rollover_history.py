@@ -6,7 +6,8 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path("public/data/nse-fo-history")
-OUTPUT = ROOT / "rollover-metrics.json"\nOUTCOMES_OUTPUT = ROOT / "rollover-outcomes.json"
+OUTPUT = ROOT / "rollover-metrics.json"
+OUTCOMES_OUTPUT = ROOT / "rollover-outcomes.json"
 
 
 def number(value, default=None):
