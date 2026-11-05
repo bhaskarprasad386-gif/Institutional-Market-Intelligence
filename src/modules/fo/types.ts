@@ -19,6 +19,7 @@ export interface RolloverMetric {
   nearVolume?:number; nextVolume?:number; spotClose?:number|null;
   nextShareMomentum3d?:number|null; nextShareMomentum5d?:number|null;
   totalOiMomentum3dPct?:number|null; totalOiMomentum5dPct?:number|null;
+  rolloverCostMomentum3dPct?:number|null; rolloverCostMomentum5dPct?:number|null;
   lotSize?:number; rolloverCostPerLot?:number; rolloverPctFlag:RolloverFlag; rolloverCostFlag:RolloverFlag; peerCount:number;
 }
 export interface HistoricalRolloverContext {
