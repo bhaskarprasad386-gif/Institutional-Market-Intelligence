@@ -18,7 +18,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: nse-fo-history-backfill
+  group: nse-daily-data-pages
   cancel-in-progress: false
 
 jobs:
