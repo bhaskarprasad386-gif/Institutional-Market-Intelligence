@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { listRecentImports, listAllImportedRows, saveImportedRows, type ImportRecord } from "../data/importRepository";
 import { restoreWorkspace } from "../data/restoreWorkspace";
 import { readTabularFile, validatePreview, type TabularPreview } from "../data/tabularImport";
@@ -40,6 +40,7 @@ export default function App() {
   const [exchange, setExchange] = useState<Exchange>("NSE");
   const [foFile, setFoFile] = useState<File | null>(null);
   const [foMetrics, setFoMetrics] = useState<FoMetrics[]>([]);
+  const nseAutoLoadedRef = useRef(false);
   const [rolloverMetrics, setRolloverMetrics] = useState<RolloverMetric[]>([]);
   const [sectorFile, setSectorFile] = useState<File | null>(null);
   const [deliveryFile, setDeliveryFile] = useState<File | null>(null);
@@ -74,7 +75,7 @@ export default function App() {
       if (!rows.length) return;
       try {
         const restored = restoreWorkspace(rows);
-        setFoMetrics(restored.futures); setRolloverMetrics(restored.rollovers);
+        if (!nseAutoLoadedRef.current) { setFoMetrics(restored.futures); setRolloverMetrics(restored.rollovers); }
         setSectorMetrics(restored.sectors); setDeliveryRows(restored.deliveries); setFlowMetrics(restored.flows);
         setRecommendations(restored.recommendations); setCompanyResults(restored.companyResults);
         setHistoricalEvaluations(restored.historicalEvaluations); setPriceBars(restored.priceBars); setOptionHistoryRows(restored.optionHistoryRows);
@@ -99,6 +100,7 @@ export default function App() {
         const valid = mapped.rows.filter(row => row.tradeDate === data.marketDate);
         if (!valid.length) throw new Error(`No valid FUTIDX/FUTSTK rows for ${data.marketDate}; rejected ${mapped.rejected.length}.`);
         if (!active) return;
+        nseAutoLoadedRef.current = true;
         setFoMetrics(valid.map(calculateFoMetrics));
         setRolloverMetrics(calculateRolloverFromRows(valid));
         setNseAutoStatus(`AUTO · ${data.marketDate} · ${valid.length.toLocaleString()} futures rows · fetched ${new Date(data.retrievedAt).toLocaleString("en-IN")}`);
