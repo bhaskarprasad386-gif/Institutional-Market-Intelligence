@@ -43,7 +43,9 @@ export default function App() {
   const nseAutoLoadedRef = useRef(false);
   const [rolloverMetrics, setRolloverMetrics] = useState<RolloverMetric[]>([]);
   const [rolloverHistoryMetrics, setRolloverHistoryMetrics] = useState<RolloverMetric[]>([]);
-  const [positionalRolloverMetrics, setPositionalRolloverMetrics] = useState<RolloverMetric[]>([]);\n  const [rolloverOutcomeStats, setRolloverOutcomeStats] = useState<Record<string, { evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number }>>({});\n  const [rolloverOutcomeStatus, setRolloverOutcomeStatus] = useState("Outcome validation loading…");
+  const [positionalRolloverMetrics, setPositionalRolloverMetrics] = useState<RolloverMetric[]>([]);
+  const [rolloverOutcomeStats, setRolloverOutcomeStats] = useState<Record<string, { evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number }>>({});
+  const [rolloverOutcomeStatus, setRolloverOutcomeStatus] = useState("Outcome validation loading…");
   const [rolloverHistoryStatus, setRolloverHistoryStatus] = useState("Historical archive loading…");
   const [historicalRollover, setHistoricalRollover] = useState<Map<string, HistoricalRolloverContext>>(new Map());
   const [sectorFile, setSectorFile] = useState<File | null>(null);
