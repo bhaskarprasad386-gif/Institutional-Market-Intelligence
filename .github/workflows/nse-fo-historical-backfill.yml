@@ -1,0 +1,59 @@
+name: NSE F&O historical backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "Start date (YYYY-MM-DD), inclusive"
+        required: true
+        type: string
+      end_date:
+        description: "End date (YYYY-MM-DD), inclusive; max 31 calendar days"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: nse-fo-history-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill-build-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download and validate NSE historical F&O sessions
+        run: python scripts/nse/backfill_fo_history.py --start-date "${{ inputs.start_date }}" --end-date "${{ inputs.end_date }}"
+      - name: Commit validated dated history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/nse-fo-history/
+          if git diff --cached --quiet; then
+            echo "No new historical sessions to commit."
+          else
+            git commit -m "data: backfill NSE F&O historical sessions [skip ci]"
+            git push
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Build app
+        run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - name: Deploy historical archive
+        id: deployment
+        uses: actions/deploy-pages@v4
