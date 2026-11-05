@@ -104,6 +104,31 @@ def build_walk_forward_folds(cycle_outcomes, symbol_sessions, minimum_train_frac
         })
     return folds
 
+def apply_daily_rollover_flags(metrics):
+    """Match the live scanner's same-day cross-sectional 75th-percentile flags."""
+    by_date = defaultdict(list)
+    for row in metrics:
+        by_date[row["tradeDate"]].append(row)
+    flagged = []
+    for rows in by_date.values():
+        enough_peers = len(rows) >= 5
+        rollover_values = [row["rolloverPct"] for row in rows]
+        positive_costs = [row["rolloverCostPct"] for row in rows if row["rolloverCostPct"] > 0]
+        pct_cutoff = sorted(rollover_values)[math.ceil(0.75 * len(rollover_values)) - 1] if enough_peers else None
+        cost_cutoff = sorted(positive_costs)[math.ceil(0.75 * len(positive_costs)) - 1] if len(positive_costs) >= 5 else None
+        for row in rows:
+            pct_flag = "INSUFFICIENT_PEERS" if not enough_peers else (
+                "HIGH" if row["rolloverPct"] >= pct_cutoff else "NORMAL"
+            )
+            cost_flag = "ROLL_CREDIT" if row["rolloverCostPct"] < 0 else (
+                "INSUFFICIENT_PEERS" if not enough_peers or cost_cutoff is None else
+                "HIGH" if row["rolloverCostPct"] >= cost_cutoff else "NORMAL"
+            )
+            flagged.append({**row, "rolloverPctFlag": pct_flag,
+                            "rolloverCostFlag": cost_flag, "peerCount": len(rows)})
+    return sorted(flagged, key=lambda row: (row["tradeDate"], row["symbol"]))
+
+
 def build():
     index_path = ROOT / "index.json"
     index = json.loads(index_path.read_text(encoding="utf-8"))
@@ -210,7 +235,7 @@ def build():
                 "rolloverCostFlag": "INSUFFICIENT_PEERS", "peerCount": 0,
             })
 
-    metrics.sort(key=lambda row: (row["tradeDate"], row["symbol"]))
+    metrics = apply_daily_rollover_flags(metrics)
     result = {
         "source": "Derived from complete NSE F&O dated history archive",
         "updatedAt": index.get("updatedAt"),
@@ -253,6 +278,9 @@ def build():
         item = {"symbol": row["symbol"], "signalDate": row["tradeDate"],
                 "nearExpiry": row["nearExpiry"], "nextExpiry": row["nextExpiry"],
                 "nextBuildUp": row.get("nextBuildUp"), "spotAtSignal": start_price,
+                "rolloverPct": row["rolloverPct"], "rolloverCostPct": row["rolloverCostPct"],
+                "rolloverPctFlag": row["rolloverPctFlag"], "rolloverCostFlag": row["rolloverCostFlag"],
+                "peerCount": row["peerCount"],
                 "realizedVol20dAnnualizedPct": vol20, "volatilityRegime": vol_regime}
         for horizon in (5, 10, 20):
             future_day = own_sessions[idx + horizon] if idx + horizon < len(own_sessions) else None
@@ -339,6 +367,31 @@ def build():
     walk_forward_folds = build_walk_forward_folds(cycle_outcomes, symbol_sessions)
     walk_forward_rows = [item for fold in walk_forward_folds for item in fold["testRows"]]
     walk_forward_summary = summarize(walk_forward_rows)["overall"]
+
+    def rollover_condition_summary(rows):
+        cohorts = {
+            "ALL_DIRECTIONAL": rows,
+            "HIGH_ROLLOVER_PCT": [x for x in rows if x.get("rolloverPctFlag") == "HIGH"],
+            "HIGH_ROLLOVER_COST": [x for x in rows if x.get("rolloverCostFlag") == "HIGH"],
+            "HIGH_BOTH": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH"],
+        }
+        return {
+            name: {"signalCount": len(selected), "stats": summarize(selected)["overall"]}
+            for name, selected in cohorts.items()
+        }
+
+    rollover_condition_stats = {
+        "flagMethod": "Same-day cross-sectional 75th percentile, matching live scanner; at least 5 total peers and 5 positive-cost peers. No future observations are used.",
+        "development": rollover_condition_summary(development),
+        "holdout": rollover_condition_summary(holdout),
+        "walkForward": rollover_condition_summary(walk_forward_rows),
+        "walkForwardFolds": [
+            {"fold": fold["fold"], "testStartDate": fold["testStartDate"],
+             "testEndDate": fold["testEndDate"],
+             "cohorts": rollover_condition_summary(fold["testRows"])}
+            for fold in walk_forward_folds
+        ],
+    }
     walk_forward_fold_summaries = [
         {key: value for key, value in fold.items() if key != "testRows"}
         | {"stats": summarize(fold["testRows"])["overall"]}
@@ -357,6 +410,7 @@ def build():
         "developmentStats": summarize(development)["overall"],
         "holdoutStats": summarize(holdout)["overall"],
         "holdoutVolatilityRegimeStats": summarize(holdout)["byVolatilityRegime"],
+        "rolloverConditionStats": rollover_condition_stats,
         "walkForward": {
             "status": "AVAILABLE" if walk_forward_folds else "INSUFFICIENT_HISTORY",
             "method": "Expanding chronological development window; up to four non-overlapping forward test folds; each fold purges development labels whose symbol-specific 20-session endpoint reaches the test window.",
