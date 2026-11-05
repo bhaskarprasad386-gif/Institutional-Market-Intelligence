@@ -25,7 +25,7 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
                     {"symbol": "ABC", "tradeDate": market_date, "expiryDate": "2025-12-25", "futuresClose": "90", "openInterest": "100", "lotSize": "25"},
                 ]
                 (root / f"{market_date}.json").write_text(json.dumps({"marketDate": market_date, "rows": rows}))
-            with patch.object(builder, "ROOT", root), patch.object(builder, "OUTPUT", root / "rollover-metrics.json"):
+            with patch.object(builder, "ROOT", root), patch.object(builder, "OUTPUT", root / "rollover-metrics.json"), patch.object(builder, "OUTCOMES_OUTPUT", root / "rollover-outcomes.json"):
                 result = builder.build()
             self.assertEqual(result["archivedSessions"], 2)
             self.assertEqual(result["metricCount"], 2)
@@ -51,7 +51,7 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
                 {"symbol": "ABC", "tradeDate": market_date, "expiryDate": "2026-02-26", "futuresClose": "102", "openInterest": "15", "lotSize": "25"},
             ]
             (root / f"{market_date}.json").write_text(json.dumps({"marketDate": market_date, "rows": rows}))
-            with patch.object(builder, "ROOT", root), patch.object(builder, "OUTPUT", root / "rollover-metrics.json"):
+            with patch.object(builder, "ROOT", root), patch.object(builder, "OUTPUT", root / "rollover-metrics.json"), patch.object(builder, "OUTCOMES_OUTPUT", root / "rollover-outcomes.json"):
                 result = builder.build()
             metric = result["metrics"][0]
             self.assertNotIn("lotSize", metric)
@@ -70,7 +70,7 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
                 {"symbol": "ABC", "tradeDate": market_date, "expiryDate": "2026-03-26", "futuresClose": "110", "previousFuturesClose": "104", "openInterest": "30", "changeOpenInterest": "5", "volume": "20", "lotSize": "25"},
             ]
             (root / f"{market_date}.json").write_text(json.dumps({"marketDate": market_date, "rows": rows}))
-            with patch.object(builder, "ROOT", root), patch.object(builder, "OUTPUT", root / "rollover-metrics.json"):
+            with patch.object(builder, "ROOT", root), patch.object(builder, "OUTPUT", root / "rollover-metrics.json"), patch.object(builder, "OUTCOMES_OUTPUT", root / "rollover-outcomes.json"):
                 result = builder.build()
             metric = result["metrics"][0]
             self.assertEqual(metric["farExpiry"], "2026-03-26")
