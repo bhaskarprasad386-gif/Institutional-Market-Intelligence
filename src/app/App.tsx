@@ -44,7 +44,8 @@ export default function App() {
   const [rolloverMetrics, setRolloverMetrics] = useState<RolloverMetric[]>([]);
   const [rolloverHistoryMetrics, setRolloverHistoryMetrics] = useState<RolloverMetric[]>([]);
   const [positionalRolloverMetrics, setPositionalRolloverMetrics] = useState<RolloverMetric[]>([]);
-  const [rolloverOutcomeStats, setRolloverOutcomeStats] = useState<Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number }>>({});\n  const [rolloverHoldoutStats, setRolloverHoldoutStats] = useState<Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number }>>({});
+  const [rolloverOutcomeStats, setRolloverOutcomeStats] = useState<Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number }>>({});
+  const [rolloverHoldoutStats, setRolloverHoldoutStats] = useState<Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number }>>({});
   const [rolloverOutcomeStatus, setRolloverOutcomeStatus] = useState("Outcome validation loading…");
   const [rolloverHistoryStatus, setRolloverHistoryStatus] = useState("Historical archive loading…");
   const [historicalRollover, setHistoricalRollover] = useState<Map<string, HistoricalRolloverContext>>(new Map());
@@ -146,7 +147,8 @@ export default function App() {
         const data = await response.json() as { thresholdPct: number; horizonsTradingSessions: number[]; rawOutcomeCount: number; cycleSignalCount: number; holdoutStartDate: string | null; stats: Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number }>; holdoutStats: Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number }> };
         if (!data.stats || !data.holdoutStats || !Number.isFinite(data.cycleSignalCount)) throw new Error("Outcome validation format is invalid.");
         if (!active) return;
-        setRolloverOutcomeStats(data.stats);\n        setRolloverHoldoutStats(data.holdoutStats);
+        setRolloverOutcomeStats(data.stats);
+        setRolloverHoldoutStats(data.holdoutStats);
         setRolloverOutcomeStatus(data.cycleSignalCount.toLocaleString() + " unique expiry-cycle signals (" + data.rawOutcomeCount.toLocaleString() + " daily observations) · holdout starts " + (data.holdoutStartDate ?? "not enough dates") + " · threshold ±" + data.thresholdPct + "%");
       } catch (error) {
         if (active) setRolloverOutcomeStatus(error instanceof Error ? error.message : "Outcome validation unavailable.");
