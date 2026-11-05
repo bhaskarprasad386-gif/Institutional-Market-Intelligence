@@ -53,6 +53,18 @@ def calculate_prior_volatility(symbol_spot_series, symbol, signal_date):
     return annualized, regime
 
 
+def calculate_prior_spot_momentum(symbol_spot_series, symbol, signal_date, horizon=5):
+    """Signal-close return versus the close N symbol sessions earlier; no future data."""
+    history = [(day, price) for day, price in symbol_spot_series.get(symbol, []) if day <= signal_date]
+    if len(history) <= horizon:
+        return None
+    prior_price = history[-(horizon + 1)][1]
+    current_price = history[-1][1]
+    if prior_price is None or current_price is None or prior_price <= 0 or current_price <= 0:
+        return None
+    return (current_price / prior_price - 1) * 100
+
+
 def purge_development_signals(cycle_outcomes, symbol_sessions, holdout_start):
     """Keep development labels only when their 20-session endpoint precedes holdout."""
     # With fewer than two distinct signal dates there is no holdout partition.
@@ -321,7 +333,9 @@ def build():
                 "totalOiMomentum5dPct": row.get("totalOiMomentum5dPct"),
                 "rolloverCostMomentum3dPct": row.get("rolloverCostMomentum3dPct"),
                 "rolloverCostMomentum5dPct": row.get("rolloverCostMomentum5dPct"),
-                "realizedVol20dAnnualizedPct": vol20, "volatilityRegime": vol_regime}
+                "realizedVol20dAnnualizedPct": vol20, "volatilityRegime": vol_regime,
+                "spotMomentum5dPct": calculate_prior_spot_momentum(
+                    symbol_spot_series, row["symbol"], row["tradeDate"], 5)}
         for horizon in (5, 10, 20):
             future_day = own_sessions[idx + horizon] if idx + horizon < len(own_sessions) else None
             future_price = number(spot_lookup.get((row["symbol"], future_day))) if future_day else None
@@ -422,6 +436,8 @@ def build():
             "HIGH_BOTH_COST_FALLING": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] < 0],
             "HIGH_BOTH_SHARE_DOWN_COST_RISING": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0],
             "HIGH_BOTH_SHARE_DOWN_COST_FALLING": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] < 0],
+            "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] < 0],
+            "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_UP": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] > 0],
         }
         return {
             name: {

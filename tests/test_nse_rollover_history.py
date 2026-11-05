@@ -195,6 +195,24 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual([x["signalDate"] for x in development], [symbol_days[4]])
         self.assertEqual(purged, 2)
 
+    def test_prior_spot_momentum_uses_signal_close_and_prior_symbol_sessions_only(self):
+        series = {"ABC": [
+            ("2026-01-01", 100.0), ("2026-01-02", 101.0),
+            ("2026-01-03", 102.0), ("2026-01-04", 103.0),
+            ("2026-01-05", 104.0), ("2026-01-06", 105.0),
+            ("2026-01-07", 106.0),
+        ]}
+        result = builder.calculate_prior_spot_momentum(series, "ABC", "2026-01-06", 5)
+        self.assertAlmostEqual(result, 5.0)
+        series["ABC"].append(("2026-01-08", 1000.0))
+        self.assertAlmostEqual(
+            builder.calculate_prior_spot_momentum(series, "ABC", "2026-01-06", 5), 5.0
+        )
+        self.assertIsNone(
+            builder.calculate_prior_spot_momentum(series, "ABC", "2026-01-05", 5)
+        )
+
+
     def test_prior_volatility_excludes_signal_day_and_uses_documented_regime_bands(self):
         days = [f"2026-01-{day:02d}" for day in range(1, 24)]
         low_prices = [(day, 100.0 + index * 0.01) for index, day in enumerate(days[:21])]
