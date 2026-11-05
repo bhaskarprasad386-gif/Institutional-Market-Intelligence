@@ -44,11 +44,11 @@ export function calculateRolloverFromRows(rows:FuturesObservation[]):RolloverMet
 function median(v:number[]):number|undefined {if(!v.length)return undefined;const s=[...v].sort((a,b)=>a-b),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
 function rank(v:number,s:number[]):number {if(!s.length)return 0;const below=s.filter(x=>x<v).length,equal=s.filter(x=>x===v).length;return (below+equal/2)/s.length*100;}
 function status(p:number,n:number):HistoricalRolloverContext["rolloverPctStatus"] {return n<5?"INSUFFICIENT_HISTORY":p>=80?"HIGH":p<=20?"LOW":"NORMAL";}
-export function calculateHistoricalRolloverContext(current:RolloverMetric[],historyRows:FuturesObservation[]):Map<string,HistoricalRolloverContext> {
- const byDate=new Map<string,FuturesObservation[]>();for(const r of historyRows){const a=byDate.get(r.tradeDate)??[];a.push(r);byDate.set(r.tradeDate,a);}
- const history=[...byDate.values()].flatMap(calculateRolloverFromRows),out=new Map<string,HistoricalRolloverContext>();
+export function calculateHistoricalRolloverContextFromMetrics(current:RolloverMetric[],history:RolloverMetric[]):Map<string,HistoricalRolloverContext> {
+ const bySymbol=new Map<string,RolloverMetric[]>();for(const item of history){const list=bySymbol.get(item.symbol)??[];list.push(item);bySymbol.set(item.symbol,list);}
+ const out=new Map<string,HistoricalRolloverContext>();
  for(const row of current){const target=(Date.parse(row.nearExpiry+"T00:00:00Z")-Date.parse(row.tradeDate+"T00:00:00Z"))/DAY_MS,cycles=new Map<string,RolloverMetric>();
-  for(const c of history){if(c.symbol!==row.symbol||c.tradeDate>=row.tradeDate||(c.nearExpiry===row.nearExpiry&&c.nextExpiry===row.nextExpiry))continue;const key=c.nearExpiry+"|"+c.nextExpiry,dte=(Date.parse(c.nearExpiry+"T00:00:00Z")-Date.parse(c.tradeDate+"T00:00:00Z"))/DAY_MS,old=cycles.get(key);
+  for(const c of bySymbol.get(row.symbol)??[]){if(c.tradeDate>=row.tradeDate||(c.nearExpiry===row.nearExpiry&&c.nextExpiry===row.nextExpiry))continue;const key=c.nearExpiry+"|"+c.nextExpiry,dte=(Date.parse(c.nearExpiry+"T00:00:00Z")-Date.parse(c.tradeDate+"T00:00:00Z"))/DAY_MS,old=cycles.get(key);
    if(!old){cycles.set(key,c);continue;}const oldDte=(Date.parse(old.nearExpiry+"T00:00:00Z")-Date.parse(old.tradeDate+"T00:00:00Z"))/DAY_MS;
    if(Math.abs(dte-target)<Math.abs(oldDte-target)||(Math.abs(dte-target)===Math.abs(oldDte-target)&&c.tradeDate>old.tradeDate))cycles.set(key,c);
   }
@@ -56,4 +56,8 @@ export function calculateHistoricalRolloverContext(current:RolloverMetric[],hist
   out.set(row.symbol+"|"+row.nearExpiry+"|"+row.nextExpiry,{sampleCount:n,rolloverPctMedian:median(pv),rolloverCostPctMedian:median(cv),rolloverPctPercentile:n>=5?pr:undefined,rolloverCostPctPercentile:n>=5?cr:undefined,rolloverPctStatus:status(pr,n),rolloverCostStatus:status(cr,n)});
  }
  return out;
+}
+export function calculateHistoricalRolloverContext(current:RolloverMetric[],historyRows:FuturesObservation[]):Map<string,HistoricalRolloverContext> {
+ const byDate=new Map<string,FuturesObservation[]>();for(const r of historyRows){const a=byDate.get(r.tradeDate)??[];a.push(r);byDate.set(r.tradeDate,a);}
+ return calculateHistoricalRolloverContextFromMetrics(current,[...byDate.values()].flatMap(calculateRolloverFromRows));
 }
