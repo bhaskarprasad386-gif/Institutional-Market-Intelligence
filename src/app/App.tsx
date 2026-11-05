@@ -137,8 +137,23 @@ export default function App() {
   }, []);
   useEffect(() => {
     if (rolloverMetrics.length) {
-      setHistoricalRollover(calculateHistoricalRolloverContextFromMetrics(rolloverMetrics, rolloverHistoryMetrics));
-      setPositionalRolloverMetrics(calculateRolloverMomentum(rolloverMetrics, rolloverHistoryMetrics));
+      const currentWithPositioning = rolloverMetrics.map(row => {
+        const archived = rolloverHistoryMetrics.find(item =>
+          item.tradeDate === row.tradeDate && item.symbol === row.symbol &&
+          item.nearExpiry === row.nearExpiry && item.nextExpiry === row.nextExpiry
+        );
+        return archived ? { ...archived, ...row,
+          farExpiry: archived.farExpiry, farOi: archived.farOi, totalOi: archived.totalOi,
+          nextFarOi: archived.nextFarOi, extendedRolloverPct: archived.extendedRolloverPct,
+          farSharePct: archived.farSharePct, nearOiChange: archived.nearOiChange,
+          nextOiChange: archived.nextOiChange, farOiChange: archived.farOiChange,
+          totalOiChange: archived.totalOiChange, nearPriceChangePct: archived.nearPriceChangePct,
+          nextPriceChangePct: archived.nextPriceChangePct, nearBuildUp: archived.nearBuildUp,
+          nextBuildUp: archived.nextBuildUp, nearVolume: archived.nearVolume, nextVolume: archived.nextVolume
+        } : row;
+      });
+      setHistoricalRollover(calculateHistoricalRolloverContextFromMetrics(currentWithPositioning, rolloverHistoryMetrics));
+      setPositionalRolloverMetrics(calculateRolloverMomentum(currentWithPositioning, rolloverHistoryMetrics));
     } else setPositionalRolloverMetrics([]);
   }, [rolloverMetrics, rolloverHistoryMetrics]);
   async function selectFile(next: File | null) {
