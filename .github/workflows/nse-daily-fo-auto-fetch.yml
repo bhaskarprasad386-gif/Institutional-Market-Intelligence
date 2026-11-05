@@ -30,6 +30,8 @@ jobs:
           python-version: "3.12"
       - name: Fetch official NSE F&O UDiFF EOD bhavcopy
         run: python scripts/nse/fetch_fo_bhavcopy.py
+      - name: Build compact full-history rollover metrics
+        run: python scripts/nse/build_rollover_history.py
       - name: Commit dated NSE history archive
         run: |
           git config user.name "github-actions[bot]"

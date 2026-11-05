@@ -4,8 +4,8 @@ import { restoreWorkspace } from "../data/restoreWorkspace";
 import { readTabularFile, validatePreview, type TabularPreview } from "../data/tabularImport";
 import { mapEquityEodRows, type Exchange } from "../data/eodMapping";
 import { mapFuturesRows } from "../modules/fo/mapping";
-import { calculateFoMetrics, calculateRolloverFromRows, calculateHistoricalRolloverContext, classifyPriceOi } from "../modules/fo/analytics";
-import type { FoMetrics, RolloverMetric, FuturesObservation, HistoricalRolloverContext } from "../modules/fo/types";
+import { calculateFoMetrics, calculateRolloverFromRows, calculateHistoricalRolloverContextFromMetrics, classifyPriceOi } from "../modules/fo/analytics";
+import type { FoMetrics, RolloverMetric, HistoricalRolloverContext } from "../modules/fo/types";
 import RolloverAnalysis from "../modules/fo/RolloverAnalysis";
 import { calculateSectorMetrics, calculateInstitutionalFlow, validateDeliveryObservation } from "../modules/flows/analytics";
 import { mapSectorRows, mapDeliveryRows, mapInstitutionalFlowRows } from "../modules/flows/mapping";
@@ -42,7 +42,7 @@ export default function App() {
   const [foMetrics, setFoMetrics] = useState<FoMetrics[]>([]);
   const nseAutoLoadedRef = useRef(false);
   const [rolloverMetrics, setRolloverMetrics] = useState<RolloverMetric[]>([]);
-  const [rolloverHistoryRows, setRolloverHistoryRows] = useState<FuturesObservation[]>([]);
+  const [rolloverHistoryMetrics, setRolloverHistoryMetrics] = useState<RolloverMetric[]>([]);
   const [rolloverHistoryStatus, setRolloverHistoryStatus] = useState("Historical archive loading…");
   const [historicalRollover, setHistoricalRollover] = useState<Map<string, HistoricalRolloverContext>>(new Map());
   const [sectorFile, setSectorFile] = useState<File | null>(null);
@@ -118,22 +118,13 @@ export default function App() {
     let active = true;
     const loadRolloverHistory = async () => {
       try {
-        const indexResponse = await fetch("data/nse-fo-history/index.json", { cache: "no-store" });
-        if (!indexResponse.ok) throw new Error("NSE rollover history index unavailable (HTTP " + indexResponse.status + ").");
-        const index = await indexResponse.json() as { dates?: { marketDate: string; path: string }[] };
-        const dates = Array.isArray(index.dates) ? index.dates.slice(0, 120) : [];
-        if (!dates.length) throw new Error("No dated NSE history archive is published yet.");
-        const datasets = await Promise.all(dates.map(async item => {
-          const response = await fetch("data/nse-fo-history/" + item.path, { cache: "no-store" });
-          if (!response.ok) throw new Error("Archive " + item.marketDate + " unavailable (HTTP " + response.status + ").");
-          const data = await response.json() as { marketDate: string; rows: Record<string, unknown>[] };
-          if (!Array.isArray(data.rows)) throw new Error("Invalid archive rows for " + item.marketDate + ".");
-          return mapFuturesRows(data.rows, { allowMissingSpot: true }).rows.filter(row => row.tradeDate === item.marketDate);
-        }));
-        const rows = datasets.flat();
+        const response = await fetch("data/nse-fo-history/rollover-metrics.json", { cache: "no-store" });
+        if (!response.ok) throw new Error("Compact NSE rollover history unavailable (HTTP " + response.status + ").");
+        const data = await response.json() as { archivedSessions: number; metricCount: number; oldestMarketDate: string | null; newestMarketDate: string | null; metrics: RolloverMetric[] };
+        if (!Array.isArray(data.metrics) || !Number.isFinite(data.archivedSessions)) throw new Error("Compact rollover history format is invalid.");
         if (!active) return;
-        setRolloverHistoryRows(rows);
-        setRolloverHistoryStatus(dates.length + " archived sessions · " + rows.length.toLocaleString() + " futures observations · newest available sessions (maximum 120)");
+        setRolloverHistoryMetrics(data.metrics);
+        setRolloverHistoryStatus(data.archivedSessions + " archived sessions · " + data.metricCount.toLocaleString() + " symbol/day rollover metrics · full available history (" + (data.oldestMarketDate ?? "—") + " to " + (data.newestMarketDate ?? "—") + ")");
       } catch (error) {
         if (active) setRolloverHistoryStatus(error instanceof Error ? "History unavailable · " + error.message : "History unavailable.");
       }
@@ -142,8 +133,8 @@ export default function App() {
     return () => { active = false; };
   }, []);
   useEffect(() => {
-    if (rolloverMetrics.length) setHistoricalRollover(calculateHistoricalRolloverContext(rolloverMetrics, rolloverHistoryRows));
-  }, [rolloverMetrics, rolloverHistoryRows]);
+    if (rolloverMetrics.length) setHistoricalRollover(calculateHistoricalRolloverContextFromMetrics(rolloverMetrics, rolloverHistoryMetrics));
+  }, [rolloverMetrics, rolloverHistoryMetrics]);
   async function selectFile(next: File | null) {
     setFile(next); setPreview(null);
     if (!next) return;

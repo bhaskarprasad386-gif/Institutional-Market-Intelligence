@@ -20,6 +20,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build complete NSE rollover history from archived sessions
+        run: python scripts/nse/build_rollover_history.py
       - name: Set up Node
         uses: actions/setup-node@v4
         with:

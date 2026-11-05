@@ -95,6 +95,17 @@ jobs:
           PY
           )"
           done
+      - name: Build compact full-history rollover metrics
+        run: python scripts/nse/build_rollover_history.py
+      - name: Commit compact rollover history index
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/nse-fo-history/rollover-metrics.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data: rebuild compact NSE rollover history [skip ci]"
+            git push
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version: 22
