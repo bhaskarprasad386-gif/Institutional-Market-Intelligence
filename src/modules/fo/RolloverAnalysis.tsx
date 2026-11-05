@@ -2,7 +2,8 @@ import type {HistoricalRolloverContext,RolloverMetric} from "./types";
 type OutcomeStat={signals:number;evaluatedSignals:number;correctSignals:number;precisionPct:number|null;flatExcluded:number;pending:number;costSensitivity?:Record<string,{assumedRoundTripCostBps:number;netDirectionalHits:number;netPrecisionPct:number|null}>};
 type WalkForwardFold={fold:number;testStartDate:string;testEndDate:string;testSignalDates:number;developmentSignalsAfterPurge:number;purgedDevelopmentSignals:number;stats:Record<string,OutcomeStat>};
 type WalkForwardData={status:"AVAILABLE"|"INSUFFICIENT_HISTORY";method:string;foldCount:number;evaluatedTestSignals:number;stats:Record<string,OutcomeStat>;folds:WalkForwardFold[]};
-type CohortSummary=Record<string,{signalCount:number;stats:Record<string,OutcomeStat>;byVolatilityRegime:Record<string,Record<string,OutcomeStat>>}>;
+type CohortOutcomeStat={signals:number;evaluatedSignals:number;correctSignals:number;precisionPct:number|null};
+type CohortSummary=Record<string,{signalCount:number;stats:Record<string,CohortOutcomeStat>;byVolatilityRegime:Record<string,Record<string,CohortOutcomeStat>>}>;
 type Props={rows:RolloverMetric[];historical?:Map<string,HistoricalRolloverContext>;historyStatus?:string;outcomeStats?:Record<string,OutcomeStat>;outcomeHoldoutStats?:Record<string,OutcomeStat>;outcomeVolatilityStats?:Record<string,Record<string,{signals:number;evaluatedSignals:number;correctSignals:number;precisionPct:number|null}>>;rolloverConditionStats?:{holdout:CohortSummary;walkForwardFolds:{fold:number;testStartDate:string;testEndDate:string;cohorts:CohortSummary}[]};outcomeStatus?:string;walkForward?:WalkForwardData};
 function historyLabel(status:HistoricalRolloverContext["rolloverPctStatus"]):string{return status==="INSUFFICIENT_HISTORY"?"Need 5 cycles":status;}
 function buildLabel(value:RolloverMetric["nearBuildUp"]):string{return value?value.replaceAll("_"," "):"—";}
