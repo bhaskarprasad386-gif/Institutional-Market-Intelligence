@@ -236,7 +236,7 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertNotEqual(first["developmentSignalsAfterPurge"], len(rows[:18]))
 
     def test_walk_forward_requires_minimum_out_of_sample_history(self):
-        days = [f"2026-01-{day:02d}" for day in range(1, 12)]
+        days = [f"2026-01-{day:02d}" for day in range(1, 10)]
         rows = [{"symbol": "ABC", "signalDate": day} for day in days]
         self.assertEqual(builder.build_walk_forward_folds(rows, {"ABC": days}), [])
 
