@@ -32,6 +32,43 @@ def direction(price_change_pct, oi_change):
     return "MIXED"
 
 
+
+def calculate_prior_volatility(symbol_spot_series, symbol, signal_date):
+    """Annualized volatility from up to 20 prior symbol sessions; excludes signal day."""
+    history = [(day, price) for day, price in symbol_spot_series.get(symbol, []) if day < signal_date]
+    if len(history) < 11:
+        return None, "INSUFFICIENT_HISTORY"
+    history = history[-21:]
+    returns = [
+        history[i][1] / history[i - 1][1] - 1
+        for i in range(1, len(history))
+        if history[i - 1][1] > 0
+    ]
+    if len(returns) < 10:
+        return None, "INSUFFICIENT_HISTORY"
+    mean = sum(returns) / len(returns)
+    variance = sum((value - mean) ** 2 for value in returns) / len(returns)
+    annualized = math.sqrt(variance) * math.sqrt(252) * 100
+    regime = "LOW" if annualized < 20 else "MEDIUM" if annualized < 40 else "HIGH"
+    return annualized, regime
+
+
+def purge_development_signals(cycle_outcomes, symbol_sessions, holdout_start):
+    """Keep development labels only when their 20-session endpoint precedes holdout."""
+    development = []
+    purged = 0
+    for item in cycle_outcomes:
+        if holdout_start is None or item["signalDate"] >= holdout_start:
+            continue
+        own_sessions = symbol_sessions.get(item["symbol"], [])
+        signal_idx = own_sessions.index(item["signalDate"]) if item["signalDate"] in own_sessions else None
+        symbol_holdout_idx = next((i for i, day in enumerate(own_sessions) if day >= holdout_start), None)
+        if signal_idx is not None and symbol_holdout_idx is not None and signal_idx + 20 < symbol_holdout_idx:
+            development.append(item)
+        else:
+            purged += 1
+    return development, purged
+
 def build():
     index_path = ROOT / "index.json"
     index = json.loads(index_path.read_text(encoding="utf-8"))
@@ -170,18 +207,7 @@ def build():
     }
 
     def prior_volatility(symbol, signal_date):
-        history = [(day, price) for day, price in symbol_spot_series.get(symbol, []) if day < signal_date]
-        if len(history) < 11:
-            return None, "INSUFFICIENT_HISTORY"
-        history = history[-21:]
-        returns = [(history[i][1] / history[i - 1][1] - 1) for i in range(1, len(history)) if history[i - 1][1] > 0]
-        if len(returns) < 10:
-            return None, "INSUFFICIENT_HISTORY"
-        mean = sum(returns) / len(returns)
-        variance = sum((value - mean) ** 2 for value in returns) / len(returns)
-        annualized = math.sqrt(variance) * math.sqrt(252) * 100
-        regime = "LOW" if annualized < 20 else "MEDIUM" if annualized < 40 else "HIGH"
-        return annualized, regime
+        return calculate_prior_volatility(symbol_spot_series, symbol, signal_date)
     for row in metrics:
         start_price = number(row.get("spotClose"))
         own_sessions = symbol_sessions.get(row["symbol"], [])
@@ -229,20 +255,9 @@ def build():
     development_cutoff = sessions[max(0, holdout_index - 20)] if holdout_index is not None and holdout_index >= 20 else holdout_start
     holdout = [x for x in cycle_outcomes if holdout_start is not None and x["signalDate"] >= holdout_start]
     # Purge by each symbol's own observation calendar, not the market-wide calendar.
-    # A development label is admissible only when its 20-session endpoint is
-    # strictly before that symbol's first holdout observation.
-    development = []
-    purged_development_signals = 0
-    for item in cycle_outcomes:
-        if holdout_start is None or item["signalDate"] >= holdout_start:
-            continue
-        own_sessions = symbol_sessions.get(item["symbol"], [])
-        signal_idx = own_sessions.index(item["signalDate"]) if item["signalDate"] in own_sessions else None
-        symbol_holdout_idx = next((i for i, day in enumerate(own_sessions) if day >= holdout_start), None)
-        if signal_idx is not None and symbol_holdout_idx is not None and signal_idx + 20 < symbol_holdout_idx:
-            development.append(item)
-        else:
-            purged_development_signals += 1
+    development, purged_development_signals = purge_development_signals(
+        cycle_outcomes, symbol_sessions, holdout_start
+    )
 
     def summarize(rows):
         summary = {}
