@@ -187,7 +187,7 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             return list(zip(days[:21], prices))
 
         _, medium_regime = builder.calculate_prior_volatility(
-            {"ABC": alternating_series(0.03)}, "ABC", days[21]
+            {"ABC": alternating_series(0.02)}, "ABC", days[21]
         )
         _, high_regime = builder.calculate_prior_volatility(
             {"ABC": alternating_series(0.05)}, "ABC", days[21]
