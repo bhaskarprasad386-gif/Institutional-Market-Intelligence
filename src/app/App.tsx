@@ -98,7 +98,7 @@ export default function App() {
         if (!Array.isArray(data.rows) || !data.marketDate) throw new Error("NSE daily dataset format is invalid.");
         const mapped = mapFuturesRows(data.rows);
         const valid = mapped.rows.filter(row => row.tradeDate === data.marketDate);
-        if (!valid.length) throw new Error(`No valid FUTIDX/FUTSTK rows for ${data.marketDate}; rejected ${mapped.rejected.length}.`);
+        if (!valid.length) throw new Error(`No valid index/stock futures rows for ${data.marketDate}; rejected ${mapped.rejected.length}.`);
         if (!active) return;
         nseAutoLoadedRef.current = true;
         setFoMetrics(valid.map(calculateFoMetrics));
