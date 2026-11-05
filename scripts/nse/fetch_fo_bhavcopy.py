@@ -57,17 +57,57 @@ def fetch_for_date(day):
             text = io.TextIOWrapper(handle, encoding="utf-8-sig", newline="")
             reader = csv.DictReader(text)
             rows = []
+            instrument_counts = {}
+            rejection_counts = {
+                "missing_symbol": 0,
+                "invalid_trade_date": 0,
+                "invalid_expiry_date": 0,
+                "missing_settlement": 0,
+                "missing_underlying": 0,
+                "missing_open_interest": 0,
+            }
+            sample_values = {}
             for raw in reader:
                 instrument = pick(raw, "FinInstrmTp", "Instrument Type").upper()
+                if instrument:
+                    instrument_counts[instrument] = instrument_counts.get(instrument, 0) + 1
                 if instrument not in ("FUTIDX", "FUTSTK"):
                     continue
                 symbol = pick(raw, "TckrSymb", "Symbol")
-                trade_date = parse_date(pick(raw, "BizDt", "Business Date"))
-                expiry = parse_date(pick(raw, "XpryDt", "Expiry Date"))
+                trade_date_raw = pick(raw, "BizDt", "Business Date")
+                expiry_raw = pick(raw, "XpryDt", "Expiry Date")
                 settle = pick(raw, "SttlmPric", "Settlement Price")
                 underlying = pick(raw, "UndrlygPric", "Underlying Price")
                 oi = pick(raw, "OpnIntrst", "Open Interest")
-                if not all((symbol, trade_date, expiry, settle, underlying, oi)):
+                trade_date = parse_date(trade_date_raw)
+                expiry = parse_date(expiry_raw)
+                missing = []
+                for key, value in (
+                    ("missing_symbol", symbol),
+                    ("invalid_trade_date", trade_date),
+                    ("invalid_expiry_date", expiry),
+                    ("missing_settlement", settle),
+                    ("missing_underlying", underlying),
+                    ("missing_open_interest", oi),
+                ):
+                    if not value:
+                        rejection_counts[key] += 1
+                        missing.append(key)
+                if missing:
+                    if len(sample_values) < 3:
+                        sample_values[str(len(sample_values) + 1)] = {
+                            "headers": list(raw.keys()),
+                            "instrumentType": instrument,
+                            "values": {
+                                "symbol": symbol,
+                                "BizDt": trade_date_raw,
+                                "XpryDt": expiry_raw,
+                                "SttlmPric": settle,
+                                "UndrlygPric": underlying,
+                                "OpnIntrst": oi,
+                            },
+                            "missing": missing,
+                        }
                     continue
                 rows.append({
                     "symbol": symbol,
@@ -83,7 +123,16 @@ def fetch_for_date(day):
                     "lotSize": pick(raw, "NewBrdLotQty", "Market Lot", "Lot Size"),
                 })
     if not rows:
-        raise ValueError(f"NSE archive {stamp} contained no valid FUTIDX/FUTSTK rows")
+        diagnostics = {
+            "csvHeaders": list(raw.keys()) if "raw" in locals() else [],
+            "instrumentTypeCounts": instrument_counts,
+            "requiredFieldRejections": rejection_counts,
+            "sampleRejectedRows": sample_values,
+        }
+        raise ValueError(
+            f"NSE archive {stamp} contained no valid FUTIDX/FUTSTK rows; "
+            f"diagnostics={json.dumps(diagnostics, separators=(',', ':'))}"
+        )
     return filename, rows
 
 def main():
