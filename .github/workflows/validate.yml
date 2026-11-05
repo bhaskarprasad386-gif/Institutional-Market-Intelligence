@@ -18,6 +18,10 @@ jobs:
           python-version: "3.12"
       - name: Test NSE historical backfill parser
         run: python -m unittest discover -s tests -p "test_*.py" -v
+      - name: Build rollover research artifacts from archived NSE sessions
+        run: python scripts/nse/build_rollover_history.py
+      - name: Validate generated walk-forward artifact
+        run: python -c "import json; d=json.load(open('public/data/nse-fo-history/rollover-outcomes.json')); w=d['walkForward']; assert w['status'] in ('AVAILABLE', 'INSUFFICIENT_HISTORY'); assert isinstance(w['folds'], list); assert w['foldCount']==len(w['folds']); assert isinstance(w['stats'], dict); print('Walk-forward artifact:', w['status'], 'folds:', w['foldCount'], 'evaluated test signals:', w['evaluatedTestSignals'])"
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
