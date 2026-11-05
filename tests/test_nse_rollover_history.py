@@ -202,5 +202,17 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         )
         self.assertEqual(result, (None, "INSUFFICIENT_HISTORY"))
 
+
+    def test_no_holdout_partition_keeps_mature_research_rows_in_development(self):
+        rows = [
+            {"symbol": "ABC", "signalDate": "2026-01-05"},
+            {"symbol": "XYZ", "signalDate": "2026-01-06"},
+        ]
+        development, purged = builder.purge_development_signals(
+            rows, {"ABC": ["2026-01-05"], "XYZ": ["2026-01-06"]}, None
+        )
+        self.assertEqual(development, rows)
+        self.assertEqual(purged, 0)
+
 if __name__ == "__main__":
     unittest.main()
