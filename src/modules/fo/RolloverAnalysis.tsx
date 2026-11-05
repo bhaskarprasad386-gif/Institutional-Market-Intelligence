@@ -1,6 +1,5 @@
 import type {HistoricalRolloverContext,RolloverMetric} from "./types";
 type Props={rows:RolloverMetric[];historical?:Map<string,HistoricalRolloverContext>;historyStatus?:string};
-function flagLabel(flag:RolloverMetric["rolloverPctFlag"]):string{return flag==="HIGH"?"HIGH":flag==="NORMAL"?"Normal":flag==="ROLL_CREDIT"?"Credit":"Need ≥5 symbols";}
 function historyLabel(status:HistoricalRolloverContext["rolloverPctStatus"]):string{return status==="INSUFFICIENT_HISTORY"?"Need 5 cycles":status;}
 function buildLabel(value:RolloverMetric["nearBuildUp"]):string{return value?value.replaceAll("_"," "):"—";}
 const key=(r:RolloverMetric)=>r.symbol+"|"+r.nearExpiry+"|"+r.nextExpiry;
