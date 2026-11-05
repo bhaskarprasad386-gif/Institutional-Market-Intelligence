@@ -44,8 +44,8 @@ export default function App() {
   const [rolloverMetrics, setRolloverMetrics] = useState<RolloverMetric[]>([]);
   const [rolloverHistoryMetrics, setRolloverHistoryMetrics] = useState<RolloverMetric[]>([]);
   const [positionalRolloverMetrics, setPositionalRolloverMetrics] = useState<RolloverMetric[]>([]);
-  const [rolloverOutcomeStats, setRolloverOutcomeStats] = useState<Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number }>>({});
-  const [rolloverHoldoutStats, setRolloverHoldoutStats] = useState<Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number }>>({});
+  const [rolloverOutcomeStats, setRolloverOutcomeStats] = useState<Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number; costSensitivity?: Record<string, { assumedRoundTripCostBps: number; netDirectionalHits: number; netPrecisionPct: number | null }> }>>({});
+  const [rolloverHoldoutStats, setRolloverHoldoutStats] = useState<Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number; costSensitivity?: Record<string, { assumedRoundTripCostBps: number; netDirectionalHits: number; netPrecisionPct: number | null }> }>>({});
   const [rolloverOutcomeStatus, setRolloverOutcomeStatus] = useState("Outcome validation loading…");
   const [rolloverHistoryStatus, setRolloverHistoryStatus] = useState("Historical archive loading…");
   const [historicalRollover, setHistoricalRollover] = useState<Map<string, HistoricalRolloverContext>>(new Map());
@@ -144,12 +144,12 @@ export default function App() {
       try {
         const response = await fetch("data/nse-fo-history/rollover-outcomes.json", { cache: "no-store" });
         if (!response.ok) throw new Error("Forward outcome artifact unavailable (HTTP " + response.status + ").");
-        const data = await response.json() as { thresholdPct: number; horizonsTradingSessions: number[]; rawOutcomeCount: number; cycleSignalCount: number; holdoutStartDate: string | null; stats: Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number }>; holdoutStats: Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number }> };
+        const data = await response.json() as { thresholdPct: number; horizonsTradingSessions: number[]; rawOutcomeCount: number; cycleSignalCount: number; holdoutStartDate: string | null; developmentCutoffExclusive: string | null; costSensitivityAssumptions: string; stats: Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number; costSensitivity?: Record<string, { assumedRoundTripCostBps: number; netDirectionalHits: number; netPrecisionPct: number | null }> }>; holdoutStats: Record<string, { signals: number; evaluatedSignals: number; correctSignals: number; precisionPct: number | null; flatExcluded: number; pending: number; costSensitivity?: Record<string, { assumedRoundTripCostBps: number; netDirectionalHits: number; netPrecisionPct: number | null }> }> };
         if (!data.stats || !data.holdoutStats || !Number.isFinite(data.cycleSignalCount)) throw new Error("Outcome validation format is invalid.");
         if (!active) return;
         setRolloverOutcomeStats(data.stats);
         setRolloverHoldoutStats(data.holdoutStats);
-        setRolloverOutcomeStatus(data.cycleSignalCount.toLocaleString() + " unique expiry-cycle signals (" + data.rawOutcomeCount.toLocaleString() + " daily observations) · holdout starts " + (data.holdoutStartDate ?? "not enough dates") + " · threshold ±" + data.thresholdPct + "%");
+        setRolloverOutcomeStatus(data.cycleSignalCount.toLocaleString() + " unique expiry-cycle signals (" + data.rawOutcomeCount.toLocaleString() + " daily observations) · holdout " + (data.holdoutStartDate ?? "not enough dates") + " · development cutoff " + (data.developmentCutoffExclusive ?? "—") + " · threshold ±" + data.thresholdPct + "% · " + data.costSensitivityAssumptions);
       } catch (error) {
         if (active) setRolloverOutcomeStatus(error instanceof Error ? error.message : "Outcome validation unavailable.");
       }
