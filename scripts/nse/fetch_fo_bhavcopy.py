@@ -4,7 +4,6 @@ import csv
 import datetime as dt
 import io
 import json
-import os
 import sys
 import time
 import urllib.error
@@ -19,6 +18,9 @@ HEADERS = {
     "Accept": "application/zip,application/octet-stream,*/*",
     "Referer": "https://www.nseindia.com/",
 }
+# UDiFF uses IDF for Index Futures and STF for Stock Futures.
+# Keep legacy codes for compatibility with older NSE files.
+FUTURES_INSTRUMENT_TYPES = {"IDF", "STF", "FUTIDX", "FUTSTK"}
 
 def norm(value):
     return "".join(ch for ch in str(value).lower() if ch.isalnum())
@@ -71,7 +73,7 @@ def fetch_for_date(day):
                 instrument = pick(raw, "FinInstrmTp", "Instrument Type").upper()
                 if instrument:
                     instrument_counts[instrument] = instrument_counts.get(instrument, 0) + 1
-                if instrument not in ("FUTIDX", "FUTSTK"):
+                if instrument not in FUTURES_INSTRUMENT_TYPES:
                     continue
                 symbol = pick(raw, "TckrSymb", "Symbol")
                 trade_date_raw = pick(raw, "BizDt", "Business Date")
@@ -118,7 +120,7 @@ def fetch_for_date(day):
                     "spotClose": underlying,
                     "openInterest": oi,
                     "changeOpenInterest": pick(raw, "ChngInOpnIntrst", "Change in Open Interest"),
-                    "previousFuturesClose": pick(raw, "PrvsClsgPric", "Previous Closing Price"),
+                    "previousFuturesClose": pick(raw, "Prvsclsgpric", "Previous Closing Price"),
                     "volume": pick(raw, "TtlTradgVol", "Total Traded Volume"),
                     "lotSize": pick(raw, "NewBrdLotQty", "Market Lot", "Lot Size"),
                 })
@@ -130,7 +132,7 @@ def fetch_for_date(day):
             "sampleRejectedRows": sample_values,
         }
         raise ValueError(
-            f"NSE archive {stamp} contained no valid FUTIDX/FUTSTK rows; "
+            f"NSE archive {stamp} contained no valid index/stock futures rows; "
             f"diagnostics={json.dumps(diagnostics, separators=(',', ':'))}"
         )
     return filename, rows
