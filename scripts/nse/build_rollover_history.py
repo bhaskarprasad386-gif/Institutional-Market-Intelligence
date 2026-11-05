@@ -165,7 +165,7 @@ def build():
                 "nearExpiry": row["nearExpiry"], "nextExpiry": row["nextExpiry"],
                 "nextBuildUp": row.get("nextBuildUp"), "spotAtSignal": start_price}
         for horizon in (5, 10, 20):
-            future_day = sessions[idx + horizon] if idx + horizon < len(sessions) else None
+            future_day = own_sessions[idx + horizon] if idx + horizon < len(own_sessions) else None
             future_price = number(spot_lookup.get((row["symbol"], future_day))) if future_day else None
             ret = (future_price / start_price - 1) * 100 if future_price is not None and future_price > 0 else None
             item[f"return{horizon}dPct"] = ret
@@ -208,7 +208,7 @@ def build():
                 eligible = [x for x in rows if x["nextBuildUp"] == signal]
                 sample = [x for x in eligible if x.get(f"correct{horizon}d") is not None]
                 hits = sum(bool(x[f"correct{horizon}d"]) for x in sample)
-                summary[f"{signal}_{horizon}D"] = {
+                cost_scenarios = {}\n                for cost_bps in (10, 20, 30):\n                    cost_pct = cost_bps / 100\n                    net_hits = sum(1 for x in sample if (x[f"return{horizon}dPct"] - cost_pct >= threshold_pct if signal == "LONG_BUILD_UP" else x[f"return{horizon}dPct"] + cost_pct <= -threshold_pct))\n                    cost_scenarios[str(cost_bps)] = {\n                        "assumedRoundTripCostBps": cost_bps,\n                        "netDirectionalHits": net_hits,\n                        "netPrecisionPct": round(net_hits / len(sample) * 100, 2) if sample else None,\n                    }\n                summary[f"{signal}_{horizon}D"] = {
                     "signals": len(eligible),
                     "evaluatedSignals": len(sample), "correctSignals": hits,
                     "precisionPct": round(hits / len(sample) * 100, 2) if sample else None,
@@ -222,7 +222,7 @@ def build():
         "thresholdPct": threshold_pct, "horizonsTradingSessions": [5, 10, 20],
         "sessions": len(sessions), "rawOutcomeCount": len(outcomes),
         "cycleSignalCount": len(cycle_outcomes),
-        "holdoutStartDate": holdout_start,
+        "holdoutStartDate": holdout_start, "developmentCutoffExclusive": development_cutoff,\n        "developmentPurgeSessions": 20, "costSensitivityAssumptions": "Hypothetical round-trip cost scenarios of 10/20/30 bps; not actual broker charges.",
         "stats": summarize(cycle_outcomes),
         "developmentStats": summarize(development),
         "holdoutStats": summarize(holdout),
