@@ -37,7 +37,6 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             self.assertAlmostEqual(first["rolloverPct"], 50)
             self.assertEqual(first["lotSize"], 25)
             self.assertTrue((root / "rollover-metrics.json").exists())
-            self.assertIn("INSUFFICIENT_HISTORY", outcomes["holdoutVolatilityRegimeStats"])
 
 
     def test_omits_per_lot_cost_when_selected_expiry_has_mixed_lot_sizes(self):
@@ -113,6 +112,7 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             self.assertEqual(len(outcomes["cycleOutcomes"]), 1)
             self.assertIn("20", outcomes["stats"]["LONG_BUILD_UP_5D"]["costSensitivity"])
             self.assertEqual(outcomes["costSensitivityAssumptions"].startswith("Hypothetical"), True)
+            self.assertIn("INSUFFICIENT_HISTORY", outcomes["holdoutVolatilityRegimeStats"])
             self.assertTrue((root / "rollover-metrics.json").exists())
 
 if __name__ == "__main__":
