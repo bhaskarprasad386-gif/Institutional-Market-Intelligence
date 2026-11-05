@@ -1,10 +1,10 @@
 import type {HistoricalRolloverContext,RolloverMetric} from "./types";
-type Props={rows:RolloverMetric[];historical?:Map<string,HistoricalRolloverContext>;historyStatus?:string};
+type OutcomeStat={evaluatedSignals:number;correctSignals:number;precisionPct:number|null;flatExcluded:number};\ntype Props={rows:RolloverMetric[];historical?:Map<string,HistoricalRolloverContext>;historyStatus?:string;outcomeStats?:Record<string,OutcomeStat>;outcomeStatus?:string};
 function historyLabel(status:HistoricalRolloverContext["rolloverPctStatus"]):string{return status==="INSUFFICIENT_HISTORY"?"Need 5 cycles":status;}
 function buildLabel(value:RolloverMetric["nearBuildUp"]):string{return value?value.replaceAll("_"," "):"—";}
 const key=(r:RolloverMetric)=>r.symbol+"|"+r.nearExpiry+"|"+r.nextExpiry;
 function signed(value:number|undefined|null,digits=2,suffix=""):string{return value===undefined||value===null?"—":(value>0?"+":"")+value.toFixed(digits)+suffix;}
-export default function RolloverAnalysis({rows,historical,historyStatus}:Props){
+export default function RolloverAnalysis({rows,historical,historyStatus,outcomeStats={},outcomeStatus}:Props){
  if(!rows.length)return null;
  const highPct=rows.filter(r=>r.rolloverPctFlag==="HIGH").length,highCost=rows.filter(r=>r.rolloverCostFlag==="HIGH").length,combined=rows.filter(r=>r.rolloverPctFlag==="HIGH"&&r.rolloverCostFlag==="HIGH");
  const longBuild=rows.filter(r=>r.nearBuildUp==="LONG_BUILD_UP"||r.nextBuildUp==="LONG_BUILD_UP").length;
@@ -16,6 +16,14 @@ export default function RolloverAnalysis({rows,historical,historyStatus}:Props){
   <div className="table-wrap"><table><thead><tr><th>Symbol</th><th>Near → Next expiry</th><th>Rollover %</th><th>Extended rollover %</th><th>Far share %</th><th>Near OI Δ</th><th>Next OI Δ</th><th>Total OI Δ % · 3D / 5D</th><th>Next share momentum · 3D / 5D</th><th>Near build-up</th><th>Next build-up</th><th>Historical cycles</th><th>Historical rollover %</th><th>Cost points</th><th>Cost %</th><th>Cost / lot</th></tr></thead><tbody>
    {[...rows].sort((a,b)=>Number((b.rolloverPctFlag==="HIGH"&&b.rolloverCostFlag==="HIGH"))-Number((a.rolloverPctFlag==="HIGH"&&a.rolloverCostFlag==="HIGH"))||b.rolloverPct-a.rolloverPct).map((r,i)=>{const h=historical?.get(key(r));return <tr key={r.symbol+r.tradeDate+i}><td><strong>{r.symbol}</strong></td><td>{r.nearExpiry} → {r.nextExpiry}</td><td>{r.rolloverPct.toFixed(2)}%</td><td>{r.extendedRolloverPct===undefined?"—":r.extendedRolloverPct.toFixed(2)+"%"}</td><td>{r.farSharePct===undefined?"—":r.farSharePct.toFixed(2)+"%"}</td><td>{signed(r.nearOiChange,0)}</td><td>{signed(r.nextOiChange,0)}</td><td>{signed(r.totalOiMomentum3dPct)+ " / "+signed(r.totalOiMomentum5dPct)+"%"}</td><td>{signed(r.nextShareMomentum3d)+" / "+signed(r.nextShareMomentum5d)+" pp"}</td><td>{buildLabel(r.nearBuildUp)}</td><td>{buildLabel(r.nextBuildUp)}</td><td>{h?.sampleCount??"—"}</td><td>{h?.rolloverPctPercentile===undefined?historyLabel(h?.rolloverPctStatus??"INSUFFICIENT_HISTORY"):h.rolloverPctPercentile.toFixed(0)+"th · "+h.rolloverPctStatus}</td><td>{r.rolloverCostPoints.toFixed(2)}</td><td>{r.rolloverCostPct.toFixed(3)}%</td><td>{r.rolloverCostPerLot===undefined?"Lot size unavailable":r.rolloverCostPerLot.toFixed(2)}</td></tr>;})}
   </tbody></table></div>
+  <section className="rollover-outcomes">
+   <h4>Historical Forward Outcome Validation</h4>
+   <p className="muted">{outcomeStatus??"Outcome validation loading…"} · Flat returns below ±0.5% excluded from directional precision. Only matured signal horizons are counted.</p>
+   <div className="table-wrap"><table><thead><tr><th>Next-month build-up</th><th>Horizon</th><th>Evaluated signals</th><th>Correct direction</th><th>Precision</th><th>Flat excluded</th></tr></thead><tbody>
+    {(["LONG_BUILD_UP","SHORT_BUILD_UP"] as const).flatMap(signal=>[5,10,20].map(horizon=>{const s=outcomeStats[signal+"_"+horizon+"D"];return <tr key={signal+horizon}><td>{signal.replaceAll("_"," ")}</td><td>{horizon} sessions</td><td>{s?.evaluatedSignals??"—"}</td><td>{s? s.correctSignals:"—"}</td><td>{s?.precisionPct===null||s?.precisionPct===undefined?"—":s.precisionPct.toFixed(2)+"%"}</td><td>{s?.flatExcluded??"—"}</td></tr>;}))}
+   </tbody></table></div>
+   <p className="muted">This is historical descriptive precision, not a guaranteed future win rate. It is not yet adjusted for costs, slippage, market regime or repeated overlapping signals. A 0.5% spot move threshold is used to separate directional outcomes from flat moves.</p>
+  </section>
   <p className="muted">Next rollover % = Next OI ÷ (Near + Next OI). Extended rollover % = (Next + Far OI) ÷ (Near + Next + Far OI). Daily build-up uses contract price change and contract OI change. Momentum is the change versus 3 or 5 archived trading sessions earlier. Build-up labels are descriptive, not proof of directional ownership. This is an EOD research screen, not a standalone buy/sell recommendation. Historical outcome accuracy is not yet measured.</p>
  </section>;
 }
