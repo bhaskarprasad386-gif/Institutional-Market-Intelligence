@@ -164,15 +164,35 @@ def build():
 
     outcomes = []
     threshold_pct = 0.5
+    symbol_spot_series = {
+        symbol: [(day, spot_lookup[(symbol, day)]) for day in days]
+        for symbol, days in symbol_sessions.items()
+    }
+
+    def prior_volatility(symbol, signal_date):
+        history = [(day, price) for day, price in symbol_spot_series.get(symbol, []) if day < signal_date]
+        if len(history) < 11:
+            return None, "INSUFFICIENT_HISTORY"
+        history = history[-21:]
+        returns = [(history[i][1] / history[i - 1][1] - 1) for i in range(1, len(history)) if history[i - 1][1] > 0]
+        if len(returns) < 10:
+            return None, "INSUFFICIENT_HISTORY"
+        mean = sum(returns) / len(returns)
+        variance = sum((value - mean) ** 2 for value in returns) / len(returns)
+        annualized = math.sqrt(variance) * math.sqrt(252) * 100
+        regime = "LOW" if annualized < 20 else "MEDIUM" if annualized < 40 else "HIGH"
+        return annualized, regime
     for row in metrics:
         start_price = number(row.get("spotClose"))
         own_sessions = symbol_sessions.get(row["symbol"], [])
         idx = own_sessions.index(row["tradeDate"]) if row["tradeDate"] in own_sessions else None
         if start_price is None or start_price <= 0 or idx is None:
             continue
+        vol20, vol_regime = prior_volatility(row["symbol"], row["tradeDate"])
         item = {"symbol": row["symbol"], "signalDate": row["tradeDate"],
                 "nearExpiry": row["nearExpiry"], "nextExpiry": row["nextExpiry"],
-                "nextBuildUp": row.get("nextBuildUp"), "spotAtSignal": start_price}
+                "nextBuildUp": row.get("nextBuildUp"), "spotAtSignal": start_price,
+                "realizedVol20dAnnualizedPct": vol20, "volatilityRegime": vol_regime}
         for horizon in (5, 10, 20):
             future_day = own_sessions[idx + horizon] if idx + horizon < len(own_sessions) else None
             future_price = number(spot_lookup.get((row["symbol"], future_day))) if future_day else None
@@ -237,7 +257,21 @@ def build():
                     "pending": sum(x.get(f"outcome{horizon}d") == "PENDING" for x in eligible),
                     "costSensitivity": cost_scenarios,
                 }
-        return summary
+        regime_summary = {}
+        for regime in ("LOW", "MEDIUM", "HIGH", "INSUFFICIENT_HISTORY"):
+            regime_rows = [x for x in rows if x.get("volatilityRegime") == regime]
+            regime_summary[regime] = {}
+            for horizon in (5, 10, 20):
+                for signal in ("LONG_BUILD_UP", "SHORT_BUILD_UP"):
+                    eligible = [x for x in regime_rows if x["nextBuildUp"] == signal]
+                    sample = [x for x in eligible if x.get(f"correct{horizon}d") is not None]
+                    hits = sum(bool(x[f"correct{horizon}d"]) for x in sample)
+                    regime_summary[regime][f"{signal}_{horizon}D"] = {
+                        "signals": len(eligible), "evaluatedSignals": len(sample),
+                        "correctSignals": hits,
+                        "precisionPct": round(hits / len(sample) * 100, 2) if sample else None,
+                    }
+        return {"overall": summary, "byVolatilityRegime": regime_summary}
 
     OUTCOMES_OUTPUT.write_text(json.dumps({
         "source": "Point-in-time signals matched to symbol-specific future NSE spot closes",
@@ -247,9 +281,10 @@ def build():
         "holdoutStartDate": holdout_start, "developmentCutoffExclusive": development_cutoff,
         "developmentPurgeSessions": 20,
         "costSensitivityAssumptions": "Hypothetical round-trip cost scenarios of 10/20/30 bps; not actual broker charges.",
-        "stats": summarize(cycle_outcomes),
-        "developmentStats": summarize(development),
-        "holdoutStats": summarize(holdout),
+        "stats": summarize(cycle_outcomes)["overall"],
+        "developmentStats": summarize(development)["overall"],
+        "holdoutStats": summarize(holdout)["overall"],
+        "holdoutVolatilityRegimeStats": summarize(holdout)["byVolatilityRegime"],
         "outcomes": outcomes, "cycleOutcomes": cycle_outcomes,
     }, separators=(",", ":")), encoding="utf-8")
     print(f"Built {OUTPUT}: {len(dates)} sessions, {len(metrics)} symbol/day rollover metrics")
