@@ -1,5 +1,3 @@
-import * as XLSX from "xlsx";
-
 export interface TabularPreview { headers: string[]; rows: Record<string, unknown>[]; totalRows: number; }
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 const MAX_IMPORT_ROWS = 50000;
@@ -37,6 +35,8 @@ export async function readTabularFile(file: File): Promise<TabularPreview> {
     const raw = await file.text();
     matrix = parseCsv(raw.replace(/^\uFEFF/, ""));
   } else if (ext === "xlsx" || ext === "xls") {
+    // Keep the sizeable spreadsheet parser out of the initial application bundle.
+    const XLSX = await import("xlsx");
     const bytes = await file.arrayBuffer();
     const workbook = XLSX.read(bytes, { type: "array", cellDates: true, sheetRows: MAX_IMPORT_ROWS + 1 });
     const first = workbook.SheetNames[0];
