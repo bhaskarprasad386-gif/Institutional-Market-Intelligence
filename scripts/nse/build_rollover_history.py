@@ -42,7 +42,7 @@ def build():
         payload = json.loads((ROOT / item["path"]).read_text(encoding="utf-8"))
         if payload.get("marketDate") != market_date:
             raise ValueError(f"Archive date mismatch: {item['path']}")
-        grouped = defaultdict(lambda: defaultdict(lambda: {
+        spot_by_symbol = defaultdict(list)\n        grouped = defaultdict(lambda: defaultdict(lambda: {
             "oi": 0.0, "oi_change": 0.0, "oi_change_known": True,
             "weighted": 0.0, "weight": 0.0, "previous_weighted": 0.0,
             "previous_weight": 0.0, "lots": [], "volume": 0.0,
@@ -57,7 +57,7 @@ def build():
             price = number(row.get("futuresClose"), 0)
             if oi is None or oi < 0 or price is None or price <= 0:
                 continue
-            bucket = grouped[symbol][expiry]
+            spot = number(row.get("spotClose"))\n            if spot is not None and spot > 0:\n                spot_by_symbol[symbol].append(spot)\n            bucket = grouped[symbol][expiry]
             bucket["oi"] += oi
             if oi > 0:
                 bucket["weighted"] += price * oi
@@ -127,7 +127,7 @@ def build():
                 "nextBuildUp": direction(price_change(nxt), next_change),
                 "nearVolume": near["volume"], "nextVolume": nxt["volume"],
                 "nearFuturesClose": near_price, "nextFuturesClose": next_price,
-                "spotClose": number(payload.get("rows", [{}])[0].get("spotClose")),
+                "spotClose": sorted(spot_by_symbol[symbol])[len(spot_by_symbol[symbol]) // 2] if spot_by_symbol[symbol] else None,
                 "rolloverCostPoints": points, "rolloverCostPct": points / near_price * 100,
                 **({"lotSize": lot_size, "rolloverCostPerLot": points * lot_size} if lot_size else {}),
                 "rolloverPctFlag": "INSUFFICIENT_PEERS",
@@ -145,7 +145,53 @@ def build():
         "metrics": metrics,
     }
     OUTPUT.write_text(json.dumps(result, separators=(",", ":")), encoding="utf-8")
+
+    # Research-only forward outcomes; never used as same-day signal inputs.
+    sessions = sorted({x["marketDate"] for x in dates})
+    session_index = {day: i for i, day in enumerate(sessions)}
+    spot_lookup = {(x["symbol"], x["tradeDate"]): x.get("spotClose") for x in metrics}
+    outcomes = []
+    threshold_pct = 0.5
+    for row in metrics:
+        start_price = number(row.get("spotClose"))
+        idx = session_index.get(row["tradeDate"])
+        if start_price is None or start_price <= 0 or idx is None:
+            continue
+        item = {"symbol": row["symbol"], "signalDate": row["tradeDate"],
+                "nearExpiry": row["nearExpiry"], "nextExpiry": row["nextExpiry"],
+                "nextBuildUp": row.get("nextBuildUp"), "spotAtSignal": start_price}
+        for horizon in (5, 10, 20):
+            future_day = sessions[idx + horizon] if idx + horizon < len(sessions) else None
+            future_price = number(spot_lookup.get((row["symbol"], future_day))) if future_day else None
+            ret = (future_price / start_price - 1) * 100 if future_price is not None and future_price > 0 else None
+            item[f"return{horizon}dPct"] = ret
+            item[f"outcome{horizon}d"] = ("UP" if ret is not None and ret >= threshold_pct else
+                "DOWN" if ret is not None and ret <= -threshold_pct else
+                "FLAT" if ret is not None else "PENDING")
+            item[f"correct{horizon}d"] = (
+                (item["nextBuildUp"] == "LONG_BUILD_UP" and ret >= threshold_pct)
+                or (item["nextBuildUp"] == "SHORT_BUILD_UP" and ret <= -threshold_pct)
+            ) if ret is not None and abs(ret) >= threshold_pct and item["nextBuildUp"] in ("LONG_BUILD_UP", "SHORT_BUILD_UP") else None
+        outcomes.append(item)
+
+    stats = {}
+    for horizon in (5, 10, 20):
+        for signal in ("LONG_BUILD_UP", "SHORT_BUILD_UP"):
+            sample = [x for x in outcomes if x["nextBuildUp"] == signal and x.get(f"correct{horizon}d") is not None]
+            hits = sum(bool(x[f"correct{horizon}d"]) for x in sample)
+            stats[f"{signal}_{horizon}D"] = {
+                "evaluatedSignals": len(sample), "correctSignals": hits,
+                "precisionPct": round(hits / len(sample) * 100, 2) if sample else None,
+                "flatExcluded": sum(x.get(f"outcome{horizon}d") == "FLAT" for x in outcomes if x["nextBuildUp"] == signal),
+            }
+    OUTCOMES_OUTPUT.write_text(json.dumps({
+        "source": "Point-in-time signals matched to future archived NSE spot closes",
+        "thresholdPct": threshold_pct, "horizonsTradingSessions": [5, 10, 20],
+        "sessions": len(sessions), "outcomeCount": len(outcomes),
+        "stats": stats, "outcomes": outcomes,
+    }, separators=(",", ":")), encoding="utf-8")
     print(f"Built {OUTPUT}: {len(dates)} sessions, {len(metrics)} symbol/day rollover metrics")
+    print(f"Built {OUTCOMES_OUTPUT}: {len(outcomes)} forward outcome rows")
     return result
 
 
