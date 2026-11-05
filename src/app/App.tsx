@@ -42,7 +42,8 @@ export default function App() {
   const [foMetrics, setFoMetrics] = useState<FoMetrics[]>([]);
   const nseAutoLoadedRef = useRef(false);
   const [rolloverMetrics, setRolloverMetrics] = useState<RolloverMetric[]>([]);
-  const [rolloverHistoryMetrics, setRolloverHistoryMetrics] = useState<RolloverMetric[]>([]);\n  const [positionalRolloverMetrics, setPositionalRolloverMetrics] = useState<RolloverMetric[]>([]);
+  const [rolloverHistoryMetrics, setRolloverHistoryMetrics] = useState<RolloverMetric[]>([]);
+  const [positionalRolloverMetrics, setPositionalRolloverMetrics] = useState<RolloverMetric[]>([]);
   const [rolloverHistoryStatus, setRolloverHistoryStatus] = useState("Historical archive loading…");
   const [historicalRollover, setHistoricalRollover] = useState<Map<string, HistoricalRolloverContext>>(new Map());
   const [sectorFile, setSectorFile] = useState<File | null>(null);
@@ -135,7 +136,10 @@ export default function App() {
     return () => { active = false; };
   }, []);
   useEffect(() => {
-    if (rolloverMetrics.length) {\n      setHistoricalRollover(calculateHistoricalRolloverContextFromMetrics(rolloverMetrics, rolloverHistoryMetrics));\n      setPositionalRolloverMetrics(calculateRolloverMomentum(rolloverMetrics, rolloverHistoryMetrics));\n    } else setPositionalRolloverMetrics([]);
+    if (rolloverMetrics.length) {
+      setHistoricalRollover(calculateHistoricalRolloverContextFromMetrics(rolloverMetrics, rolloverHistoryMetrics));
+      setPositionalRolloverMetrics(calculateRolloverMomentum(rolloverMetrics, rolloverHistoryMetrics));
+    } else setPositionalRolloverMetrics([]);
   }, [rolloverMetrics, rolloverHistoryMetrics]);
   async function selectFile(next: File | null) {
     setFile(next); setPreview(null);
