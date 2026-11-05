@@ -41,7 +41,10 @@ export default function App() {
   const [foFile, setFoFile] = useState<File | null>(null);
   const [foMetrics, setFoMetrics] = useState<FoMetrics[]>([]);
   const nseAutoLoadedRef = useRef(false);
-  const [rolloverMetrics, setRolloverMetrics] = useState<RolloverMetric[]>([]);\n  const [rolloverHistoryRows, setRolloverHistoryRows] = useState<FuturesObservation[]>([]);\n  const [rolloverHistoryStatus, setRolloverHistoryStatus] = useState("Historical archive loading…");\n  const [historicalRollover, setHistoricalRollover] = useState<Map<string, HistoricalRolloverContext>>(new Map());
+  const [rolloverMetrics, setRolloverMetrics] = useState<RolloverMetric[]>([]);
+  const [rolloverHistoryRows, setRolloverHistoryRows] = useState<FuturesObservation[]>([]);
+  const [rolloverHistoryStatus, setRolloverHistoryStatus] = useState("Historical archive loading…");
+  const [historicalRollover, setHistoricalRollover] = useState<Map<string, HistoricalRolloverContext>>(new Map());
   const [sectorFile, setSectorFile] = useState<File | null>(null);
   const [deliveryFile, setDeliveryFile] = useState<File | null>(null);
   const [flowFile, setFlowFile] = useState<File | null>(null);
