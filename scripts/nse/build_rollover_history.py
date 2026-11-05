@@ -227,8 +227,22 @@ def build():
     holdout_start = unique_signal_dates[split_index] if split_index < len(unique_signal_dates) else None
     holdout_index = sessions.index(holdout_start) if holdout_start in sessions else None
     development_cutoff = sessions[max(0, holdout_index - 20)] if holdout_index is not None and holdout_index >= 20 else holdout_start
-    development = [x for x in cycle_outcomes if development_cutoff is not None and x["signalDate"] < development_cutoff]
     holdout = [x for x in cycle_outcomes if holdout_start is not None and x["signalDate"] >= holdout_start]
+    # Purge by each symbol's own observation calendar, not the market-wide calendar.
+    # A development label is admissible only when its 20-session endpoint is
+    # strictly before that symbol's first holdout observation.
+    development = []
+    purged_development_signals = 0
+    for item in cycle_outcomes:
+        if holdout_start is None or item["signalDate"] >= holdout_start:
+            continue
+        own_sessions = symbol_sessions.get(item["symbol"], [])
+        signal_idx = own_sessions.index(item["signalDate"]) if item["signalDate"] in own_sessions else None
+        symbol_holdout_idx = next((i for i, day in enumerate(own_sessions) if day >= holdout_start), None)
+        if signal_idx is not None and symbol_holdout_idx is not None and signal_idx + 20 < symbol_holdout_idx:
+            development.append(item)
+        else:
+            purged_development_signals += 1
 
     def summarize(rows):
         summary = {}
@@ -279,7 +293,7 @@ def build():
         "sessions": len(sessions), "rawOutcomeCount": len(outcomes),
         "cycleSignalCount": len(cycle_outcomes),
         "holdoutStartDate": holdout_start, "developmentCutoffExclusive": development_cutoff,
-        "developmentPurgeSessions": 20,
+        "developmentPurgeSessions": 20, "purgedDevelopmentSignals": purged_development_signals,
         "costSensitivityAssumptions": "Hypothetical round-trip cost scenarios of 10/20/30 bps; not actual broker charges.",
         "stats": summarize(cycle_outcomes)["overall"],
         "developmentStats": summarize(development)["overall"],
