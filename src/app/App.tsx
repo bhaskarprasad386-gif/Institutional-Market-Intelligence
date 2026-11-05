@@ -128,7 +128,7 @@ export default function App() {
           if (!response.ok) throw new Error("Archive " + item.marketDate + " unavailable (HTTP " + response.status + ").");
           const data = await response.json() as { marketDate: string; rows: Record<string, unknown>[] };
           if (!Array.isArray(data.rows)) throw new Error("Invalid archive rows for " + item.marketDate + ".");
-          return mapFuturesRows(data.rows).rows.filter(row => row.tradeDate === item.marketDate);
+          return mapFuturesRows(data.rows, { allowMissingSpot: true }).rows.filter(row => row.tradeDate === item.marketDate);
         }));
         const rows = datasets.flat();
         if (!active) return;
