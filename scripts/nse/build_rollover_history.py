@@ -407,6 +407,8 @@ def build():
             "HIGH_BOTH": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH"],
             "HIGH_BOTH_MOMENTUM_UP": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and (x.get("nextShareMomentum5d") or 0) > 0 and (x.get("totalOiMomentum5dPct") or 0) > 0],
             "HIGH_BOTH_MOMENTUM_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and (x.get("nextShareMomentum5d") or 0) < 0 and (x.get("totalOiMomentum5dPct") or 0) > 0],
+            "HIGH_BOTH_SHARE_UP_OI_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x.get("totalOiMomentum5dPct") is not None and x["nextShareMomentum5d"] > 0 and x["totalOiMomentum5dPct"] < 0],
+            "HIGH_BOTH_SHARE_DOWN_OI_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x.get("totalOiMomentum5dPct") is not None and x["nextShareMomentum5d"] < 0 and x["totalOiMomentum5dPct"] < 0],
         }
         return {
             name: {"signalCount": len(selected), "stats": summarize(selected)["overall"]}
