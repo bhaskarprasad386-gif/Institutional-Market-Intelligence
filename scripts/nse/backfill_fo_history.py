@@ -108,6 +108,8 @@ def main():
     end = dt.date.fromisoformat(args.end_date)
     if end < start:
         raise SystemExit("end-date must be on or after start-date")
+    if end > dt.datetime.now(dt.timezone.utc).date():
+        raise SystemExit("end-date cannot be in the future")
     if (end - start).days > 30:
         raise SystemExit("Maximum 31 calendar days per run; use smaller batches")
     if end >= UDIFF_START and start < UDIFF_START:
