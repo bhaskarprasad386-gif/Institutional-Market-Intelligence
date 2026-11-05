@@ -31,7 +31,8 @@ export function calculateRolloverFromRows(rows:FuturesObservation[]):RolloverMet
   const [nearExpiry,near]=ordered[0],[nextExpiry,next]=ordered[1];if(near.oi+next.oi<=0||near.priceWeight<=0||next.priceWeight<=0)continue;
   const [symbol,tradeDate]=key.split("|"),nearFuturesClose=near.weightedPrice/near.priceWeight,nextFuturesClose=next.weightedPrice/next.priceWeight;
   const rolloverCostPoints=nextFuturesClose-nearFuturesClose,rolloverCostPct=rolloverCostPoints/nearFuturesClose*100;
-  const lotSize=near.lotSizes.length&&next.lotSizes.length&&near.lotSizes[0]===next.lotSizes[0]?near.lotSizes[0]:undefined;
+  const nearLots=new Set(near.lotSizes),nextLots=new Set(next.lotSizes);
+  const lotSize=nearLots.size===1&&nextLots.size===1&&[...nearLots][0]===[...nextLots][0]?[...nearLots][0]:undefined;
   draft.push({...calculateRolloverPct(symbol,tradeDate,nearExpiry,nextExpiry,near.oi,next.oi),nearFuturesClose,nextFuturesClose,rolloverCostPoints,rolloverCostPct,lotSize,rolloverCostPerLot:lotSize===undefined?undefined:rolloverCostPoints*lotSize});
  }
  const byDate=new Map<string,RolloverMetric[]>();for(const r of draft){const g=byDate.get(r.tradeDate)??[];g.push(r);byDate.set(r.tradeDate,g);}
