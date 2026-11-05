@@ -12,6 +12,16 @@ import backfill_fo_history as backfill
 
 
 class BackfillParserTests(unittest.TestCase):
+    def test_cli_date_parser_trims_surrounding_whitespace(self):
+        self.assertEqual(backfill.parse_cli_date(" 2024-07-07 ", "end-date"), dt.date(2024, 7, 7))
+        self.assertEqual(backfill.parse_cli_date("2024-06-08\\n", "start-date"), dt.date(2024, 6, 8))
+
+    def test_cli_date_parser_rejects_invalid_or_non_iso_dates(self):
+        for raw in ("", "2024/07/07", "2024-02-30"):
+            with self.subTest(raw=raw):
+                with self.assertRaises(ValueError):
+                    backfill.parse_cli_date(raw, "end-date")
+
     def test_parse_day_supports_legacy_date_formats(self):
         self.assertEqual(backfill.parse_day("04-NOV-2026"), "2026-11-04")
         self.assertEqual(backfill.parse_day("2026-11-04"), "2026-11-04")
