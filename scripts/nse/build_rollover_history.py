@@ -42,7 +42,8 @@ def build():
         payload = json.loads((ROOT / item["path"]).read_text(encoding="utf-8"))
         if payload.get("marketDate") != market_date:
             raise ValueError(f"Archive date mismatch: {item['path']}")
-        spot_by_symbol = defaultdict(list)\n        grouped = defaultdict(lambda: defaultdict(lambda: {
+        spot_by_symbol = defaultdict(list)
+        grouped = defaultdict(lambda: defaultdict(lambda: {
             "oi": 0.0, "oi_change": 0.0, "oi_change_known": True,
             "weighted": 0.0, "weight": 0.0, "previous_weighted": 0.0,
             "previous_weight": 0.0, "lots": [], "volume": 0.0,
@@ -57,7 +58,10 @@ def build():
             price = number(row.get("futuresClose"), 0)
             if oi is None or oi < 0 or price is None or price <= 0:
                 continue
-            spot = number(row.get("spotClose"))\n            if spot is not None and spot > 0:\n                spot_by_symbol[symbol].append(spot)\n            bucket = grouped[symbol][expiry]
+            spot = number(row.get("spotClose"))
+            if spot is not None and spot > 0:
+                spot_by_symbol[symbol].append(spot)
+            bucket = grouped[symbol][expiry]
             bucket["oi"] += oi
             if oi > 0:
                 bucket["weighted"] += price * oi
