@@ -1,11 +1,13 @@
 import type {HistoricalRolloverContext,RolloverMetric} from "./types";
 type OutcomeStat={signals:number;evaluatedSignals:number;correctSignals:number;precisionPct:number|null;flatExcluded:number;pending:number;costSensitivity?:Record<string,{assumedRoundTripCostBps:number;netDirectionalHits:number;netPrecisionPct:number|null}>};
-type Props={rows:RolloverMetric[];historical?:Map<string,HistoricalRolloverContext>;historyStatus?:string;outcomeStats?:Record<string,OutcomeStat>;outcomeHoldoutStats?:Record<string,OutcomeStat>;outcomeVolatilityStats?:Record<string,Record<string,{signals:number;evaluatedSignals:number;correctSignals:number;precisionPct:number|null}>>;outcomeStatus?:string};
+type WalkForwardFold={fold:number;testStartDate:string;testEndDate:string;testSignalDates:number;developmentSignalsAfterPurge:number;purgedDevelopmentSignals:number;stats:Record<string,OutcomeStat>};
+type WalkForwardData={status:"AVAILABLE"|"INSUFFICIENT_HISTORY";method:string;foldCount:number;evaluatedTestSignals:number;stats:Record<string,OutcomeStat>;folds:WalkForwardFold[]};
+type Props={rows:RolloverMetric[];historical?:Map<string,HistoricalRolloverContext>;historyStatus?:string;outcomeStats?:Record<string,OutcomeStat>;outcomeHoldoutStats?:Record<string,OutcomeStat>;outcomeVolatilityStats?:Record<string,Record<string,{signals:number;evaluatedSignals:number;correctSignals:number;precisionPct:number|null}>>;outcomeStatus?:string;walkForward?:WalkForwardData};
 function historyLabel(status:HistoricalRolloverContext["rolloverPctStatus"]):string{return status==="INSUFFICIENT_HISTORY"?"Need 5 cycles":status;}
 function buildLabel(value:RolloverMetric["nearBuildUp"]):string{return value?value.replaceAll("_"," "):"—";}
 const key=(r:RolloverMetric)=>r.symbol+"|"+r.nearExpiry+"|"+r.nextExpiry;
 function signed(value:number|undefined|null,digits=2,suffix=""):string{return value===undefined||value===null?"—":(value>0?"+":"")+value.toFixed(digits)+suffix;}
-export default function RolloverAnalysis({rows,historical,historyStatus,outcomeStats={},outcomeHoldoutStats={},outcomeVolatilityStats={},outcomeStatus}:Props){
+export default function RolloverAnalysis({rows,historical,historyStatus,outcomeStats={},outcomeHoldoutStats={},outcomeVolatilityStats={},outcomeStatus,walkForward}:Props){
  if(!rows.length)return null;
  const highPct=rows.filter(r=>r.rolloverPctFlag==="HIGH").length,highCost=rows.filter(r=>r.rolloverCostFlag==="HIGH").length,combined=rows.filter(r=>r.rolloverPctFlag==="HIGH"&&r.rolloverCostFlag==="HIGH");
  const longBuild=rows.filter(r=>r.nearBuildUp==="LONG_BUILD_UP"||r.nextBuildUp==="LONG_BUILD_UP").length;
@@ -28,6 +30,18 @@ export default function RolloverAnalysis({rows,historical,historyStatus,outcomeS
   <div className="table-wrap"><table><thead><tr><th>Prior 20-session regime</th><th>Long 5D</th><th>Short 5D</th><th>Long 10D</th><th>Short 10D</th><th>Long 20D</th><th>Short 20D</th></tr></thead><tbody>
    {(["LOW","MEDIUM","HIGH","INSUFFICIENT_HISTORY"] as const).map(regime=><tr key={regime}><td>{regime.replaceAll("_"," ")}</td>{([5,10,20] as const).flatMap(horizon=>(["LONG_BUILD_UP","SHORT_BUILD_UP"] as const).map(signal=>{const stat=outcomeVolatilityStats[regime]?.[signal+"_"+horizon+"D"];return <td key={signal+horizon}>{stat?.precisionPct===null||stat?.precisionPct===undefined?"—":stat.precisionPct.toFixed(1)+"%"} ({stat?.evaluatedSignals??0})</td>;}))}</tr>)}
   </tbody></table></div>
+  <h4>Rolling Walk-Forward Validation</h4>
+  <p className="muted">{walkForward?.status==="AVAILABLE"?`${walkForward.foldCount} chronological test folds · ${walkForward.evaluatedTestSignals.toLocaleString()} evaluated test signals`:"INSUFFICIENT HISTORY · At least 5 distinct out-of-sample signal dates are required per fold."} · Each fold uses only earlier development observations and applies the symbol-specific 20-session purge.</p>
+  {walkForward?.status==="AVAILABLE"&&<>
+   <div className="table-wrap"><table><thead><tr><th>Fold</th><th>Out-of-sample window</th><th>Test dates</th><th>Test signals</th><th>Development after purge</th><th>Purged</th><th>Long 5D</th><th>Short 5D</th><th>Long 10D</th><th>Short 10D</th><th>Long 20D</th><th>Short 20D</th></tr></thead><tbody>
+    {walkForward.folds.map(fold=><tr key={fold.fold}><td>{fold.fold}</td><td>{fold.testStartDate} → {fold.testEndDate}</td><td>{fold.testSignalDates}</td><td>{Object.values(fold.stats).reduce((sum,stat)=>sum+stat.signals,0)}</td><td>{fold.developmentSignalsAfterPurge}</td><td>{fold.purgedDevelopmentSignals}</td>{([5,10,20] as const).flatMap(horizon=>(["LONG_BUILD_UP","SHORT_BUILD_UP"] as const).map(signal=>{const stat=fold.stats[signal+"_"+horizon+"D"];return <td key={signal+horizon}>{stat?.precisionPct===null||stat?.precisionPct===undefined?"—":stat.precisionPct.toFixed(1)+"%"} ({stat?.evaluatedSignals??0})</td>;}))}</tr>)}
+   </tbody></table></div>
+   <p className="muted">Combined out-of-sample results across folds (not the in-sample development score):</p>
+   <div className="table-wrap"><table><thead><tr><th>Signal</th><th>Horizon</th><th>Evaluated</th><th>Correct</th><th>Precision</th><th>Net precision · 20 bps</th></tr></thead><tbody>
+    {(["LONG_BUILD_UP","SHORT_BUILD_UP"] as const).flatMap(signal=>[5,10,20].map(horizon=>{const stat=walkForward.stats[signal+"_"+horizon+"D"];return <tr key={signal+horizon}><td>{signal.replaceAll("_"," ")}</td><td>{horizon} sessions</td><td>{stat?.evaluatedSignals??0}</td><td>{stat?.correctSignals??0}</td><td>{stat?.precisionPct===null||stat?.precisionPct===undefined?"—":stat.precisionPct.toFixed(2)+"%"}</td><td>{stat?.costSensitivity?.["20"]?.netPrecisionPct===null||stat?.costSensitivity?.["20"]?.netPrecisionPct===undefined?"—":stat.costSensitivity["20"].netPrecisionPct!.toFixed(2)+"%"}</td></tr>;}))}
+   </tbody></table></div>
+  </>}
+  <p className="muted">Walk-forward precision is historical and sample-dependent; folds are chronological, not independent randomized trials. Do not interpret a small-sample percentage as a reliable future win rate or an 80% accuracy guarantee.</p>
   <p className="muted">Regime uses only the prior 20 available symbol spot closes before the signal date: Low below 20% annualized realized volatility, Medium 20–40%, High above 40%. At least 10 prior daily returns are required. Regime thresholds are research buckets, not optimized cut-offs.</p>
   </section>
   <p className="muted">Next rollover % = Next OI ÷ (Near + Next OI). Extended rollover % = (Next + Far OI) ÷ (Near + Next + Far OI). Daily build-up uses contract price change and contract OI change. Momentum is the change versus 3 or 5 archived trading sessions earlier. Build-up labels are descriptive, not proof of directional ownership. This is an EOD research screen, not a standalone buy/sell recommendation. Historical outcome accuracy is descriptive; assumed cost sensitivity is not actual trade P&L.</p>
