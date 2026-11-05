@@ -3,6 +3,7 @@ import * as XLSX from "xlsx";
 export interface TabularPreview { headers: string[]; rows: Record<string, unknown>[]; totalRows: number; }
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 const MAX_IMPORT_ROWS = 50000;
+const MAX_IMPORT_COLUMNS = 250;
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
@@ -37,12 +38,13 @@ export async function readTabularFile(file: File): Promise<TabularPreview> {
     matrix = parseCsv(raw.replace(/^\uFEFF/, ""));
   } else if (ext === "xlsx" || ext === "xls") {
     const bytes = await file.arrayBuffer();
-    const workbook = XLSX.read(bytes, { type: "array", cellDates: true });
+    const workbook = XLSX.read(bytes, { type: "array", cellDates: true, sheetRows: MAX_IMPORT_ROWS + 1 });
     const first = workbook.SheetNames[0];
     if (!first) throw new Error("Workbook में कोई sheet नहीं मिली।");
     matrix = XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[first], { header: 1, raw: true, defval: "" });
   } else throw new Error("केवल CSV, XLSX या XLS file स्वीकार है।");
   if (matrix.length < 2) throw new Error("कम-से-कम header और एक data row जरूरी है।");
+  if ((matrix[0] ?? []).length > MAX_IMPORT_COLUMNS) throw new Error("एक file में अधिकतम 250 columns स्वीकार हैं।");
   const headers = (matrix[0] ?? []).map((v, i) => String(v ?? "").trim() || `column_${i + 1}`);
   if (new Set(headers).size !== headers.length) throw new Error("Duplicate column headers मिले।");
   const data = matrix.slice(1).filter(row => row.some(v => String(v ?? "").trim() !== ""));
