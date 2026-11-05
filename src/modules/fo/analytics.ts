@@ -42,13 +42,13 @@ export function calculateRolloverFromRows(rows:FuturesObservation[]):RolloverMet
  return result.sort((a,b)=>a.tradeDate.localeCompare(b.tradeDate)||b.rolloverPct-a.rolloverPct);
 }
 function median(v:number[]):number|undefined {if(!v.length)return undefined;const s=[...v].sort((a,b)=>a-b),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
-function rank(v:number,s:number[]):number{return s.length?s.filter(x=>x<=v).length/s.length*100:0;}
+function rank(v:number,s:number[]):number {if(!s.length)return 0;const below=s.filter(x=>x<v).length,equal=s.filter(x=>x===v).length;return (below+equal/2)/s.length*100;}
 function status(p:number,n:number):HistoricalRolloverContext["rolloverPctStatus"] {return n<5?"INSUFFICIENT_HISTORY":p>=80?"HIGH":p<=20?"LOW":"NORMAL";}
 export function calculateHistoricalRolloverContext(current:RolloverMetric[],historyRows:FuturesObservation[]):Map<string,HistoricalRolloverContext> {
  const byDate=new Map<string,FuturesObservation[]>();for(const r of historyRows){const a=byDate.get(r.tradeDate)??[];a.push(r);byDate.set(r.tradeDate,a);}
  const history=[...byDate.values()].flatMap(calculateRolloverFromRows),out=new Map<string,HistoricalRolloverContext>();
  for(const row of current){const target=(Date.parse(row.nearExpiry+"T00:00:00Z")-Date.parse(row.tradeDate+"T00:00:00Z"))/DAY_MS,cycles=new Map<string,RolloverMetric>();
-  for(const c of history){if(c.symbol!==row.symbol||(c.nearExpiry===row.nearExpiry&&c.nextExpiry===row.nextExpiry))continue;const key=c.nearExpiry+"|"+c.nextExpiry,dte=(Date.parse(c.nearExpiry+"T00:00:00Z")-Date.parse(c.tradeDate+"T00:00:00Z"))/DAY_MS,old=cycles.get(key);
+  for(const c of history){if(c.symbol!==row.symbol||c.tradeDate>=row.tradeDate||(c.nearExpiry===row.nearExpiry&&c.nextExpiry===row.nextExpiry))continue;const key=c.nearExpiry+"|"+c.nextExpiry,dte=(Date.parse(c.nearExpiry+"T00:00:00Z")-Date.parse(c.tradeDate+"T00:00:00Z"))/DAY_MS,old=cycles.get(key);
    if(!old){cycles.set(key,c);continue;}const oldDte=(Date.parse(old.nearExpiry+"T00:00:00Z")-Date.parse(old.tradeDate+"T00:00:00Z"))/DAY_MS;
    if(Math.abs(dte-target)<Math.abs(oldDte-target)||(Math.abs(dte-target)===Math.abs(oldDte-target)&&c.tradeDate>old.tradeDate))cycles.set(key,c);
   }
