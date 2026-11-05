@@ -151,5 +151,56 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             self.assertEqual(long_stats["20"]["netDirectionalHits"], 0)
             self.assertEqual(long_stats["30"]["netDirectionalHits"], 0)
 
+
+    def test_development_purge_uses_symbol_sessions_and_strict_twenty_session_boundary(self):
+        symbol_days = [f"2026-01-{day:02d}" for day in range(1, 32)]
+        holdout_start = symbol_days[25]
+        signals = [
+            {"symbol": "ABC", "signalDate": symbol_days[4]},  # endpoint index 24: retained
+            {"symbol": "ABC", "signalDate": symbol_days[5]},  # endpoint index 25: purged
+            {"symbol": "XYZ", "signalDate": symbol_days[4]},  # missing own calendar: purged
+            {"symbol": "ABC", "signalDate": holdout_start},  # holdout, not development
+        ]
+        development, purged = builder.purge_development_signals(
+            signals, {"ABC": symbol_days}, holdout_start
+        )
+        self.assertEqual([x["signalDate"] for x in development], [symbol_days[4]])
+        self.assertEqual(purged, 2)
+
+    def test_prior_volatility_excludes_signal_day_and_uses_documented_regime_bands(self):
+        days = [f"2026-01-{day:02d}" for day in range(1, 24)]
+        low_prices = [(day, 100.0 + index * 0.01) for index, day in enumerate(days[:21])]
+        low_with_signal_spike = low_prices + [(days[21], 10000.0)]
+        low_a = builder.calculate_prior_volatility(
+            {"ABC": low_prices}, "ABC", days[21]
+        )
+        low_b = builder.calculate_prior_volatility(
+            {"ABC": low_with_signal_spike}, "ABC", days[21]
+        )
+        self.assertEqual(low_a, low_b)
+        self.assertEqual(low_a[1], "LOW")
+
+        def alternating_series(amplitude):
+            prices = [100.0]
+            for index in range(20):
+                prices.append(prices[-1] * (1 + (amplitude if index % 2 == 0 else -amplitude)))
+            return list(zip(days[:21], prices))
+
+        _, medium_regime = builder.calculate_prior_volatility(
+            {"ABC": alternating_series(0.03)}, "ABC", days[21]
+        )
+        _, high_regime = builder.calculate_prior_volatility(
+            {"ABC": alternating_series(0.05)}, "ABC", days[21]
+        )
+        self.assertEqual(medium_regime, "MEDIUM")
+        self.assertEqual(high_regime, "HIGH")
+
+    def test_prior_volatility_requires_at_least_ten_prior_returns(self):
+        short_history = [(f"2026-01-{day:02d}", 100 + day) for day in range(1, 11)]
+        result = builder.calculate_prior_volatility(
+            {"ABC": short_history}, "ABC", "2026-01-11"
+        )
+        self.assertEqual(result, (None, "INSUFFICIENT_HISTORY"))
+
 if __name__ == "__main__":
     unittest.main()
