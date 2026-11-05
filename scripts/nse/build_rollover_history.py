@@ -178,21 +178,55 @@ def build():
             ) if ret is not None and abs(ret) >= threshold_pct and item["nextBuildUp"] in ("LONG_BUILD_UP", "SHORT_BUILD_UP") else None
         outcomes.append(item)
 
-    stats = {}
-    for horizon in (5, 10, 20):
-        for signal in ("LONG_BUILD_UP", "SHORT_BUILD_UP"):
-            sample = [x for x in outcomes if x["nextBuildUp"] == signal and x.get(f"correct{horizon}d") is not None]
-            hits = sum(bool(x[f"correct{horizon}d"]) for x in sample)
-            stats[f"{signal}_{horizon}D"] = {
-                "evaluatedSignals": len(sample), "correctSignals": hits,
-                "precisionPct": round(hits / len(sample) * 100, 2) if sample else None,
-                "flatExcluded": sum(x.get(f"outcome{horizon}d") == "FLAT" for x in outcomes if x["nextBuildUp"] == signal),
-            }
+    # Count one first directional signal per symbol + near/next expiry cycle.
+    # This prevents daily repeated observations from inflating the sample count.
+    cycle_seen = set()
+    cycle_outcomes = []
+    for item in outcomes:
+        signal = item.get("nextBuildUp")
+        if signal not in ("LONG_BUILD_UP", "SHORT_BUILD_UP"):
+            continue
+        cycle_key = (item["symbol"], item["nearExpiry"], item["nextExpiry"])
+        if cycle_key in cycle_seen:
+            continue
+        cycle_seen.add(cycle_key)
+        item["cycleKey"] = "|".join(cycle_key)
+        cycle_outcomes.append(item)
+
+    # Chronological 70/30 holdout. The cutoff is based on signal dates only;
+    # no future outcome is used to select signals or define the split.
+    unique_signal_dates = sorted({x["signalDate"] for x in cycle_outcomes})
+    split_index = min(len(unique_signal_dates), max(1, int(len(unique_signal_dates) * 0.7)))
+    holdout_start = unique_signal_dates[split_index] if split_index < len(unique_signal_dates) else None
+    development = [x for x in cycle_outcomes if holdout_start is None or x["signalDate"] < holdout_start]
+    holdout = [x for x in cycle_outcomes if holdout_start is not None and x["signalDate"] >= holdout_start]
+
+    def summarize(rows):
+        summary = {}
+        for horizon in (5, 10, 20):
+            for signal in ("LONG_BUILD_UP", "SHORT_BUILD_UP"):
+                eligible = [x for x in rows if x["nextBuildUp"] == signal]
+                sample = [x for x in eligible if x.get(f"correct{horizon}d") is not None]
+                hits = sum(bool(x[f"correct{horizon}d"]) for x in sample)
+                summary[f"{signal}_{horizon}D"] = {
+                    "signals": len(eligible),
+                    "evaluatedSignals": len(sample), "correctSignals": hits,
+                    "precisionPct": round(hits / len(sample) * 100, 2) if sample else None,
+                    "flatExcluded": sum(x.get(f"outcome{horizon}d") == "FLAT" for x in eligible),
+                    "pending": sum(x.get(f"outcome{horizon}d") == "PENDING" for x in eligible),
+                }
+        return summary
+
     OUTCOMES_OUTPUT.write_text(json.dumps({
         "source": "Point-in-time signals matched to future archived NSE spot closes",
         "thresholdPct": threshold_pct, "horizonsTradingSessions": [5, 10, 20],
-        "sessions": len(sessions), "outcomeCount": len(outcomes),
-        "stats": stats, "outcomes": outcomes,
+        "sessions": len(sessions), "rawOutcomeCount": len(outcomes),
+        "cycleSignalCount": len(cycle_outcomes),
+        "holdoutStartDate": holdout_start,
+        "stats": summarize(cycle_outcomes),
+        "developmentStats": summarize(development),
+        "holdoutStats": summarize(holdout),
+        "outcomes": outcomes, "cycleOutcomes": cycle_outcomes,
     }, separators=(",", ":")), encoding="utf-8")
     print(f"Built {OUTPUT}: {len(dates)} sessions, {len(metrics)} symbol/day rollover metrics")
     print(f"Built {OUTCOMES_OUTPUT}: {len(outcomes)} forward outcome rows")
