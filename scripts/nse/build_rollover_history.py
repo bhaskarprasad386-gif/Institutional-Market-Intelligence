@@ -141,9 +141,11 @@ def add_point_in_time_rollover_momentum(metrics):
                 prior_index = index - horizon
                 share_key = f"nextShareMomentum{horizon}d"
                 oi_key = f"totalOiMomentum{horizon}dPct"
+                cost_key = f"rolloverCostMomentum{horizon}dPct"
                 if prior_index < 0:
                     row[share_key] = None
                     row[oi_key] = None
+                    row[cost_key] = None
                     continue
                 prior = rows[prior_index]
                 current_denominator = row["nearOi"] + row["nextOi"]
@@ -152,6 +154,11 @@ def add_point_in_time_rollover_momentum(metrics):
                 prior_oi = number(prior.get("totalOi"))
                 current_oi = number(row.get("totalOi"))
                 row[oi_key] = (current_oi / prior_oi - 1) * 100 if prior_oi is not None and current_oi is not None and prior_oi > 0 else None
+                prior_cost = number(prior.get("rolloverCostPct"))
+                current_cost = number(row.get("rolloverCostPct"))
+                # Difference in rollover-cost percentage points; positive means
+                # the next-expiry premium/cost is widening versus the near expiry.
+                row[cost_key] = current_cost - prior_cost if current_cost is not None and prior_cost is not None else None
     return metrics
 
 
@@ -312,6 +319,8 @@ def build():
                 "nextShareMomentum5d": row.get("nextShareMomentum5d"),
                 "totalOiMomentum3dPct": row.get("totalOiMomentum3dPct"),
                 "totalOiMomentum5dPct": row.get("totalOiMomentum5dPct"),
+                "rolloverCostMomentum3dPct": row.get("rolloverCostMomentum3dPct"),
+                "rolloverCostMomentum5dPct": row.get("rolloverCostMomentum5dPct"),
                 "realizedVol20dAnnualizedPct": vol20, "volatilityRegime": vol_regime}
         for horizon in (5, 10, 20):
             future_day = own_sessions[idx + horizon] if idx + horizon < len(own_sessions) else None
@@ -409,6 +418,10 @@ def build():
             "HIGH_BOTH_MOMENTUM_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and (x.get("nextShareMomentum5d") or 0) < 0 and (x.get("totalOiMomentum5dPct") or 0) > 0],
             "HIGH_BOTH_SHARE_UP_OI_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x.get("totalOiMomentum5dPct") is not None and x["nextShareMomentum5d"] > 0 and x["totalOiMomentum5dPct"] < 0],
             "HIGH_BOTH_SHARE_DOWN_OI_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x.get("totalOiMomentum5dPct") is not None and x["nextShareMomentum5d"] < 0 and x["totalOiMomentum5dPct"] < 0],
+            "HIGH_BOTH_COST_RISING": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0],
+            "HIGH_BOTH_COST_FALLING": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] < 0],
+            "HIGH_BOTH_SHARE_DOWN_COST_RISING": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0],
+            "HIGH_BOTH_SHARE_DOWN_COST_FALLING": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] < 0],
         }
         return {
             name: {"signalCount": len(selected), "stats": summarize(selected)["overall"]}
@@ -417,7 +430,7 @@ def build():
 
     rollover_condition_stats = {
         "flagMethod": "Same-day cross-sectional 75th percentile, matching live scanner; at least 5 total peers and 5 positive-cost peers. No future observations are used.",
-        "momentumMethod": "Point-in-time 3/5 symbol-session change in next-expiry OI share (percentage points) and total near+next+far OI (percent); current day compared only with prior archived symbol sessions.",
+        "momentumMethod": "Point-in-time 3/5 symbol-session change in next-expiry OI share (percentage points), total near+next+far OI (percent), and rollover cost (percentage points); current day compared only with prior archived symbol sessions.",
         "development": rollover_condition_summary(development),
         "holdout": rollover_condition_summary(holdout),
         "walkForward": rollover_condition_summary(walk_forward_rows),

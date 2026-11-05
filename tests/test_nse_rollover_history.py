@@ -268,15 +268,19 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             rows.append({
                 "symbol": "ABC", "tradeDate": f"2026-01-{index + 1:02d}",
                 "nearOi": 100 - index * 5, "nextOi": 100 + index * 5,
-                "totalOi": 200 + index * 10,
+                "totalOi": 200 + index * 10, "rolloverCostPct": 0.10 + index * 0.01,
             })
         result = builder.add_point_in_time_rollover_momentum(rows)
         self.assertIsNone(result[2]["nextShareMomentum3d"])
         self.assertAlmostEqual(result[3]["nextShareMomentum3d"], 7.5)
         self.assertAlmostEqual(result[5]["nextShareMomentum5d"], 12.5)
         self.assertAlmostEqual(result[5]["totalOiMomentum5dPct"], 25.0)
+        self.assertAlmostEqual(result[5]["rolloverCostMomentum5dPct"], 0.05)
+        self.assertAlmostEqual(result[3]["rolloverCostMomentum3dPct"], 0.03)
         result[6]["nextOi"] = 100000
+        result[6]["rolloverCostPct"] = 99.0
         self.assertAlmostEqual(result[5]["nextShareMomentum5d"], 12.5)
+        self.assertAlmostEqual(result[5]["rolloverCostMomentum5dPct"], 0.05)
 
 
 if __name__ == "__main__":
