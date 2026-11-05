@@ -121,7 +121,7 @@ export default function App() {
         const indexResponse = await fetch("data/nse-fo-history/index.json", { cache: "no-store" });
         if (!indexResponse.ok) throw new Error("NSE rollover history index unavailable (HTTP " + indexResponse.status + ").");
         const index = await indexResponse.json() as { dates?: { marketDate: string; path: string }[] };
-        const dates = Array.isArray(index.dates) ? index.dates.slice(-120) : [];
+        const dates = Array.isArray(index.dates) ? index.dates.slice(0, 120) : [];
         if (!dates.length) throw new Error("No dated NSE history archive is published yet.");
         const datasets = await Promise.all(dates.map(async item => {
           const response = await fetch("data/nse-fo-history/" + item.path, { cache: "no-store" });
