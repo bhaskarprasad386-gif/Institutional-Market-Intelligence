@@ -137,11 +137,11 @@ export default function App() {
   }, []);
   useEffect(() => {
     if (rolloverMetrics.length) {
+      const latestPositioning = new Map(rolloverHistoryMetrics
+        .filter(item => item.tradeDate === rolloverMetrics[0].tradeDate)
+        .map(item => [item.symbol + "|" + item.nearExpiry + "|" + item.nextExpiry, item]));
       const currentWithPositioning = rolloverMetrics.map(row => {
-        const archived = rolloverHistoryMetrics.find(item =>
-          item.tradeDate === row.tradeDate && item.symbol === row.symbol &&
-          item.nearExpiry === row.nearExpiry && item.nextExpiry === row.nextExpiry
-        );
+        const archived = latestPositioning.get(row.symbol + "|" + row.nearExpiry + "|" + row.nextExpiry);
         return archived ? { ...archived, ...row,
           farExpiry: archived.farExpiry, farOi: archived.farOi, totalOi: archived.totalOi,
           nextFarOi: archived.nextFarOi, extendedRolloverPct: archived.extendedRolloverPct,
