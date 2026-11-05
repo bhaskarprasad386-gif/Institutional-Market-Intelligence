@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -30,6 +30,17 @@ jobs:
           python-version: "3.12"
       - name: Fetch official NSE F&O UDiFF EOD bhavcopy
         run: python scripts/nse/fetch_fo_bhavcopy.py
+      - name: Commit dated NSE history archive
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/nse-fo-latest.json public/data/nse-fo-history/
+          if git diff --cached --quiet; then
+            echo "NSE archive is already up to date."
+          else
+            git commit -m "data: archive NSE F&O bhavcopy [skip ci]"
+            git push
+          fi
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -46,4 +57,4 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
       - name: Report published market date
-        run: python -c "import json; d=json.load(open('public/data/nse-fo-latest.json')); print('Published market date:', d['marketDate'], '| rows:', d['rowCount'])"
+        run: python -c "import json; d=json.load(open('public/data/nse-fo-latest.json')); i=json.load(open('public/data/nse-fo-history/index.json')); print('Published market date:', d['marketDate'], '| rows:', d['rowCount'], '| archived sessions:', i['count'])"
