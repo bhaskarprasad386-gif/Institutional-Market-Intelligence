@@ -55,10 +55,15 @@ def calculate_prior_volatility(symbol_spot_series, symbol, signal_date):
 
 def purge_development_signals(cycle_outcomes, symbol_sessions, holdout_start):
     """Keep development labels only when their 20-session endpoint precedes holdout."""
+    # With fewer than two distinct signal dates there is no holdout partition.
+    # Keep the observations in development and report the holdout as unavailable.
+    if holdout_start is None:
+        return list(cycle_outcomes), 0
+
     development = []
     purged = 0
     for item in cycle_outcomes:
-        if holdout_start is None or item["signalDate"] >= holdout_start:
+        if item["signalDate"] >= holdout_start:
             continue
         own_sessions = symbol_sessions.get(item["symbol"], [])
         signal_idx = own_sessions.index(item["signalDate"]) if item["signalDate"] in own_sessions else None
@@ -251,8 +256,7 @@ def build():
     unique_signal_dates = sorted({x["signalDate"] for x in cycle_outcomes})
     split_index = min(len(unique_signal_dates), max(1, int(len(unique_signal_dates) * 0.7)))
     holdout_start = unique_signal_dates[split_index] if split_index < len(unique_signal_dates) else None
-    holdout_index = sessions.index(holdout_start) if holdout_start in sessions else None
-    development_cutoff = sessions[max(0, holdout_index - 20)] if holdout_index is not None and holdout_index >= 20 else holdout_start
+    # Purging uses each symbol's own observation calendar, not a global cutoff date.
     holdout = [x for x in cycle_outcomes if holdout_start is not None and x["signalDate"] >= holdout_start]
     # Purge by each symbol's own observation calendar, not the market-wide calendar.
     development, purged_development_signals = purge_development_signals(
@@ -307,7 +311,7 @@ def build():
         "thresholdPct": threshold_pct, "horizonsTradingSessions": [5, 10, 20],
         "sessions": len(sessions), "rawOutcomeCount": len(outcomes),
         "cycleSignalCount": len(cycle_outcomes),
-        "holdoutStartDate": holdout_start, "developmentCutoffExclusive": development_cutoff,
+        "holdoutStartDate": holdout_start, "developmentPurgeRule": "Each symbol's 20-session forward endpoint must precede its first holdout observation.",
         "developmentPurgeSessions": 20, "purgedDevelopmentSignals": purged_development_signals,
         "costSensitivityAssumptions": "Hypothetical round-trip cost scenarios of 10/20/30 bps; not actual broker charges.",
         "stats": summarize(cycle_outcomes)["overall"],
