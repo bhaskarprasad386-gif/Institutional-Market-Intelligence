@@ -498,6 +498,24 @@ def build():
             "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_DOWN_OI_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] < 0 and x.get("totalOiMomentum5dPct") is not None and x["totalOiMomentum5dPct"] < 0],
             "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_UP_OI_UP": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] > 0 and x.get("totalOiMomentum5dPct") is not None and x["totalOiMomentum5dPct"] > 0],
             "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_UP_OI_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] > 0 and x.get("totalOiMomentum5dPct") is not None and x["totalOiMomentum5dPct"] < 0],
+            **{
+                f"HIGH_BOTH_SHARE_DOWN_COST_RISING_{trend}_PRICE_{price}_OI_{oi}": [
+                    x for x in rows
+                    if x.get("rolloverPctFlag") == "HIGH"
+                    and x.get("rolloverCostFlag") == "HIGH"
+                    and x.get("nextShareMomentum5d") is not None
+                    and x["nextShareMomentum5d"] < 0
+                    and x.get("rolloverCostMomentum5dPct") is not None
+                    and x["rolloverCostMomentum5dPct"] > 0
+                    and x.get("niftyTrend5d") == trend
+                    and x.get("spotMomentum5dPct") is not None
+                    and (x["spotMomentum5dPct"] < 0 if price == "DOWN" else x["spotMomentum5dPct"] > 0)
+                    and x.get("totalOiMomentum5dPct") is not None
+                    and (x["totalOiMomentum5dPct"] > 0 if oi == "UP" else x["totalOiMomentum5dPct"] < 0)
+                ]
+                for trend in ("DOWN", "UP", "FLAT")
+                for price, oi in (("DOWN", "UP"), ("DOWN", "DOWN"), ("UP", "UP"), ("UP", "DOWN"))
+            },
         }
         return {
             name: {
