@@ -310,3 +310,27 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_point_in_time_nifty_trend_uses_only_signal_and_prior_index_sessions(self):
+        market = {
+            "2026-01-01": 100.0,
+            "2026-01-02": 101.0,
+            "2026-01-03": 102.0,
+            "2026-01-04": 103.0,
+            "2026-01-05": 104.0,
+            "2026-01-06": 105.0,
+            "2026-01-07": 104.0,
+        }
+        rows = [
+            {"symbol": "ABC", "tradeDate": "2026-01-06"},
+            {"symbol": "XYZ", "tradeDate": "2026-01-07"},
+            {"symbol": "OLD", "tradeDate": "2025-12-31"},
+        ]
+        result = builder.add_point_in_time_market_momentum(rows, market, horizon=5)
+        self.assertAlmostEqual(result[0]["niftyMomentum5dPct"], 5.0)
+        self.assertEqual(result[0]["niftyTrend5d"], "UP")
+        self.assertAlmostEqual(result[1]["niftyMomentum5dPct"], 104 / 101 * 100 - 100)
+        self.assertEqual(result[1]["niftyTrend5d"], "FLAT")
+        self.assertIsNone(result[2]["niftyMomentum5dPct"])
+        self.assertEqual(result[2]["niftyTrend5d"], "INSUFFICIENT_HISTORY")
+
