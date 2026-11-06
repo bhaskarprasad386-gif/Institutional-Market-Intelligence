@@ -20,6 +20,8 @@ export interface RolloverMetric {
   nextShareMomentum3d?:number|null; nextShareMomentum5d?:number|null;
   totalOiMomentum3dPct?:number|null; totalOiMomentum5dPct?:number|null;
   rolloverCostMomentum3dPct?:number|null; rolloverCostMomentum5dPct?:number|null;
+  rolloverPctMean63d?:number|null; rolloverPctStd63d?:number|null; rolloverPctZScore63d?:number|null;
+  rolloverZScoreStatus?:"AVAILABLE"|"INSUFFICIENT_63_PRIOR_SESSIONS"|"ZERO_HISTORICAL_VARIANCE"|"MISSING_CURRENT_ROLLOVER";
   lotSize?:number; rolloverCostPerLot?:number; rolloverPctFlag:RolloverFlag; rolloverCostFlag:RolloverFlag; peerCount:number;
 }
 export interface HistoricalRolloverContext {
