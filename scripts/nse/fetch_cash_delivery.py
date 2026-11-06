@@ -172,6 +172,12 @@ def main():
     errors = []
     for offset in range(8):
         day = today - dt.timedelta(days=offset)
+        # The scheduled daily job must be idempotent: once the latest available
+        # trading date is archived, stop instead of rewriting retrievedAt daily.
+        existing = OUT_DIR / f"{day.isoformat()}.json"
+        if existing.exists() and existing.stat().st_size > 100:
+            print(f"Latest available cash delivery date already archived: {day}")
+            return
         try:
             filename, url, rows = fetch_for_date(day)
             save_history(day, filename, url, rows)
