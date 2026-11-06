@@ -297,6 +297,102 @@ def joint_rollover_zscore_cohorts(rows):
     return cohorts
 
 
+
+def false_signal_forensics(rows):
+    """Compare correct and failed 20-session Shorts inside the pre-defined core cohort."""
+    selected = [
+        row for row in rows
+        if row.get("rolloverPctFlag") == "HIGH"
+        and row.get("rolloverCostFlag") == "HIGH"
+        and row.get("nextShareMomentum5d") is not None
+        and row["nextShareMomentum5d"] < 0
+        and row.get("rolloverCostMomentum5dPct") is not None
+        and row["rolloverCostMomentum5dPct"] > 0
+        and row.get("nextBuildUp") == "SHORT_BUILD_UP"
+    ]
+    evaluated = [row for row in selected if row.get("correct20d") is not None]
+
+    def result_stats(sample):
+        n = len(sample)
+        hits = sum(row.get("correct20d") is True for row in sample)
+        net_hits = sum(
+            number(row.get("return20dPct")) is not None
+            and number(row.get("return20dPct")) <= -0.7
+            for row in sample
+        )
+        return {
+            "evaluated": n, "correct": hits, "wrong": n - hits,
+            "precisionPct": round(hits / n * 100, 2) if n else None,
+            "netPrecision20BpsPct": round(net_hits / n * 100, 2) if n else None,
+            "sampleWarning": "LOW_SAMPLE_LT_5" if n < 5 else None,
+        }
+
+    def quantiles(values):
+        values = sorted(value for value in values if value is not None and math.isfinite(value))
+        if not values:
+            return {"count": 0, "median": None, "p25": None, "p75": None}
+        def percentile(p):
+            position = (len(values) - 1) * p
+            lower = int(position)
+            upper = min(lower + 1, len(values) - 1)
+            weight = position - lower
+            return round(values[lower] * (1 - weight) + values[upper] * weight, 4)
+        return {"count": len(values), "median": percentile(0.5),
+                "p25": percentile(0.25), "p75": percentile(0.75)}
+
+    categorical_fields = {
+        "niftyTrend5d": lambda row: row.get("niftyTrend5d") or "MISSING",
+        "stockPriceTrend5d": lambda row: (
+            "MISSING" if row.get("spotMomentum5dPct") is None else
+            "UP" if row["spotMomentum5dPct"] > 0.25 else
+            "DOWN" if row["spotMomentum5dPct"] < -0.25 else "FLAT"
+        ),
+        "totalOiTrend5d": lambda row: (
+            "MISSING" if row.get("totalOiMomentum5dPct") is None else
+            "UP" if row["totalOiMomentum5dPct"] > 0 else
+            "DOWN" if row["totalOiMomentum5dPct"] < 0 else "FLAT"
+        ),
+        "volatilityRegime": lambda row: row.get("volatilityRegime") or "MISSING",
+    }
+    subgroup_results = {}
+    for field, classify in categorical_fields.items():
+        buckets = defaultdict(list)
+        for row in selected:
+            buckets[classify(row)].append(row)
+        subgroup_results[field] = {
+            label: {
+                "signals": len(bucket),
+                **result_stats([row for row in bucket if row.get("correct20d") is not None]),
+            }
+            for label, bucket in sorted(buckets.items())
+        }
+
+    numeric_fields = (
+        "rolloverPct", "rolloverCostPct", "nextShareMomentum5d",
+        "rolloverCostMomentum5dPct", "spotMomentum5dPct",
+        "totalOiMomentum5dPct", "niftyMomentum5dPct",
+        "realizedVol20dAnnualizedPct",
+    )
+    feature_comparison = {
+        field: {
+            "correct": quantiles([number(row.get(field)) for row in evaluated if row.get("correct20d") is True]),
+            "wrong": quantiles([number(row.get(field)) for row in evaluated if row.get("correct20d") is False]),
+        }
+        for field in numeric_fields
+    }
+    return {
+        "cohortDefinition": "HIGH rollover + HIGH positive roll cost + falling next-expiry OI share + rising roll cost over 5 sessions + SHORT_BUILD_UP",
+        "target": "20-session return <= -0.5% is a correct Short; flat and pending outcomes are excluded",
+        "signals": len(selected), "evaluated": len(evaluated),
+        "correct": sum(row.get("correct20d") is True for row in evaluated),
+        "wrong": sum(row.get("correct20d") is False for row in evaluated),
+        "flatExcluded": sum(row.get("outcome20d") == "FLAT" for row in selected),
+        "pending": sum(row.get("outcome20d") == "PENDING" for row in selected),
+        "overall": result_stats(evaluated), "subgroups": subgroup_results,
+        "correctVsWrongFeatureDistributions": feature_comparison,
+        "interpretationGuard": "Exploratory diagnosis only; do not convert same-sample subgroup results into a trading filter. Require a newly accrued prospective validation period.",
+    }
+
 def cohort_evidence_gate(selected, summary):
     """Apply a conservative sample/breadth gate before highlighting 20-session accuracy."""
     breadth = {
@@ -712,6 +808,17 @@ def build():
         "momentumMethod": "Point-in-time 3/5 symbol-session change in next-expiry OI share (percentage points), total near+next+far OI (percent), and rollover cost (percentage points); current day compared only with prior archived symbol sessions.",
         "marketTrendMethod": "NIFTY spot-close return over the signal date and five prior archived NIFTY sessions; UP above +0.25%, DOWN below -0.25%, otherwise FLAT. Missing index history is kept separate. No future index observations are used.",
         "rolloverZScoreDiagnostics": {"allCycleSignals": rollover_zscore_diagnostics(cycle_outcomes), "holdout": rollover_zscore_diagnostics(holdout), "walkForward": rollover_zscore_diagnostics(walk_forward_rows)},
+        "falseSignalForensics": {
+            "development": false_signal_forensics(development),
+            "holdout": false_signal_forensics(holdout),
+            "walkForward": false_signal_forensics(walk_forward_rows),
+            "walkForwardFolds": [
+                {"fold": fold["fold"], "testStartDate": fold["testStartDate"],
+                 "testEndDate": fold["testEndDate"],
+                 "analysis": false_signal_forensics(fold["testRows"])}
+                for fold in walk_forward_folds
+            ],
+        },
         "development": rollover_condition_summary(development),
         "holdout": rollover_condition_summary(holdout),
         "walkForward": rollover_condition_summary(walk_forward_rows),
