@@ -775,7 +775,8 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(result["cohortSignalsInSharedClusters"], 2)
         self.assertEqual(result["baselineSignalsInSharedClusters"], 2)
         self.assertEqual(result["pointPrecisionLiftPercentagePoints"], 0.0)
-        self.assertEqual(result["precisionLiftBootstrap95Pct"], [0.0, 0.0])
+        # Cluster resampling preserves period-level uncertainty: either shared cluster may be drawn repeatedly.
+        self.assertEqual(result["precisionLiftBootstrap95Pct"], [-100.0, 100.0])
         self.assertEqual(result["replicates"], 250)
         self.assertEqual(
             result["warning"],
