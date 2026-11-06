@@ -95,6 +95,111 @@ def outcome_overlap_cluster_bootstrap_precision(rows, market_sessions, seed=2026
         return round(estimates[lower] * (1 - weight) + estimates[upper] * weight, 2)
     return {"clusterCount": len(clusters), "evaluatedSignals": sum(map(len, clusters)), "replicates": len(estimates), "precisionBootstrap95Pct": [percentile(0.025), percentile(0.975)], "warning": "FEWER_THAN_20_OVERLAP_CLUSTERS_WIDE_UNCERTAINTY" if len(clusters) < 20 else None, "method": "Resample connected components of actual 20-market-session outcome intervals; overlapping windows are merged transitively before resampling."}
 
+
+def paired_outcome_overlap_cluster_lift(cohort_rows, baseline_rows, market_sessions,
+                                        seed=20261106, replicates=2000):
+    """Paired bootstrap lift on shared transitive clusters of overlapping 20-session outcomes.
+
+    Cohort and baseline intervals are unioned before clustering. Only components
+    containing both groups contribute, so every resample uses the same temporal
+    clusters for both precision estimates and preserves their within-period
+    dependence.
+    """
+    session_index = {day: index for index, day in enumerate(market_sessions)}
+    intervals = []
+    for group, rows in (("cohort", cohort_rows), ("baseline", baseline_rows)):
+        for row in rows:
+            if row.get("correct20d") is None:
+                continue
+            start = session_index.get(row.get("signalDate"))
+            end = session_index.get(row.get("outcomeEndDate"))
+            if start is not None and end is not None and end >= start:
+                intervals.append((start, end, group, row))
+    intervals.sort(key=lambda item: (item[0], item[1], item[2]))
+    components, current, current_end = [], [], -1
+    for start, end, group, row in intervals:
+        if current and start > current_end:
+            components.append(current)
+            current, current_end = [], -1
+        current.append((group, row))
+        current_end = max(current_end, end)
+    if current:
+        components.append(current)
+
+    shared = []
+    for component in components:
+        grouped = {"cohort": [], "baseline": []}
+        for group, row in component:
+            grouped[group].append(row)
+        if grouped["cohort"] and grouped["baseline"]:
+            shared.append(grouped)
+
+    def precision(rows):
+        if not rows:
+            return None
+        return sum(row.get("correct20d") is True for row in rows) / len(rows) * 100
+
+    shared_cohort = [row for cluster in shared for row in cluster["cohort"]]
+    shared_baseline = [row for cluster in shared for row in cluster["baseline"]]
+    point_cohort = precision(shared_cohort)
+    point_baseline = precision(shared_baseline)
+    point_lift = (round(point_cohort - point_baseline, 2)
+                  if point_cohort is not None and point_baseline is not None else None)
+
+    if len(shared) < 2:
+        return {
+            "method": "PAIRED_SHARED_OUTCOME_OVERLAP_CLUSTER_BOOTSTRAP",
+            "unionOverlapClusterCount": len(components),
+            "sharedClusterCount": len(shared),
+            "cohortSignalsInSharedClusters": len(shared_cohort),
+            "baselineSignalsInSharedClusters": len(shared_baseline),
+            "pointPrecisionLiftPercentagePoints": point_lift,
+            "replicates": 0,
+            "precisionLiftBootstrap95Pct": None,
+            "warning": "INSUFFICIENT_SHARED_TEMPORAL_CLUSTERS_LT_2",
+        }
+
+    rng = random.Random(seed)
+    estimates = []
+    for _ in range(replicates):
+        sampled = [rng.choice(shared) for _ in shared]
+        sampled_cohort = [row for cluster in sampled for row in cluster["cohort"]]
+        sampled_baseline = [row for cluster in sampled for row in cluster["baseline"]]
+        cohort_precision = precision(sampled_cohort)
+        baseline_precision = precision(sampled_baseline)
+        if cohort_precision is not None and baseline_precision is not None:
+            estimates.append(cohort_precision - baseline_precision)
+    estimates.sort()
+
+    def percentile(p):
+        position = (len(estimates) - 1) * p
+        lower = int(position)
+        upper = min(lower + 1, len(estimates) - 1)
+        weight = position - lower
+        return round(estimates[lower] * (1 - weight) + estimates[upper] * weight, 2)
+
+    return {
+        "method": "PAIRED_SHARED_OUTCOME_OVERLAP_CLUSTER_BOOTSTRAP",
+        "unionOverlapClusterCount": len(components),
+        "sharedClusterCount": len(shared),
+        "cohortSignalsInSharedClusters": len(shared_cohort),
+        "baselineSignalsInSharedClusters": len(shared_baseline),
+        "pointPrecisionLiftPercentagePoints": point_lift,
+        "replicates": len(estimates),
+        "precisionLiftBootstrap95Pct": [percentile(0.025), percentile(0.975)] if estimates else None,
+        "warning": (
+            "FEWER_THAN_20_SHARED_OVERLAP_CLUSTERS_WIDE_UNCERTAINTY"
+            if len(shared) < 20 else None
+        ),
+        "interpretation": (
+            "Both groups are resampled together from the same shared transitive "
+            "components built from the union of their actual 20-market-session "
+            "outcome intervals. Signals outside shared components are excluded "
+            "from this paired lift estimand; this is not an independent sample."
+        ),
+    }
+
+
 def direction(price_change_pct, oi_change):
     if price_change_pct is None or oi_change is None:
         return "INSUFFICIENT_DATA"
@@ -858,13 +963,26 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
                     weight = position - lower
                     return round(lifts[lower] * (1 - weight) + lifts[upper] * weight, 2)
                 lift_bootstrap = [lift_percentile(0.025), lift_percentile(0.975)]
+        paired_overlap_lift = paired_outcome_overlap_cluster_lift(
+            matched_cohort, matched_controls, market_sessions,
+            seed=20267106 + sum(ord(char) for char in migration_label),
+        ) if market_sessions else None
         oi_migration_matched_baselines[migration_label] = {
             "matchingFields": ["niftyTrend5d", "stockPriceTrend5d", "volatilityRegime"],
             "matchingMethod": "Exact categorical strata; pooled only across strata containing both cohort and non-core SHORT controls.",
             "eligibleCohortSignals": len(subgroup),
             "matchedCohort": cohort_stats,
             "matchedNonCohortShortBaseline": baseline_stats,
-            "outcomeOverlapClusterBootstrap": {"cohortPrecision": cohort_overlap_bootstrap, "baselinePrecision": baseline_overlap_bootstrap, "interpretation": "Exploratory unpaired bootstrap of transitive clusters formed from actual 20-market-session outcome intervals; overlapping windows are kept together."},
+            "outcomeOverlapClusterBootstrap": {
+                "cohortPrecision": cohort_overlap_bootstrap,
+                "baselinePrecision": baseline_overlap_bootstrap,
+                "pairedPrecisionLift": paired_overlap_lift,
+                "interpretation": (
+                    "Separate cohort/baseline intervals are descriptive only. The "
+                    "pairedPrecisionLift resamples their shared union-overlap clusters "
+                    "together and is the relevant time-dependence-aware comparison."
+                ),
+            },
             "dateClusterBootstrap": {
                 "cohortPrecision": cohort_cluster_bootstrap,
                 "baselinePrecision": baseline_cluster_bootstrap,
