@@ -2,6 +2,7 @@
 """Build daily, contract-aware positional rollover metrics from NSE F&O history."""
 import json
 import math
+import random
 from collections import defaultdict
 from pathlib import Path
 
@@ -16,6 +17,47 @@ def number(value, default=None):
         return result if math.isfinite(result) else default
     except (TypeError, ValueError):
         return default
+
+
+def date_cluster_bootstrap_precision(rows, seed=20261106, replicates=2000):
+    """Percentile interval from resampling whole signal-date clusters."""
+    by_date = defaultdict(list)
+    for row in rows:
+        day = row.get("signalDate")
+        if day and row.get("correct20d") is not None:
+            by_date[day].append(row)
+    dates = sorted(by_date)
+    if not dates:
+        return {
+            "clusterCount": 0, "evaluatedSignals": 0, "replicates": 0,
+            "precisionBootstrap95Pct": None,
+            "warning": "NO_VALID_SIGNAL_DATE_CLUSTERS",
+        }
+    rng = random.Random(seed)
+    estimates = []
+    for _ in range(replicates):
+        sampled_dates = [rng.choice(dates) for _ in dates]
+        sample = [row for day in sampled_dates for row in by_date[day]]
+        if sample:
+            estimates.append(
+                sum(row.get("correct20d") is True for row in sample)
+                / len(sample) * 100
+            )
+    estimates.sort()
+    def percentile(p):
+        position = (len(estimates) - 1) * p
+        lower = int(position)
+        upper = min(lower + 1, len(estimates) - 1)
+        weight = position - lower
+        return round(estimates[lower] * (1 - weight) + estimates[upper] * weight, 2)
+    return {
+        "clusterCount": len(dates),
+        "evaluatedSignals": sum(len(by_date[day]) for day in dates),
+        "replicates": len(estimates),
+        "precisionBootstrap95Pct": [percentile(0.025), percentile(0.975)],
+        "warning": "FEWER_THAN_20_DATE_CLUSTERS_WIDE_UNCERTAINTY" if len(dates) < 20 else None,
+        "method": "Resample unique signal dates with replacement; retain every evaluated signal on each sampled date.",
+    }
 
 
 def direction(price_change_pct, oi_change):
@@ -737,12 +779,65 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
         matched_controls = [row for key in common_strata for row in baseline_by_stratum[key]]
         cohort_stats = result_stats(matched_cohort)
         baseline_stats = result_stats(matched_controls)
+        cohort_cluster_bootstrap = date_cluster_bootstrap_precision(
+            matched_cohort, seed=20261106 + sum(ord(char) for char in migration_label)
+        )
+        baseline_cluster_bootstrap = date_cluster_bootstrap_precision(
+            matched_controls, seed=20262106 + sum(ord(char) for char in migration_label)
+        )
+        lift_bootstrap = None
+        if (cohort_cluster_bootstrap["precisionBootstrap95Pct"] is not None
+                and baseline_cluster_bootstrap["precisionBootstrap95Pct"] is not None):
+            # Independent date-cluster resampling: strata are matched, dates are not
+            # paired. This is deliberately labelled unpaired and exploratory.
+            rng_cohort = random.Random(20263106 + sum(ord(char) for char in migration_label))
+            rng_baseline = random.Random(20264106 + sum(ord(char) for char in migration_label))
+            def bootstrap_draws(sample, rng, replicates=2000):
+                grouped = defaultdict(list)
+                for item in sample:
+                    if item.get("signalDate"):
+                        grouped[item["signalDate"]].append(item)
+                keys = sorted(grouped)
+                if not keys:
+                    return []
+                draws = []
+                for _ in range(replicates):
+                    selected_days = [rng.choice(keys) for _ in keys]
+                    cluster_rows = [item for day in selected_days for item in grouped[day]]
+                    draws.append(sum(item.get("correct20d") is True for item in cluster_rows)
+                                 / len(cluster_rows) * 100)
+                return draws
+            cohort_draws = bootstrap_draws(matched_cohort, rng_cohort)
+            baseline_draws = bootstrap_draws(matched_controls, rng_baseline)
+            if cohort_draws and baseline_draws:
+                lifts = sorted(
+                    cohort_draws[index] - baseline_draws[index]
+                    for index in range(min(len(cohort_draws), len(baseline_draws)))
+                )
+                def lift_percentile(p):
+                    position = (len(lifts) - 1) * p
+                    lower = int(position)
+                    upper = min(lower + 1, len(lifts) - 1)
+                    weight = position - lower
+                    return round(lifts[lower] * (1 - weight) + lifts[upper] * weight, 2)
+                lift_bootstrap = [lift_percentile(0.025), lift_percentile(0.975)]
         oi_migration_matched_baselines[migration_label] = {
             "matchingFields": ["niftyTrend5d", "stockPriceTrend5d", "volatilityRegime"],
             "matchingMethod": "Exact categorical strata; pooled only across strata containing both cohort and non-core SHORT controls.",
             "eligibleCohortSignals": len(subgroup),
             "matchedCohort": cohort_stats,
             "matchedNonCohortShortBaseline": baseline_stats,
+            "dateClusterBootstrap": {
+                "cohortPrecision": cohort_cluster_bootstrap,
+                "baselinePrecision": baseline_cluster_bootstrap,
+                "unpairedPrecisionLiftBootstrap95Pct": lift_bootstrap,
+                "interpretation": (
+                    "EXPLORATORY_UNPAIRED_CLUSTER_BOOTSTRAP; cohort and baseline "
+                    "dates are resampled independently because exact date pairing "
+                    "was not part of the matching design. Adjacent 20-session outcome "
+                    "windows can still overlap across date clusters."
+                ),
+            },
             "matchedStrata": [
                 {
                     "niftyTrend5d": key[0],
