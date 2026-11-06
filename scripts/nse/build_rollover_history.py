@@ -320,9 +320,20 @@ def false_signal_forensics(rows):
             and number(row.get("return20dPct")) <= -0.7
             for row in sample
         )
+        precision = hits / n if n else None
+        if n:
+            z = 1.96
+            denominator = 1 + z * z / n
+            center = (precision + z * z / (2 * n)) / denominator
+            margin = z * math.sqrt(precision * (1 - precision) / n + z * z / (4 * n * n)) / denominator
+            wilson95 = [round(max(0.0, center - margin) * 100, 2),
+                        round(min(1.0, center + margin) * 100, 2)]
+        else:
+            wilson95 = None
         return {
             "evaluated": n, "correct": hits, "wrong": n - hits,
-            "precisionPct": round(hits / n * 100, 2) if n else None,
+            "precisionPct": round(precision * 100, 2) if n else None,
+            "precisionWilson95Pct": wilson95,
             "netPrecision20BpsPct": round(net_hits / n * 100, 2) if n else None,
             "sampleWarning": "LOW_SAMPLE_LT_5" if n < 5 else None,
         }
@@ -390,7 +401,23 @@ def false_signal_forensics(rows):
         "pending": sum(row.get("outcome20d") == "PENDING" for row in selected),
         "overall": result_stats(evaluated), "subgroups": subgroup_results,
         "correctVsWrongFeatureDistributions": feature_comparison,
-        "interpretationGuard": "Exploratory diagnosis only; do not convert same-sample subgroup results into a trading filter. Require a newly accrued prospective validation period.",
+        "signalDetails": [
+            {
+                "symbol": row.get("symbol"), "signalDate": row.get("signalDate"),
+                "correct20d": row.get("correct20d"), "outcome20d": row.get("outcome20d"),
+                "return20dPct": number(row.get("return20dPct")),
+                "niftyTrend5d": row.get("niftyTrend5d"),
+                "spotMomentum5dPct": number(row.get("spotMomentum5dPct")),
+                "totalOiMomentum5dPct": number(row.get("totalOiMomentum5dPct")),
+                "rolloverPct": number(row.get("rolloverPct")),
+                "rolloverCostPct": number(row.get("rolloverCostPct")),
+                "nextShareMomentum5d": number(row.get("nextShareMomentum5d")),
+                "rolloverCostMomentum5dPct": number(row.get("rolloverCostMomentum5dPct")),
+                "volatilityRegime": row.get("volatilityRegime"),
+            }
+            for row in selected
+        ],
+        "interpretationGuard": "Exploratory diagnosis only; do not convert same-sample subgroup results into a trading filter. Wilson intervals describe sampling uncertainty and do not correct regime shift or selection bias. Require newly accrued prospective validation.",
     }
 
 def cohort_evidence_gate(selected, summary):
