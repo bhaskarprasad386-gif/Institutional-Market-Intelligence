@@ -87,13 +87,20 @@ def parse_cash_delivery_csv(payload, expected_day):
         if close <= 0:
             raise ValueError(f"Invalid cash close for {symbol}: {close}")
         computed_pct = delivered / traded * 100 if traded else None
-        if computed_pct is not None and abs(computed_pct - delivery_pct) > 1.0:
-            raise ValueError(f"Reported and computed delivery percentage disagree for {symbol}")
+        # NSE's reported delivery percentage can differ from DELIV_QTY / traded
+        # quantity on isolated rows. Preserve both source and computed values;
+        # flag the discrepancy for downstream quality filtering instead of
+        # discarding an otherwise valid trading date.
+        pct_consistency = (
+            "NOT_COMPUTABLE" if computed_pct is None else
+            "MATCH" if abs(computed_pct - delivery_pct) <= 1.0 else "MISMATCH"
+        )
         rows.append({
             "symbol": symbol, "series": series, "tradeDate": trade_date,
             "closePrice": close, "vwap": vwap, "tradedQuantity": int(traded),
             "deliveryQuantity": int(delivered), "deliveryPct": delivery_pct,
             "computedDeliveryPct": round(computed_pct, 4) if computed_pct is not None else None,
+            "deliveryPctConsistencyStatus": pct_consistency,
             "tradeCount": int(trades) if trades is not None else None,
         })
     if not rows:
