@@ -608,7 +608,8 @@ if __name__ == "__main__":
         result = builder.attach_point_in_time_cash_delivery(metrics, archive)
         # Day 7 compares to day 2: quantity momentum remains valid, but
         # delivery-percentage momentum is blocked by the mismatched endpoint.
-        self.assertIsNone(result[6]["deliveryPctTrusted"] if result[1]["deliveryPctConsistencyStatus"] != "MATCH" else 0)
+        self.assertIsNone(result[1]["deliveryPctTrusted"])
+        self.assertIsNotNone(result[6]["deliveryPctTrusted"])
         self.assertIsNone(result[6]["deliveryPctMomentum5d"])
         self.assertEqual(
             result[6]["deliveryPctTrendQualityStatus"],
