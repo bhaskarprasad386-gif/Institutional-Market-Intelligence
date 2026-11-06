@@ -174,7 +174,7 @@ def attach_point_in_time_cash_delivery(metrics, archive_by_date):
             row["cashDemandCoverageStatus"] = (
                 "AVAILABLE" if delivery and all(row.get(field) is not None for field in
                     ("deliveryQuantity", "tradedQuantity", "cashVwap", "cashClosePrice"))
-                else row["deliveryCoverageStatus"]
+                else "PARTIAL_DATA" if delivery else row["deliveryCoverageStatus"]
             )
             for horizon in (5, 20):
                 row[f"deliveryQuantityMomentum{horizon}dPct"] = None
