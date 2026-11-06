@@ -466,11 +466,11 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             "rolloverCostPct": 1.2, "realizedVol20dAnnualizedPct": 28.0,
         }
         rows = [
-            {**base, "symbol": "A", "correct20d": True, "return20dPct": -1.2, "outcome20d": "DOWN"},
-            {**base, "symbol": "B", "correct20d": False, "return20dPct": 0.8, "outcome20d": "UP",
+            {**base, "symbol": "A", "nearOiChange": -10, "nextOiChange": 20, "correct20d": True, "return20dPct": -1.2, "outcome20d": "DOWN"},
+            {**base, "symbol": "B", "nearOiChange": 10, "nextOiChange": 20, "correct20d": False, "return20dPct": 0.8, "outcome20d": "UP",
              "niftyTrend5d": "UP", "spotMomentum5dPct": 1.0},
-            {**base, "symbol": "C", "correct20d": None, "return20dPct": 0.1, "outcome20d": "FLAT"},
-            {**base, "symbol": "D", "correct20d": None, "return20dPct": None, "outcome20d": "PENDING"},
+            {**base, "symbol": "C", "nearOiChange": -10, "nextOiChange": -20, "correct20d": None, "return20dPct": 0.1, "outcome20d": "FLAT"},
+            {**base, "symbol": "D", "nearOiChange": 10, "nextOiChange": -20, "correct20d": None, "return20dPct": None, "outcome20d": "PENDING"},
             {**base, "symbol": "E", "correct20d": True, "return20dPct": -0.8, "outcome20d": "DOWN",
              "nextBuildUp": "LONG_BUILD_UP"},
             {**base, "symbol": "F", "rolloverPctFlag": "NORMAL",
@@ -489,6 +489,13 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(result["overall"]["precisionWilson95Pct"], [9.45, 90.55])
         self.assertEqual(len(result["signalDetails"]), 4)
         self.assertEqual(result["signalDetails"][0]["symbol"], "A")
+        self.assertEqual(result["signalDetails"][0]["oiMigrationGroup"], "CONFIRMED_MIGRATION")
+        self.assertEqual(result["signalDetails"][0]["nearOiChange"], -10)
+        self.assertEqual(result["signalDetails"][0]["nextOiChange"], 20)
+        self.assertEqual(result["oiMigrationGroups"]["CONFIRMED_MIGRATION"]["correct"], 1)
+        self.assertEqual(result["oiMigrationGroups"]["FRESH_NEXT_EXPIRY_ADDITION"]["wrong"], 1)
+        self.assertEqual(result["oiMigrationGroups"]["POSITION_REDUCTION_BOTH"]["signals"], 1)
+        self.assertEqual(result["oiMigrationGroups"]["MIXED_OR_UNCONFIRMED"]["signals"], 1)
         self.assertIn("newly accrued prospective", result["interpretationGuard"])
         matched = result["matchedBaselineComparisons"]["niftyTrend5d__stockPriceTrend5d"]
         matched_down_down = next(
