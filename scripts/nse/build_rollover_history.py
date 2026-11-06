@@ -280,6 +280,51 @@ def joint_market_stock_share_increase_cohorts(rows):
     return cohorts
 
 
+
+def cohort_evidence_gate(selected, summary):
+    """Apply a conservative sample/breadth gate before highlighting 20-session accuracy."""
+    breadth = {
+        "symbols": len({row.get("symbol") for row in selected if row.get("symbol")}),
+        "dates": len({row.get("signalDate") for row in selected if row.get("signalDate")}),
+    }
+    total = len(selected)
+    symbol_counts = defaultdict(int)
+    date_counts = defaultdict(int)
+    for row in selected:
+        symbol_counts[row.get("symbol")] += 1
+        date_counts[row.get("signalDate")] += 1
+    breadth["maxSymbolSharePct"] = round(max(symbol_counts.values(), default=0) / total * 100, 2) if total else None
+    breadth["maxDateSharePct"] = round(max(date_counts.values(), default=0) / total * 100, 2) if total else None
+    short = summary.get("SHORT_BUILD_UP_20D", {})
+    evaluated = short.get("evaluatedSignals", 0)
+    reasons = []
+    if evaluated < 30:
+        reasons.append("FEWER_THAN_30_EVALUATED_SHORT_20D")
+    if breadth["symbols"] < 10:
+        reasons.append("FEWER_THAN_10_SYMBOLS")
+    if breadth["dates"] < 8:
+        reasons.append("FEWER_THAN_8_SIGNAL_DATES")
+    if breadth["maxSymbolSharePct"] is None or breadth["maxSymbolSharePct"] > 20:
+        reasons.append("SINGLE_SYMBOL_CONCENTRATION_OVER_20_PERCENT")
+    if breadth["maxDateSharePct"] is None or breadth["maxDateSharePct"] > 20:
+        reasons.append("SINGLE_DATE_CONCENTRATION_OVER_20_PERCENT")
+    net20 = short.get("costSensitivity", {}).get("20", {}).get("netPrecisionPct")
+    precision = short.get("precisionPct")
+    passed = not reasons
+    return {
+        "status": "BREADTH_OK_NOT_PROOF" if passed else "INSUFFICIENT_EVIDENCE",
+        "minimums": {"evaluatedShort20d": 30, "uniqueSymbols": 10, "uniqueSignalDates": 8,
+                     "maxSingleSymbolSharePct": 20, "maxSingleDateSharePct": 20},
+        "breadth": breadth,
+        "evaluatedShort20d": evaluated,
+        "short20dPrecisionPct": precision,
+        "short20dNetPrecision20BpsPct": net20,
+        "meets80PercentAfter20BpsGate": bool(passed and precision is not None and net20 is not None
+                                              and precision >= 80 and net20 >= 80),
+        "failedChecks": reasons,
+    }
+
+
 def build():
     index_path = ROOT / "index.json"
     index = json.loads(index_path.read_text(encoding="utf-8"))
@@ -589,6 +634,7 @@ def build():
                 "signalCount": len(selected),
                 "breadth": cohort_breadth(selected),
                 "stats": summarize(selected)["overall"],
+                "evidenceGate": cohort_evidence_gate(selected, summarize(selected)["overall"]),
                 # Regime labels use only prior symbol-session spot returns.
                 # Keep the same cohort definitions across holdout and each fold.
                 "byVolatilityRegime": summarize(selected)["byVolatilityRegime"],
