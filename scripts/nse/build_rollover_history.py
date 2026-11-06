@@ -198,6 +198,42 @@ def add_point_in_time_rollover_momentum(metrics):
     return metrics
 
 
+
+def add_point_in_time_rollover_zscore(metrics, window=63):
+    """Compare today's rollover share with the prior 63 symbol sessions only."""
+    by_symbol = defaultdict(list)
+    for row in metrics:
+        by_symbol[row["symbol"]].append(row)
+    for rows in by_symbol.values():
+        rows.sort(key=lambda row: row["tradeDate"])
+        for index, row in enumerate(rows):
+            history = [
+                number(item.get("rolloverPct"))
+                for item in rows[max(0, index - window):index]
+            ]
+            history = [value for value in history if value is not None]
+            row["rolloverPctMean63d"] = None
+            row["rolloverPctStd63d"] = None
+            row["rolloverPctZScore63d"] = None
+            if len(history) < window:
+                row["rolloverZScoreStatus"] = "INSUFFICIENT_63_PRIOR_SESSIONS"
+                continue
+            mean = sum(history) / window
+            variance = sum((value - mean) ** 2 for value in history) / window
+            std_dev = math.sqrt(variance)
+            row["rolloverPctMean63d"] = mean
+            row["rolloverPctStd63d"] = std_dev
+            if std_dev <= 1e-12:
+                row["rolloverZScoreStatus"] = "ZERO_HISTORICAL_VARIANCE"
+                continue
+            current = number(row.get("rolloverPct"))
+            if current is None:
+                row["rolloverZScoreStatus"] = "MISSING_CURRENT_ROLLOVER"
+                continue
+            row["rolloverPctZScore63d"] = (current - mean) / std_dev
+            row["rolloverZScoreStatus"] = "AVAILABLE"
+    return metrics
+
 def joint_market_stock_cohorts(rows):
     """Split the core high-rollover/share-down/cost-rising cohort by NIFTY and stock price/OI regimes."""
     cohorts = {}
@@ -358,6 +394,7 @@ def build():
 
     metrics = apply_daily_rollover_flags(metrics)
     metrics = add_point_in_time_rollover_momentum(metrics)
+    metrics = add_point_in_time_rollover_zscore(metrics, window=63)
     metrics = add_point_in_time_market_momentum(metrics, nifty_spot_by_date, horizon=5)
     result = {
         "source": "Derived from complete NSE F&O dated history archive",
