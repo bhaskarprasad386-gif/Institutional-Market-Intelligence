@@ -446,6 +446,58 @@ def false_signal_forensics(rows, threshold_pct=0.5):
             for label, bucket in sorted(buckets.items())
         }
 
+    # Pairwise interaction tables are diagnostic only. They are computed
+    # from the pre-defined cohort and never alter signal eligibility or direction.
+    interaction_pairs = (
+        ("niftyTrend5d", "stockPriceTrend5d"),
+        ("stockPriceTrend5d", "totalOiTrend5d"),
+        ("stockPriceTrend5d", "volatilityRegime"),
+    )
+
+    def interaction_label(row, field):
+        if field == "niftyTrend5d":
+            return row.get(field) or "MISSING"
+        if field == "stockPriceTrend5d":
+            value = number(row.get("spotMomentum5dPct"))
+            return (
+                "MISSING" if value is None else
+                "UP" if value > 0.25 else
+                "DOWN" if value < -0.25 else "FLAT"
+            )
+        if field == "totalOiTrend5d":
+            value = number(row.get("totalOiMomentum5dPct"))
+            return (
+                "MISSING" if value is None else
+                "UP" if value > 0 else
+                "DOWN" if value < 0 else "FLAT"
+            )
+        return row.get(field) or "MISSING"
+
+    pairwise_interactions = {}
+    for left_field, right_field in interaction_pairs:
+        cells = defaultdict(list)
+        for row in evaluated:
+            cells[(interaction_label(row, left_field),
+                   interaction_label(row, right_field))].append(row)
+        cell_results = []
+        for (left_label, right_label), sample in sorted(cells.items()):
+            stats = result_stats(sample)
+            cell_results.append({
+                "left": left_label,
+                "right": right_label,
+                **stats,
+            })
+        pairwise_interactions[f"{left_field}__{right_field}"] = {
+            "leftField": left_field,
+            "rightField": right_field,
+            "evaluatedSignals": len(evaluated),
+            "cells": cell_results,
+            "interpretation": (
+                "EXPLORATORY_ONLY; cells below 5 evaluated signals are "
+                "low-sample; no filter or entry rule is implied."
+            ),
+        }
+
     numeric_fields = (
         "rolloverPct", "rolloverCostPct", "nextShareMomentum5d",
         "rolloverCostMomentum5dPct", "spotMomentum5dPct",
@@ -469,6 +521,7 @@ def false_signal_forensics(rows, threshold_pct=0.5):
         "flatExcluded": sum(row.get("outcome20d") == "FLAT" for row in selected),
         "pending": sum(row.get("outcome20d") == "PENDING" for row in selected),
         "overall": result_stats(evaluated), "subgroups": subgroup_results,
+        "pairwiseInteractions": pairwise_interactions,
         "correctVsWrongFeatureDistributions": feature_comparison,
         "signalDetails": [
             {
