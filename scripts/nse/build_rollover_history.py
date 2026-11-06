@@ -140,8 +140,43 @@ def build_walk_forward_folds(cycle_outcomes, symbol_sessions, minimum_train_frac
         })
     return folds
 
+DELIVERY_DAY_MIN_COMPARISONS = 100
+DELIVERY_DAY_MISMATCH_QUARANTINE_RATE = 0.10
+
+
+def cash_delivery_day_quality(daily):
+    """Quarantine a date when a broad source inconsistency suggests a bad file."""
+    comparable = 0
+    mismatches = 0
+    for delivery in (daily or {}).values():
+        source_pct = number(delivery.get("deliveryPct"))
+        computed_pct = number(delivery.get("computedDeliveryPct"))
+        status = delivery.get("deliveryPctConsistencyStatus")
+        if status is None and source_pct is not None and computed_pct is not None:
+            status = "MATCH" if abs(source_pct - computed_pct) <= 1.0 else "MISMATCH"
+        if status not in ("MATCH", "MISMATCH"):
+            continue
+        comparable += 1
+        mismatches += status == "MISMATCH"
+    mismatch_rate = mismatches / comparable if comparable else 0.0
+    quarantined = (
+        comparable >= DELIVERY_DAY_MIN_COMPARISONS
+        and mismatch_rate >= DELIVERY_DAY_MISMATCH_QUARANTINE_RATE
+    )
+    return {
+        "status": "QUARANTINED_SYSTEMIC_MISMATCH" if quarantined else "USABLE",
+        "comparableRows": comparable,
+        "mismatchRows": mismatches,
+        "mismatchRate": mismatch_rate,
+    }
+
+
 def attach_point_in_time_cash_delivery(metrics, archive_by_date):
-    """Attach cash demand fields; only internally consistent delivery % enters trend features."""
+    """Attach cash demand fields; quarantine dates with systemic source inconsistency."""
+    day_quality = {
+        market_date: cash_delivery_day_quality(daily)
+        for market_date, daily in archive_by_date.items()
+    }
     by_symbol = defaultdict(list)
     for row in metrics:
         by_symbol[row["symbol"]].append(row)
@@ -150,6 +185,11 @@ def attach_point_in_time_cash_delivery(metrics, archive_by_date):
         for index, row in enumerate(rows):
             daily = archive_by_date.get(row["tradeDate"])
             delivery = daily.get(row["symbol"]) if daily is not None else None
+            quality = day_quality.get(row["tradeDate"], {"status": "USABLE"})
+            row["cashDeliveryDayQualityStatus"] = quality["status"]
+            row["cashDeliveryDayMismatchRate"] = quality.get("mismatchRate")
+            if quality["status"] == "QUARANTINED_SYSTEMIC_MISMATCH":
+                delivery = None
             row["deliveryPct"] = number(delivery.get("deliveryPct")) if delivery else None
             row["computedDeliveryPct"] = number(delivery.get("computedDeliveryPct")) if delivery else None
             stored_consistency = (
@@ -179,6 +219,8 @@ def attach_point_in_time_cash_delivery(metrics, archive_by_date):
                 "SYMBOL_NOT_REPORTED" if daily is not None else
                 "DATE_ARCHIVE_MISSING"
             )
+            if quality["status"] == "QUARANTINED_SYSTEMIC_MISMATCH":
+                row["deliveryCoverageStatus"] = "DATE_DATA_QUALITY_QUARANTINED"
             row["deliveryPctMomentum5d"] = None
             row["deliveryPctTrendQualityStatus"] = "INSUFFICIENT_HISTORY"
             quantities_trusted = bool(
