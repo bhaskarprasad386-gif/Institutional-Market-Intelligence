@@ -214,9 +214,7 @@ def main():
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError) as exc:
             errors.append(f"{day.isoformat()}: {exc}")
             time.sleep(1)
-    raise SystemExit("Unable to fetch NSE cash delivery report:
-" + "
-".join(errors))
+    raise SystemExit("Unable to fetch NSE cash delivery report:\n" + "\n".join(errors))
 
 if __name__ == "__main__":
     main()
