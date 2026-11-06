@@ -7,9 +7,21 @@ export interface FoMetrics {
   oiChange?:number; oiChangePct?:number; priceChangePct?:number; basis:number; costOfCarryAnnualizedPct?:number; daysToExpiry:number;
 }
 export type RolloverFlag="HIGH"|"NORMAL"|"INSUFFICIENT_PEERS"|"ROLL_CREDIT";
+export type BuildUpDirection="LONG_BUILD_UP"|"SHORT_BUILD_UP"|"SHORT_COVERING"|"LONG_UNWINDING"|"MIXED"|"INSUFFICIENT_DATA";
 export interface RolloverMetric {
   symbol:string; tradeDate:string; nearExpiry:string; nextExpiry:string; nearOi:number; nextOi:number; rolloverPct:number;
   nearFuturesClose:number; nextFuturesClose:number; rolloverCostPoints:number; rolloverCostPct:number;
+  farExpiry?:string|null; farOi?:number; totalOi?:number; nextFarOi?:number;
+  extendedRolloverPct?:number; farSharePct?:number;
+  nearOiChange?:number|null; nextOiChange?:number|null; farOiChange?:number|null; totalOiChange?:number|null;
+  nearPriceChangePct?:number|null; nextPriceChangePct?:number|null;
+  nearBuildUp?:BuildUpDirection; nextBuildUp?:BuildUpDirection;
+  nearVolume?:number; nextVolume?:number; spotClose?:number|null;
+  nextShareMomentum3d?:number|null; nextShareMomentum5d?:number|null;
+  totalOiMomentum3dPct?:number|null; totalOiMomentum5dPct?:number|null;
+  rolloverCostMomentum3dPct?:number|null; rolloverCostMomentum5dPct?:number|null;
+  rolloverPctMean63d?:number|null; rolloverPctStd63d?:number|null; rolloverPctZScore63d?:number|null;
+  rolloverZScoreStatus?:"AVAILABLE"|"INSUFFICIENT_63_PRIOR_SESSIONS"|"ZERO_HISTORICAL_VARIANCE"|"MISSING_CURRENT_ROLLOVER";
   lotSize?:number; rolloverCostPerLot?:number; rolloverPctFlag:RolloverFlag; rolloverCostFlag:RolloverFlag; peerCount:number;
 }
 export interface HistoricalRolloverContext {

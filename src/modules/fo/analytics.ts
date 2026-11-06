@@ -62,3 +62,27 @@ export function calculateHistoricalRolloverContext(current:RolloverMetric[],hist
  const byDate=new Map<string,FuturesObservation[]>();for(const r of historyRows){const a=byDate.get(r.tradeDate)??[];a.push(r);byDate.set(r.tradeDate,a);}
  return calculateHistoricalRolloverContextFromMetrics(current,[...byDate.values()].flatMap(calculateRolloverFromRows));
 }
+
+/**
+ * Add point-in-time momentum using only observations dated on or before each
+ * current row. A 3-session momentum needs the current observation plus the
+ * observation three archived sessions earlier (four observations total).
+ */
+export function calculateRolloverMomentum(current:RolloverMetric[],history:RolloverMetric[]):RolloverMetric[] {
+ const bySymbol=new Map<string,RolloverMetric[]>();
+ for(const row of history){const list=bySymbol.get(row.symbol)??[];list.push(row);bySymbol.set(row.symbol,list);}
+ for(const list of bySymbol.values())list.sort((a,b)=>a.tradeDate.localeCompare(b.tradeDate));
+ return current.map(row=>{
+  const prior=(bySymbol.get(row.symbol)??[]).filter(x=>x.tradeDate<=row.tradeDate&&x.tradeDate!==row.tradeDate);
+  const series=[...prior.slice(-5),row];
+  const nextShare=(x:RolloverMetric)=>x.nearOi+x.nextOi>0?x.nextOi/(x.nearOi+x.nextOi)*100:undefined;
+  const calc=(sessions:number,field:"share"|"oi")=>{
+   if(series.length<=sessions)return undefined;
+   const old=series[series.length-1-sessions],now=series[series.length-1];
+   if(field==="share"){const a=nextShare(old),b=nextShare(now);return a===undefined||b===undefined?undefined:b-a;}
+   const a=old.totalOi??(old.nearOi+old.nextOi),b=now.totalOi??(now.nearOi+now.nextOi);
+   return a>0?(b/a-1)*100:undefined;
+  };
+  return {...row,nextShareMomentum3d:calc(3,"share"),nextShareMomentum5d:calc(5,"share"),totalOiMomentum3dPct:calc(3,"oi"),totalOiMomentum5dPct:calc(5,"oi")};
+ });
+}
