@@ -900,6 +900,9 @@ def build():
             "availableMetricRows": sum(row.get("deliveryCoverageStatus") == "AVAILABLE" for row in metrics),
             "missingDateRows": sum(row.get("deliveryCoverageStatus") == "DATE_ARCHIVE_MISSING" for row in metrics),
             "missingSymbolRows": sum(row.get("deliveryCoverageStatus") == "SYMBOL_NOT_REPORTED" for row in metrics),
+            "quarantinedMetricRows": sum(row.get("deliveryCoverageStatus") == "DATE_DATA_QUALITY_QUARANTINED" for row in metrics),
+            "quarantinedDates": len({row.get("tradeDate") for row in metrics
+                                     if row.get("cashDeliveryDayQualityStatus") == "QUARANTINED_SYSTEMIC_MISMATCH"}),
             "status": "AVAILABLE" if cash_delivery_history else "NOT_ARCHIVED",
         },
         "metrics": metrics,
@@ -972,7 +975,9 @@ def build():
                 "cashTradedValueProxyMomentum20dPct": row.get("cashTradedValueProxyMomentum20dPct"),
                 "vwapStrengthPct": row.get("vwapStrengthPct"),
                 "cashDemandCoverageStatus": row.get("cashDemandCoverageStatus", "DATE_ARCHIVE_MISSING"),
-                "deliveryCoverageStatus": row.get("deliveryCoverageStatus", "DATE_ARCHIVE_MISSING")}
+                "deliveryCoverageStatus": row.get("deliveryCoverageStatus", "DATE_ARCHIVE_MISSING"),
+                "cashDeliveryDayQualityStatus": row.get("cashDeliveryDayQualityStatus", "UNVERIFIED"),
+                "cashDeliveryDayMismatchRate": row.get("cashDeliveryDayMismatchRate")}
         for horizon in (5, 10, 20):
             future_day = own_sessions[idx + horizon] if idx + horizon < len(own_sessions) else None
             future_price = number(spot_lookup.get((row["symbol"], future_day))) if future_day else None
