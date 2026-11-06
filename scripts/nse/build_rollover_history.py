@@ -65,6 +65,30 @@ def calculate_prior_spot_momentum(symbol_spot_series, symbol, signal_date, horiz
     return (current_price / prior_price - 1) * 100
 
 
+def add_point_in_time_market_momentum(metrics, market_spot_by_date, horizon=5):
+    """Attach NIFTY trend using only the signal date and its prior archived index sessions."""
+    series = sorted(
+        (day, price) for day, price in market_spot_by_date.items()
+        if price is not None and price > 0
+    )
+    by_date = {day: index for index, (day, _) in enumerate(series)}
+    for row in metrics:
+        index = by_date.get(row["tradeDate"])
+        momentum = None
+        if index is not None and index >= horizon:
+            prior = series[index - horizon][1]
+            current = series[index][1]
+            if prior > 0:
+                momentum = (current / prior - 1) * 100
+        row["niftyMomentum5dPct"] = momentum
+        # A 0.25% dead band avoids labelling negligible index moves as trend.
+        row["niftyTrend5d"] = (
+            "INSUFFICIENT_HISTORY" if momentum is None else
+            "UP" if momentum > 0.25 else "DOWN" if momentum < -0.25 else "FLAT"
+        )
+    return metrics
+
+
 def purge_development_signals(cycle_outcomes, symbol_sessions, holdout_start):
     """Keep development labels only when their 20-session endpoint precedes holdout."""
     # With fewer than two distinct signal dates there is no holdout partition.
@@ -179,6 +203,7 @@ def build():
     index = json.loads(index_path.read_text(encoding="utf-8"))
     dates = index.get("dates", [])
     metrics = []
+    nifty_spot_by_date = {}
     for item in dates:
         market_date = item["marketDate"]
         payload = json.loads((ROOT / item["path"]).read_text(encoding="utf-8"))
@@ -221,6 +246,11 @@ def build():
             if lot and lot > 0:
                 bucket["lots"].append(lot)
             bucket["volume"] += number(row.get("volume"), 0) or 0
+
+        nifty_prices = spot_by_symbol.get("NIFTY", [])
+        if nifty_prices:
+            ordered_nifty_prices = sorted(nifty_prices)
+            nifty_spot_by_date[market_date] = ordered_nifty_prices[len(ordered_nifty_prices) // 2]
 
         for symbol, expiries in grouped.items():
             ordered = sorted(expiries.items())
@@ -282,6 +312,7 @@ def build():
 
     metrics = apply_daily_rollover_flags(metrics)
     metrics = add_point_in_time_rollover_momentum(metrics)
+    metrics = add_point_in_time_market_momentum(metrics, nifty_spot_by_date, horizon=5)
     result = {
         "source": "Derived from complete NSE F&O dated history archive",
         "updatedAt": index.get("updatedAt"),
@@ -333,6 +364,8 @@ def build():
                 "totalOiMomentum5dPct": row.get("totalOiMomentum5dPct"),
                 "rolloverCostMomentum3dPct": row.get("rolloverCostMomentum3dPct"),
                 "rolloverCostMomentum5dPct": row.get("rolloverCostMomentum5dPct"),
+                "niftyMomentum5dPct": row.get("niftyMomentum5dPct"),
+                "niftyTrend5d": row.get("niftyTrend5d", "INSUFFICIENT_HISTORY"),
                 "realizedVol20dAnnualizedPct": vol20, "volatilityRegime": vol_regime,
                 "spotMomentum5dPct": calculate_prior_spot_momentum(
                     symbol_spot_series, row["symbol"], row["tradeDate"], 5)}
@@ -454,6 +487,10 @@ def build():
             "HIGH_BOTH_COST_RISING": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0],
             "HIGH_BOTH_COST_FALLING": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] < 0],
             "HIGH_BOTH_SHARE_DOWN_COST_RISING": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0],
+            "HIGH_BOTH_SHARE_DOWN_COST_RISING_NIFTY_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("niftyTrend5d") == "DOWN"],
+            "HIGH_BOTH_SHARE_DOWN_COST_RISING_NIFTY_UP": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("niftyTrend5d") == "UP"],
+            "HIGH_BOTH_SHARE_DOWN_COST_RISING_NIFTY_FLAT": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("niftyTrend5d") == "FLAT"],
+            "HIGH_BOTH_SHARE_DOWN_COST_RISING_NIFTY_INSUFFICIENT": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("niftyTrend5d") == "INSUFFICIENT_HISTORY"],
             "HIGH_BOTH_SHARE_DOWN_COST_FALLING": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] < 0],
             "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] < 0],
             "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_UP": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] > 0],
@@ -477,6 +514,7 @@ def build():
     rollover_condition_stats = {
         "flagMethod": "Same-day cross-sectional 75th percentile, matching live scanner; at least 5 total peers and 5 positive-cost peers. No future observations are used.",
         "momentumMethod": "Point-in-time 3/5 symbol-session change in next-expiry OI share (percentage points), total near+next+far OI (percent), and rollover cost (percentage points); current day compared only with prior archived symbol sessions.",
+        "marketTrendMethod": "NIFTY spot-close return over the signal date and five prior archived NIFTY sessions; UP above +0.25%, DOWN below -0.25%, otherwise FLAT. Missing index history is kept separate. No future index observations are used.",
         "development": rollover_condition_summary(development),
         "holdout": rollover_condition_summary(holdout),
         "walkForward": rollover_condition_summary(walk_forward_rows),
