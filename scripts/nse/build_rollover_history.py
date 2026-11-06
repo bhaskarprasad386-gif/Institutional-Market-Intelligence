@@ -333,7 +333,7 @@ def joint_market_stock_share_increase_cohorts(rows):
 
 
 def joint_rollover_zscore_cohorts(rows):
-    """Compare high-rollover/high-cost signals with unusually elevated 63-session rollover Z-scores."""
+    """Compare high-rollover/high-cost signals with positive and negative 63-session Z-scores."""
     cohorts = {}
     for threshold in (1.5, 2.0):
         label = str(threshold).replace(".", "")
@@ -344,6 +344,18 @@ def joint_rollover_zscore_cohorts(rows):
             and row.get("rolloverZScoreStatus") == "AVAILABLE"
             and row.get("rolloverPctZScore63d") is not None
             and row["rolloverPctZScore63d"] >= threshold
+        ]
+    # A cross-sectionally high rollover can still be below the same stock's
+    # own prior-year norm. Keep these as research cohorts, not entry filters.
+    for threshold in (0.5, 1.0):
+        label = str(threshold).replace(".", "")
+        cohorts[f"HIGH_BOTH_ROLLOVER_ZSCORE_NEG{label}"] = [
+            row for row in rows
+            if row.get("rolloverPctFlag") == "HIGH"
+            and row.get("rolloverCostFlag") == "HIGH"
+            and row.get("rolloverZScoreStatus") == "AVAILABLE"
+            and row.get("rolloverPctZScore63d") is not None
+            and row["rolloverPctZScore63d"] <= -threshold
         ]
     return cohorts
 
