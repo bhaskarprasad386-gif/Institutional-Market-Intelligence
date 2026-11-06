@@ -530,6 +530,30 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
         return {"count": len(values), "median": percentile(0.5),
                 "p25": percentile(0.25), "p75": percentile(0.75)}
 
+    def oi_migration_group(row):
+        near = number(row.get("nearOiChange"))
+        nxt = number(row.get("nextOiChange"))
+        if near is None or nxt is None:
+            return "MISSING"
+        if near < 0 and nxt > 0:
+            return "CONFIRMED_MIGRATION"
+        if near >= 0 and nxt > 0:
+            return "FRESH_NEXT_EXPIRY_ADDITION"
+        if near < 0 and nxt < 0:
+            return "POSITION_REDUCTION_BOTH"
+        return "MIXED_OR_UNCONFIRMED"
+
+    oi_migration_buckets = defaultdict(list)
+    for row in selected:
+        oi_migration_buckets[oi_migration_group(row)].append(row)
+    oi_migration_results = {
+        label: {
+            "signals": len(bucket),
+            **result_stats([row for row in bucket if row.get("correct20d") is not None]),
+        }
+        for label, bucket in sorted(oi_migration_buckets.items())
+    }
+
     categorical_fields = {
         "niftyTrend5d": lambda row: row.get("niftyTrend5d") or "MISSING",
         "stockPriceTrend5d": lambda row: (
@@ -675,6 +699,7 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
                 }
 
     numeric_fields = (
+        "nearOiChange", "nextOiChange",
         "rolloverPct", "rolloverCostPct", "nextShareMomentum5d",
         "rolloverCostMomentum5dPct", "spotMomentum5dPct",
         "totalOiMomentum5dPct", "niftyMomentum5dPct",
@@ -701,6 +726,7 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
         "flatExcluded": sum(row.get("outcome20d") == "FLAT" for row in selected),
         "pending": sum(row.get("outcome20d") == "PENDING" for row in selected),
         "overall": result_stats(evaluated), "subgroups": subgroup_results,
+        "oiMigrationGroups": oi_migration_results,
         "pairwiseInteractions": pairwise_interactions,
         "matchedBaselineComparisons": matched_baseline_comparisons,
         "correctVsWrongFeatureDistributions": feature_comparison,
@@ -712,6 +738,9 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
                 "niftyTrend5d": row.get("niftyTrend5d"),
                 "spotMomentum5dPct": number(row.get("spotMomentum5dPct")),
                 "totalOiMomentum5dPct": number(row.get("totalOiMomentum5dPct")),
+                "nearOiChange": number(row.get("nearOiChange")),
+                "nextOiChange": number(row.get("nextOiChange")),
+                "oiMigrationGroup": oi_migration_group(row),
                 "rolloverPct": number(row.get("rolloverPct")),
                 "rolloverCostPct": number(row.get("rolloverCostPct")),
                 "nextShareMomentum5d": number(row.get("nextShareMomentum5d")),
@@ -940,6 +969,7 @@ def build():
         item = {"symbol": row["symbol"], "signalDate": row["tradeDate"],
                 "nearExpiry": row["nearExpiry"], "nextExpiry": row["nextExpiry"],
                 "nextBuildUp": row.get("nextBuildUp"), "spotAtSignal": start_price,
+                "nearOiChange": row.get("nearOiChange"), "nextOiChange": row.get("nextOiChange"),
                 "rolloverPct": row["rolloverPct"], "rolloverCostPct": row["rolloverCostPct"],
                 "rolloverPctFlag": row["rolloverPctFlag"], "rolloverCostFlag": row["rolloverCostFlag"],
                 "rolloverZScoreStatus": row.get("rolloverZScoreStatus"),
