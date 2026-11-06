@@ -443,6 +443,37 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(len(cohorts), 2)
 
 
+    def test_false_signal_forensics_separates_correct_wrong_and_point_in_time_groups(self):
+        base = {
+            "rolloverPctFlag": "HIGH", "rolloverCostFlag": "HIGH",
+            "nextShareMomentum5d": -1.0, "rolloverCostMomentum5dPct": 0.2,
+            "nextBuildUp": "SHORT_BUILD_UP", "niftyTrend5d": "DOWN",
+            "spotMomentum5dPct": -1.0, "totalOiMomentum5dPct": 2.0,
+            "volatilityRegime": "MEDIUM", "rolloverPct": 75.0,
+            "rolloverCostPct": 1.2, "realizedVol20dAnnualizedPct": 28.0,
+        }
+        rows = [
+            {**base, "symbol": "A", "correct20d": True, "return20dPct": -1.2, "outcome20d": "DOWN"},
+            {**base, "symbol": "B", "correct20d": False, "return20dPct": 0.8, "outcome20d": "UP",
+             "niftyTrend5d": "UP", "spotMomentum5dPct": 1.0},
+            {**base, "symbol": "C", "correct20d": None, "return20dPct": 0.1, "outcome20d": "FLAT"},
+            {**base, "symbol": "D", "correct20d": None, "return20dPct": None, "outcome20d": "PENDING"},
+            {**base, "symbol": "E", "correct20d": True, "return20dPct": -0.8, "outcome20d": "DOWN",
+             "nextBuildUp": "LONG_BUILD_UP"},
+        ]
+        result = builder.false_signal_forensics(rows)
+        self.assertEqual(result["signals"], 4)
+        self.assertEqual(result["evaluated"], 2)
+        self.assertEqual(result["correct"], 1)
+        self.assertEqual(result["wrong"], 1)
+        self.assertEqual(result["flatExcluded"], 1)
+        self.assertEqual(result["pending"], 1)
+        self.assertEqual(result["subgroups"]["niftyTrend5d"]["DOWN"]["evaluated"], 1)
+        self.assertEqual(result["subgroups"]["niftyTrend5d"]["UP"]["wrong"], 1)
+        self.assertEqual(result["overall"]["netPrecision20BpsPct"], 50.0)
+        self.assertIn("newly accrued prospective", result["interpretationGuard"])
+
+
 if __name__ == "__main__":
     unittest.main()
 
