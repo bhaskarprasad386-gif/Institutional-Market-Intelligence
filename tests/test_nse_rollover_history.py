@@ -651,6 +651,28 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertIsNone(result[6]["cashTradedValueProxyMomentum5dPct"])
         self.assertIsNotNone(result[6]["vwapStrengthPct"])
 
+    def test_legacy_delivery_rows_rederive_consistency_from_archived_percentages(self):
+        rows = [{"symbol": "ABC", "tradeDate": f"2026-01-{day:02d}"} for day in range(1, 8)]
+        archive = {}
+        for day in range(1, 8):
+            mismatch = day == 2
+            archive[f"2026-01-{day:02d}"] = {"ABC": {
+                "deliveryPct": 55.0 if mismatch else 50.0,
+                "computedDeliveryPct": 30.0 if mismatch else 50.0,
+                "deliveryQuantity": 100 + day,
+                "tradedQuantity": 200 + day,
+                "vwap": 100.0,
+                "closePrice": 101.0,
+            }}
+        result = builder.attach_point_in_time_cash_delivery(rows, archive)
+        self.assertEqual(result[0]["deliveryPctConsistencyStatus"], "MATCH")
+        self.assertEqual(result[0]["deliveryPctTrusted"], 50.0)
+        self.assertEqual(result[1]["deliveryPctConsistencyStatus"], "MISMATCH")
+        self.assertIsNone(result[1]["deliveryPctTrusted"])
+        self.assertIsNone(result[1]["deliveryQuantity"])
+        self.assertIsNone(result[6]["deliveryPctMomentum5d"])
+        self.assertIsNone(result[6]["deliveryQuantityMomentum5dPct"])
+
     def test_legacy_delivery_rows_without_consistency_status_are_unverified(self):
         rows = [{"symbol": "ABC", "tradeDate": f"2026-01-{day:02d}"} for day in range(1, 8)]
         archive = {
