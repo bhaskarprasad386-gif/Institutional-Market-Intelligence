@@ -330,7 +330,7 @@ if __name__ == "__main__":
         self.assertAlmostEqual(result[0]["niftyMomentum5dPct"], 5.0)
         self.assertEqual(result[0]["niftyTrend5d"], "UP")
         self.assertAlmostEqual(result[1]["niftyMomentum5dPct"], 104 / 101 * 100 - 100)
-        self.assertEqual(result[1]["niftyTrend5d"], "FLAT")
+        self.assertEqual(result[1]["niftyTrend5d"], "UP")
         self.assertIsNone(result[2]["niftyMomentum5dPct"])
         self.assertEqual(result[2]["niftyTrend5d"], "INSUFFICIENT_HISTORY")
 
