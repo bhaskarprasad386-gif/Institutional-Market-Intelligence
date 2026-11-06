@@ -651,6 +651,31 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertIsNone(result[6]["cashTradedValueProxyMomentum5dPct"])
         self.assertIsNotNone(result[6]["vwapStrengthPct"])
 
+    def test_delivery_day_quarantine_threshold_and_minimum_comparisons(self):
+        below_minimum = {
+            f"S{i}": {
+                "deliveryPct": 60.0 if i < 10 else 50.0,
+                "computedDeliveryPct": 30.0 if i < 10 else 50.0,
+            }
+            for i in range(99)
+        }
+        self.assertEqual(
+            builder.cash_delivery_day_quality(below_minimum)["status"],
+            "USABLE",
+        )
+
+        at_threshold = {
+            f"S{i}": {
+                "deliveryPct": 60.0 if i < 10 else 50.0,
+                "computedDeliveryPct": 30.0 if i < 10 else 50.0,
+            }
+            for i in range(100)
+        }
+        quality = builder.cash_delivery_day_quality(at_threshold)
+        self.assertEqual(quality["status"], "QUARANTINED_SYSTEMIC_MISMATCH")
+        self.assertEqual(quality["comparableRows"], 100)
+        self.assertAlmostEqual(quality["mismatchRate"], 0.10)
+
     def test_systemically_inconsistent_delivery_date_is_quarantined(self):
         daily = {}
         for index in range(100):
