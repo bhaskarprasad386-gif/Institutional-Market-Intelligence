@@ -157,6 +157,41 @@ def attach_point_in_time_cash_delivery(metrics, archive_by_date):
                 "DATE_ARCHIVE_MISSING"
             )
             row["deliveryPctMomentum5d"] = None
+            # Raw NSE cash fields and same-symbol prior-session demand features.
+            row["deliveryQuantity"] = number(delivery.get("deliveryQuantity")) if delivery else None
+            row["tradedQuantity"] = number(delivery.get("tradedQuantity")) if delivery else None
+            row["cashVwap"] = number(delivery.get("vwap")) if delivery else None
+            row["cashClosePrice"] = number(delivery.get("closePrice")) if delivery else None
+            row["cashTradedValueProxy"] = (
+                row["cashVwap"] * row["tradedQuantity"]
+                if row["cashVwap"] is not None and row["tradedQuantity"] is not None else None
+            )
+            row["vwapStrengthPct"] = (
+                (row["cashClosePrice"] / row["cashVwap"] - 1) * 100
+                if row["cashClosePrice"] is not None and row["cashVwap"] is not None
+                and row["cashVwap"] > 0 else None
+            )
+            row["cashDemandCoverageStatus"] = (
+                "AVAILABLE" if delivery and all(row.get(field) is not None for field in
+                    ("deliveryQuantity", "tradedQuantity", "cashVwap", "cashClosePrice"))
+                else row["deliveryCoverageStatus"]
+            )
+            for horizon in (5, 20):
+                row[f"deliveryQuantityMomentum{horizon}dPct"] = None
+                row[f"tradedQuantityMomentum{horizon}dPct"] = None
+                row[f"cashTradedValueProxyMomentum{horizon}dPct"] = None
+                if index < horizon:
+                    continue
+                prior = rows[index - horizon]
+                for field, output in (
+                    ("deliveryQuantity", f"deliveryQuantityMomentum{horizon}dPct"),
+                    ("tradedQuantity", f"tradedQuantityMomentum{horizon}dPct"),
+                    ("cashTradedValueProxy", f"cashTradedValueProxyMomentum{horizon}dPct"),
+                ):
+                    current_value = number(row.get(field))
+                    prior_value = number(prior.get(field))
+                    if current_value is not None and prior_value is not None and prior_value > 0:
+                        row[output] = (current_value / prior_value - 1) * 100
             if index >= 5:
                 prior = rows[index - 5]
                 current_pct = number(row.get("deliveryPct"))
@@ -563,7 +598,11 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
         "rolloverCostMomentum5dPct", "spotMomentum5dPct",
         "totalOiMomentum5dPct", "niftyMomentum5dPct",
         "realizedVol20dAnnualizedPct",
-        "deliveryPct", "deliveryPctMomentum5d",
+        "deliveryPct", "deliveryPctMomentum5d", "deliveryQuantity",
+        "deliveryQuantityMomentum5dPct", "deliveryQuantityMomentum20dPct",
+        "tradedQuantity", "tradedQuantityMomentum5dPct", "tradedQuantityMomentum20dPct",
+        "cashTradedValueProxy", "cashTradedValueProxyMomentum5dPct",
+        "cashTradedValueProxyMomentum20dPct", "vwapStrengthPct",
     )
     feature_comparison = {
         field: {
@@ -837,6 +876,17 @@ def build():
                     symbol_spot_series, row["symbol"], row["tradeDate"], 5),
                 "deliveryPct": row.get("deliveryPct"),
                 "deliveryPctMomentum5d": row.get("deliveryPctMomentum5d"),
+                "deliveryQuantity": row.get("deliveryQuantity"),
+                "deliveryQuantityMomentum5dPct": row.get("deliveryQuantityMomentum5dPct"),
+                "deliveryQuantityMomentum20dPct": row.get("deliveryQuantityMomentum20dPct"),
+                "tradedQuantity": row.get("tradedQuantity"),
+                "tradedQuantityMomentum5dPct": row.get("tradedQuantityMomentum5dPct"),
+                "tradedQuantityMomentum20dPct": row.get("tradedQuantityMomentum20dPct"),
+                "cashTradedValueProxy": row.get("cashTradedValueProxy"),
+                "cashTradedValueProxyMomentum5dPct": row.get("cashTradedValueProxyMomentum5dPct"),
+                "cashTradedValueProxyMomentum20dPct": row.get("cashTradedValueProxyMomentum20dPct"),
+                "vwapStrengthPct": row.get("vwapStrengthPct"),
+                "cashDemandCoverageStatus": row.get("cashDemandCoverageStatus", "DATE_ARCHIVE_MISSING"),
                 "deliveryCoverageStatus": row.get("deliveryCoverageStatus", "DATE_ARCHIVE_MISSING")}
         for horizon in (5, 10, 20):
             future_day = own_sessions[idx + horizon] if idx + horizon < len(own_sessions) else None
