@@ -678,13 +678,33 @@ def build():
             if row.get("rolloverPctFlag") == "HIGH"
             and row.get("rolloverCostFlag") == "HIGH"
         ]
+        z_values = sorted(row["rolloverPctZScore63d"] for row in high_both)
+        def percentile(values, pct):
+            if not values:
+                return None
+            position = (len(values) - 1) * pct
+            lower = int(position)
+            upper = min(lower + 1, len(values) - 1)
+            weight = position - lower
+            return round(values[lower] * (1 - weight) + values[upper] * weight, 4)
         return {
             "rows": len(rows),
             "statusCounts": status_counts,
             "availableZScoreRows": len(available),
             "availableHighBothRows": len(high_both),
-            "highBothZScoreAtLeast15": sum(row["rolloverPctZScore63d"] >= 1.5 for row in high_both),
-            "highBothZScoreAtLeast20": sum(row["rolloverPctZScore63d"] >= 2.0 for row in high_both),
+            "highBothZScoreDistribution": {
+                "min": round(z_values[0], 4) if z_values else None,
+                "p50": percentile(z_values, 0.50),
+                "p75": percentile(z_values, 0.75),
+                "p90": percentile(z_values, 0.90),
+                "p95": percentile(z_values, 0.95),
+                "max": round(z_values[-1], 4) if z_values else None,
+                "positiveCount": sum(value > 0 for value in z_values),
+            },
+            "highBothZScoreAtLeast05": sum(value >= 0.5 for value in z_values),
+            "highBothZScoreAtLeast10": sum(value >= 1.0 for value in z_values),
+            "highBothZScoreAtLeast15": sum(value >= 1.5 for value in z_values),
+            "highBothZScoreAtLeast20": sum(value >= 2.0 for value in z_values),
         }
 
     rollover_condition_stats = {
