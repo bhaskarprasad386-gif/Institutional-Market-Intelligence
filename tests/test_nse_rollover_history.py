@@ -473,6 +473,8 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             {**base, "symbol": "D", "correct20d": None, "return20dPct": None, "outcome20d": "PENDING"},
             {**base, "symbol": "E", "correct20d": True, "return20dPct": -0.8, "outcome20d": "DOWN",
              "nextBuildUp": "LONG_BUILD_UP"},
+            {**base, "symbol": "F", "rolloverPctFlag": "NORMAL",
+             "correct20d": False, "return20dPct": 0.9, "outcome20d": "UP"},
         ]
         result = builder.false_signal_forensics(rows)
         self.assertEqual(result["signals"], 4)
@@ -488,6 +490,16 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(len(result["signalDetails"]), 4)
         self.assertEqual(result["signalDetails"][0]["symbol"], "A")
         self.assertIn("newly accrued prospective", result["interpretationGuard"])
+        matched = result["matchedBaselineComparisons"]["niftyTrend5d__stockPriceTrend5d"]
+        matched_down_down = next(
+            cell for cell in matched["cells"]
+            if cell["niftyTrend5d"] == "DOWN" and cell["stockPriceTrend5d"] == "DOWN"
+        )
+        self.assertEqual(matched_down_down["cohort"]["evaluated"], 1)
+        self.assertEqual(matched_down_down["matchedNonCohortShortBaseline"]["evaluated"], 1)
+        self.assertEqual(matched_down_down["precisionLiftPercentagePoints"], 100.0)
+        self.assertEqual(matched_down_down["warning"], "LOW_SAMPLE_OR_MISSING_COMPARATOR")
+        self.assertIn("DEVELOPMENT_ONLY_DIAGNOSTIC", matched["interpretation"])
         interactions = result["pairwiseInteractions"]
         market_stock = interactions["niftyTrend5d__stockPriceTrend5d"]
         self.assertEqual(market_stock["evaluatedSignals"], 2)
