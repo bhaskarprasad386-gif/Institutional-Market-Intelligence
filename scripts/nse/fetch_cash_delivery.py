@@ -75,7 +75,7 @@ def parse_cash_delivery_csv(payload, expected_day):
         if not symbol or trade_date != expected_day.isoformat():
             continue
         traded = number(pick(raw, "TTL_TRD_QNTY", "TOTAL_TRADED_QUANTITY"), "traded quantity")
-        delivered = number(pick(raw, "DELIV_QTY", "DELIVERABLE_QTY"), "delivery quantity")
+        # NSE occasionally publishes an EQ row with an empty DELIV_QTY.\n        # Keep the security row and the date archive, but represent the missing\n        # source value as null so downstream demand features remain PARTIAL_DATA.\n        delivered = number(pick(raw, "DELIV_QTY", "DELIVERABLE_QTY"), "delivery quantity", allow_blank=True)
         delivery_pct = number(pick(raw, "DELIV_PER", "DELIVERABLE_PERCENT"), "delivery percentage")
         close = number(pick(raw, "CLOSE_PRICE"), "close price")
         vwap = number(pick(raw, "AVG_PRICE", "VWAP"), "VWAP", allow_blank=True)
@@ -86,7 +86,7 @@ def parse_cash_delivery_csv(payload, expected_day):
             raise ValueError(f"Invalid delivery percentage for {symbol}: {delivery_pct}")
         if close <= 0:
             raise ValueError(f"Invalid cash close for {symbol}: {close}")
-        computed_pct = delivered / traded * 100 if traded else None
+        computed_pct = (delivered / traded * 100\n                        if delivered is not None and traded > 0 else None)
         # NSE's reported delivery percentage can differ from DELIV_QTY / traded
         # quantity on isolated rows. Preserve both source and computed values;
         # flag the discrepancy for downstream quality filtering instead of
@@ -98,7 +98,7 @@ def parse_cash_delivery_csv(payload, expected_day):
         rows.append({
             "symbol": symbol, "series": series, "tradeDate": trade_date,
             "closePrice": close, "vwap": vwap, "tradedQuantity": int(traded),
-            "deliveryQuantity": int(delivered), "deliveryPct": delivery_pct,
+            "deliveryQuantity": int(delivered) if delivered is not None else None,\n            "deliveryQuantityStatus": "AVAILABLE" if delivered is not None else "MISSING",\n            "deliveryPct": delivery_pct,
             "computedDeliveryPct": round(computed_pct, 4) if computed_pct is not None else None,
             "deliveryPctConsistencyStatus": pct_consistency,
             "tradeCount": int(trades) if trades is not None else None,
