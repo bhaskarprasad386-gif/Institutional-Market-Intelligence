@@ -424,6 +424,25 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertIn("SINGLE_SYMBOL_CONCENTRATION_OVER_20_PERCENT", blocked["failedChecks"])
 
 
+    def test_rollover_zscore_cohorts_are_separate_and_require_high_both_flags(self):
+        base = {
+            "rolloverPctFlag": "HIGH", "rolloverCostFlag": "HIGH",
+            "rolloverZScoreStatus": "AVAILABLE", "rolloverPctZScore63d": 1.8,
+        }
+        rows = [
+            {**base, "symbol": "MATCH_15"},
+            {**base, "symbol": "MATCH_20", "rolloverPctZScore63d": 2.2},
+            {**base, "symbol": "LOW_Z", "rolloverPctZScore63d": 1.2},
+            {**base, "symbol": "NO_HISTORY", "rolloverZScoreStatus": "INSUFFICIENT_63_PRIOR_SESSIONS"},
+            {**base, "symbol": "LOW_ROLLOVER", "rolloverPctFlag": "NORMAL"},
+            {**base, "symbol": "LOW_COST", "rolloverCostFlag": "NORMAL"},
+        ]
+        cohorts = builder.joint_rollover_zscore_cohorts(rows)
+        self.assertEqual([row["symbol"] for row in cohorts["HIGH_BOTH_ROLLOVER_ZSCORE_15"]], ["MATCH_15", "MATCH_20"])
+        self.assertEqual([row["symbol"] for row in cohorts["HIGH_BOTH_ROLLOVER_ZSCORE_20"]], ["MATCH_20"])
+        self.assertEqual(len(cohorts), 2)
+
+
 if __name__ == "__main__":
     unittest.main()
 
