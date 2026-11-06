@@ -157,8 +157,17 @@ def backfill_existing_fo_dates():
             print(f"SKIP {day}: {exc}")
         time.sleep(1)
     print(f"Cash delivery backfill complete: {successes} fetched, {skipped} already archived, {failed} failed.")
-    if successes == 0 and failed:
-        raise SystemExit("No new cash delivery dates fetched; existing archive was left unchanged.")
+    ensure_backfill_complete(successes, skipped, failed)
+
+
+def ensure_backfill_complete(successes, skipped, failed):
+    """Fail visibly on partial coverage; successful files remain resumable."""
+    if failed:
+        raise SystemExit(
+            f"Cash delivery backfill incomplete: {failed} dates failed; "
+            f"{successes} fetched and {skipped} already archived. "
+            "Successful dates are preserved; rerun to retry missing dates."
+        )
 
 
 def main():
