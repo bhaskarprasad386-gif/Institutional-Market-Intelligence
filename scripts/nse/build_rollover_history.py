@@ -281,6 +281,22 @@ def joint_market_stock_share_increase_cohorts(rows):
 
 
 
+def joint_rollover_zscore_cohorts(rows):
+    """Compare high-rollover/high-cost signals with unusually elevated 63-session rollover Z-scores."""
+    cohorts = {}
+    for threshold in (1.5, 2.0):
+        label = str(threshold).replace(".", "")
+        cohorts[f"HIGH_BOTH_ROLLOVER_ZSCORE_{label}"] = [
+            row for row in rows
+            if row.get("rolloverPctFlag") == "HIGH"
+            and row.get("rolloverCostFlag") == "HIGH"
+            and row.get("rolloverZScoreStatus") == "AVAILABLE"
+            and row.get("rolloverPctZScore63d") is not None
+            and row["rolloverPctZScore63d"] >= threshold
+        ]
+    return cohorts
+
+
 def cohort_evidence_gate(selected, summary):
     """Apply a conservative sample/breadth gate before highlighting 20-session accuracy."""
     breadth = {
@@ -626,6 +642,7 @@ def build():
             "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_DOWN_OI_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] < 0 and x.get("totalOiMomentum5dPct") is not None and x["totalOiMomentum5dPct"] < 0],
             "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_UP_OI_UP": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] > 0 and x.get("totalOiMomentum5dPct") is not None and x["totalOiMomentum5dPct"] > 0],
             "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_UP_OI_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] > 0 and x.get("totalOiMomentum5dPct") is not None and x["totalOiMomentum5dPct"] < 0],
+            **joint_rollover_zscore_cohorts(rows),
             **joint_market_stock_cohorts(rows),
             **joint_market_stock_share_increase_cohorts(rows),
         }
