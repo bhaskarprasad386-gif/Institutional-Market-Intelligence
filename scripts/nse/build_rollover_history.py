@@ -698,6 +698,74 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
                     ),
                 }
 
+    # Match OI-migration subgroups against non-core SHORT signals in the
+    # same point-in-time NIFTY, stock-price and volatility regimes.
+    oi_migration_matched_baselines = {}
+    baseline_rows = [
+        row for row in rows
+        if row.get("nextBuildUp") == "SHORT_BUILD_UP"
+        and row.get("correct20d") is not None
+        and not is_core_rollover_cohort(row)
+    ]
+
+    def migration_match_stratum(row):
+        nifty = row.get("niftyTrend5d")
+        spot = number(row.get("spotMomentum5dPct"))
+        volatility = row.get("volatilityRegime")
+        if nifty not in ("UP", "DOWN", "FLAT") or spot is None or not volatility:
+            return None
+        stock_trend = "UP" if spot > 0.25 else "DOWN" if spot < -0.25 else "FLAT"
+        return (nifty, stock_trend, volatility)
+
+    for migration_label in sorted(oi_migration_buckets):
+        subgroup = [
+            row for row in oi_migration_buckets[migration_label]
+            if row.get("correct20d") is not None
+        ]
+        cohort_by_stratum = defaultdict(list)
+        baseline_by_stratum = defaultdict(list)
+        for row in subgroup:
+            key = migration_match_stratum(row)
+            if key is not None:
+                cohort_by_stratum[key].append(row)
+        for row in baseline_rows:
+            key = migration_match_stratum(row)
+            if key is not None:
+                baseline_by_stratum[key].append(row)
+        common_strata = sorted(set(cohort_by_stratum) & set(baseline_by_stratum))
+        matched_cohort = [row for key in common_strata for row in cohort_by_stratum[key]]
+        matched_controls = [row for key in common_strata for row in baseline_by_stratum[key]]
+        cohort_stats = result_stats(matched_cohort)
+        baseline_stats = result_stats(matched_controls)
+        oi_migration_matched_baselines[migration_label] = {
+            "matchingFields": ["niftyTrend5d", "stockPriceTrend5d", "volatilityRegime"],
+            "matchingMethod": "Exact categorical strata; pooled only across strata containing both cohort and non-core SHORT controls.",
+            "eligibleCohortSignals": len(subgroup),
+            "matchedCohort": cohort_stats,
+            "matchedNonCohortShortBaseline": baseline_stats,
+            "matchedStrata": [
+                {
+                    "niftyTrend5d": key[0],
+                    "stockPriceTrend5d": key[1],
+                    "volatilityRegime": key[2],
+                    "cohort": result_stats(cohort_by_stratum[key]),
+                    "baseline": result_stats(baseline_by_stratum[key]),
+                }
+                for key in common_strata
+            ],
+            "precisionLiftPercentagePoints": (
+                round(cohort_stats["precisionPct"] - baseline_stats["precisionPct"], 2)
+                if cohort_stats["precisionPct"] is not None
+                and baseline_stats["precisionPct"] is not None else None
+            ),
+            "warning": (
+                "INSUFFICIENT_MATCHED_SAMPLE"
+                if cohort_stats["evaluated"] < 5 or baseline_stats["evaluated"] < 5
+                else None
+            ),
+            "interpretation": "EXPLORATORY_MATCHED_DIAGNOSTIC_ONLY; does not remove unobserved confounding, overlapping outcome dependence, or selection bias.",
+        }
+
     numeric_fields = (
         "nearOiChange", "nextOiChange",
         "rolloverPct", "rolloverCostPct", "nextShareMomentum5d",
@@ -727,6 +795,7 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
         "pending": sum(row.get("outcome20d") == "PENDING" for row in selected),
         "overall": result_stats(evaluated), "subgroups": subgroup_results,
         "oiMigrationGroups": oi_migration_results,
+        "oiMigrationMatchedBaselineComparisons": oi_migration_matched_baselines,
         "pairwiseInteractions": pairwise_interactions,
         "matchedBaselineComparisons": matched_baseline_comparisons,
         "correctVsWrongFeatureDistributions": feature_comparison,
