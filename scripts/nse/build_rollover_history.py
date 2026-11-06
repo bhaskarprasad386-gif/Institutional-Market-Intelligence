@@ -361,7 +361,7 @@ def joint_rollover_zscore_cohorts(rows):
 
 
 
-def false_signal_forensics(rows, threshold_pct=0.5):
+def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interactions=True):
     """Compare correct and failed 20-session Shorts inside the pre-defined core cohort."""
     selected = [
         row for row in rows
@@ -474,29 +474,30 @@ def false_signal_forensics(rows, threshold_pct=0.5):
         return row.get(field) or "MISSING"
 
     pairwise_interactions = {}
-    for left_field, right_field in interaction_pairs:
-        cells = defaultdict(list)
-        for row in evaluated:
-            cells[(interaction_label(row, left_field),
-                   interaction_label(row, right_field))].append(row)
-        cell_results = []
-        for (left_label, right_label), sample in sorted(cells.items()):
-            stats = result_stats(sample)
-            cell_results.append({
-                "left": left_label,
-                "right": right_label,
-                **stats,
-            })
-        pairwise_interactions[f"{left_field}__{right_field}"] = {
-            "leftField": left_field,
-            "rightField": right_field,
-            "evaluatedSignals": len(evaluated),
-            "cells": cell_results,
-            "interpretation": (
-                "EXPLORATORY_ONLY; cells below 5 evaluated signals are "
-                "low-sample; no filter or entry rule is implied."
-            ),
-        }
+    if include_pairwise_interactions:
+        for left_field, right_field in interaction_pairs:
+            cells = defaultdict(list)
+            for row in evaluated:
+                cells[(interaction_label(row, left_field),
+                       interaction_label(row, right_field))].append(row)
+            cell_results = []
+            for (left_label, right_label), sample in sorted(cells.items()):
+                stats = result_stats(sample)
+                cell_results.append({
+                    "left": left_label,
+                    "right": right_label,
+                    **stats,
+                })
+            pairwise_interactions[f"{left_field}__{right_field}"] = {
+                "leftField": left_field,
+                "rightField": right_field,
+                "evaluatedSignals": len(evaluated),
+                "cells": cell_results,
+                "interpretation": (
+                    "EXPLORATORY_ONLY; DEVELOPMENT_ONLY; cells below 5 evaluated "
+                    "signals are low-sample; no filter or entry rule is implied."
+                ),
+            }
 
     numeric_fields = (
         "rolloverPct", "rolloverCostPct", "nextShareMomentum5d",
@@ -974,12 +975,12 @@ def build():
         "rolloverZScoreDiagnostics": {"allCycleSignals": rollover_zscore_diagnostics(cycle_outcomes), "holdout": rollover_zscore_diagnostics(holdout), "walkForward": rollover_zscore_diagnostics(walk_forward_rows)},
         "falseSignalForensics": {
             "development": false_signal_forensics(development, threshold_pct),
-            "holdout": false_signal_forensics(holdout, threshold_pct),
-            "walkForward": false_signal_forensics(walk_forward_rows, threshold_pct),
+            "holdout": false_signal_forensics(holdout, threshold_pct, include_pairwise_interactions=False),
+            "walkForward": false_signal_forensics(walk_forward_rows, threshold_pct, include_pairwise_interactions=False),
             "walkForwardFolds": [
                 {"fold": fold["fold"], "testStartDate": fold["testStartDate"],
                  "testEndDate": fold["testEndDate"],
-                 "analysis": false_signal_forensics(fold["testRows"], threshold_pct)}
+                 "analysis": false_signal_forensics(fold["testRows"], threshold_pct, include_pairwise_interactions=False)}
                 for fold in walk_forward_folds
             ],
         },
