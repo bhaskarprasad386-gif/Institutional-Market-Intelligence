@@ -140,6 +140,57 @@ def build_walk_forward_folds(cycle_outcomes, symbol_sessions, minimum_train_frac
         })
     return folds
 
+def attach_point_in_time_cash_delivery(metrics, archive_by_date):
+    """Attach same-day delivery % and prior-five-symbol-session change; no lookahead."""
+    by_symbol = defaultdict(list)
+    for row in metrics:
+        by_symbol[row["symbol"]].append(row)
+    for rows in by_symbol.values():
+        rows.sort(key=lambda row: row["tradeDate"])
+        for index, row in enumerate(rows):
+            daily = archive_by_date.get(row["tradeDate"])
+            delivery = daily.get(row["symbol"]) if daily is not None else None
+            row["deliveryPct"] = number(delivery.get("deliveryPct")) if delivery else None
+            row["deliveryCoverageStatus"] = (
+                "AVAILABLE" if delivery else
+                "SYMBOL_NOT_REPORTED" if daily is not None else
+                "DATE_ARCHIVE_MISSING"
+            )
+            row["deliveryPctMomentum5d"] = None
+            if index >= 5:
+                prior = rows[index - 5]
+                current_pct = number(row.get("deliveryPct"))
+                prior_pct = number(prior.get("deliveryPct"))
+                if current_pct is not None and prior_pct is not None:
+                    row["deliveryPctMomentum5d"] = current_pct - prior_pct
+    return metrics
+
+
+def load_cash_delivery_history(directory=Path("public/data/nse-cash-delivery")):
+    """Load archived NSE cash delivery files keyed by date and symbol."""
+    index_path = directory / "index.json"
+    if not index_path.exists():
+        return {}
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    result = {}
+    for entry in index.get("dates", []):
+        market_date = entry.get("marketDate")
+        relative_path = entry.get("path")
+        if not market_date or not relative_path:
+            continue
+        payload_path = directory / relative_path
+        if not payload_path.exists():
+            continue
+        payload = json.loads(payload_path.read_text(encoding="utf-8"))
+        if payload.get("marketDate") != market_date:
+            raise ValueError(f"Cash delivery archive date mismatch: {relative_path}")
+        result[market_date] = {
+            row["symbol"]: row for row in payload.get("rows", [])
+            if row.get("symbol") and row.get("series") == "EQ"
+        }
+    return result
+
+
 def apply_daily_rollover_flags(metrics):
     """Match the live scanner's same-day cross-sectional 75th-percentile flags."""
     by_date = defaultdict(list)
@@ -576,6 +627,8 @@ def build():
                 "rolloverCostFlag": "INSUFFICIENT_PEERS", "peerCount": 0,
             })
 
+    cash_delivery_history = load_cash_delivery_history()
+    metrics = attach_point_in_time_cash_delivery(metrics, cash_delivery_history)
     metrics = apply_daily_rollover_flags(metrics)
     metrics = add_point_in_time_rollover_momentum(metrics)
     metrics = add_point_in_time_rollover_zscore(metrics, window=63)
@@ -587,6 +640,13 @@ def build():
         "oldestMarketDate": min((x["marketDate"] for x in dates), default=None),
         "newestMarketDate": max((x["marketDate"] for x in dates), default=None),
         "metricCount": len(metrics),
+        "cashDeliveryCoverage": {
+            "archivedDates": len(cash_delivery_history),
+            "availableMetricRows": sum(row.get("deliveryCoverageStatus") == "AVAILABLE" for row in metrics),
+            "missingDateRows": sum(row.get("deliveryCoverageStatus") == "DATE_ARCHIVE_MISSING" for row in metrics),
+            "missingSymbolRows": sum(row.get("deliveryCoverageStatus") == "SYMBOL_NOT_REPORTED" for row in metrics),
+            "status": "AVAILABLE" if cash_delivery_history else "NOT_ARCHIVED",
+        },
         "metrics": metrics,
     }
     OUTPUT.write_text(json.dumps(result, separators=(",", ":")), encoding="utf-8")
@@ -639,7 +699,10 @@ def build():
                 "niftyTrend5d": row.get("niftyTrend5d", "INSUFFICIENT_HISTORY"),
                 "realizedVol20dAnnualizedPct": vol20, "volatilityRegime": vol_regime,
                 "spotMomentum5dPct": calculate_prior_spot_momentum(
-                    symbol_spot_series, row["symbol"], row["tradeDate"], 5)}
+                    symbol_spot_series, row["symbol"], row["tradeDate"], 5),
+                "deliveryPct": row.get("deliveryPct"),
+                "deliveryPctMomentum5d": row.get("deliveryPctMomentum5d"),
+                "deliveryCoverageStatus": row.get("deliveryCoverageStatus", "DATE_ARCHIVE_MISSING")}
         for horizon in (5, 10, 20):
             future_day = own_sessions[idx + horizon] if idx + horizon < len(own_sessions) else None
             future_price = number(spot_lookup.get((row["symbol"], future_day))) if future_day else None
