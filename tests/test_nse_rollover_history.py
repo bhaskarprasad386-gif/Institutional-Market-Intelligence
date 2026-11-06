@@ -499,6 +499,11 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(down_down["correct"], 1)
         self.assertEqual(down_down["sampleWarning"], "LOW_SAMPLE_LT_5")
         self.assertIn("EXPLORATORY_ONLY", market_stock["interpretation"])
+        self.assertIn("DEVELOPMENT_ONLY", market_stock["interpretation"])
+        protected_split = builder.false_signal_forensics(
+            rows, include_pairwise_interactions=False
+        )
+        self.assertEqual(protected_split["pairwiseInteractions"], {})
         stricter_threshold = builder.false_signal_forensics([
             {**base, "symbol": "THRESHOLD", "correct20d": True,
              "return20dPct": -0.8, "outcome20d": "DOWN"}
