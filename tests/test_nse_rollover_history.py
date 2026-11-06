@@ -547,6 +547,39 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(result[0]["deliveryCoverageStatus"], "DATE_ARCHIVE_MISSING")
 
 
+    def test_cash_demand_features_use_same_symbol_prior_sessions_and_preserve_missing_data(self):
+        rows = [
+            {"symbol": "ABC", "tradeDate": f"2026-10-{day:02d}"}
+            for day in range(1, 22)
+        ]
+        archive = {}
+        for index, row in enumerate(rows):
+            day = row["tradeDate"]
+            archive[day] = {"ABC": {
+                "deliveryPct": 50.0,
+                "deliveryQuantity": 50 + index * 5,
+                "tradedQuantity": 100 + index * 10,
+                "vwap": 100 + index,
+                "closePrice": 102 + index,
+            }}
+        result = builder.attach_point_in_time_cash_delivery(rows, archive)
+        latest = result[-1]
+        self.assertEqual(latest["cashDemandCoverageStatus"], "AVAILABLE")
+        self.assertAlmostEqual(latest["vwapStrengthPct"], (122 / 120 - 1) * 100)
+        self.assertAlmostEqual(latest["deliveryQuantityMomentum5dPct"], (150 / 125 - 1) * 100)
+        self.assertAlmostEqual(latest["deliveryQuantityMomentum20dPct"], (150 / 50 - 1) * 100)
+        self.assertAlmostEqual(latest["tradedQuantityMomentum20dPct"], (300 / 100 - 1) * 100)
+        self.assertAlmostEqual(latest["cashTradedValueProxyMomentum20dPct"], (36000 / 10000 - 1) * 100)
+
+        missing = builder.attach_point_in_time_cash_delivery(
+            [{"symbol": "XYZ", "tradeDate": "2026-10-21"}], {}
+        )[0]
+        self.assertIsNone(missing["deliveryQuantity"])
+        self.assertIsNone(missing["cashTradedValueProxy"])
+        self.assertIsNone(missing["vwapStrengthPct"])
+        self.assertEqual(missing["cashDemandCoverageStatus"], "DATE_ARCHIVE_MISSING")
+
+
 if __name__ == "__main__":
     unittest.main()
 
