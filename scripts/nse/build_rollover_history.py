@@ -349,7 +349,7 @@ def joint_rollover_zscore_cohorts(rows):
 
 
 
-def false_signal_forensics(rows):
+def false_signal_forensics(rows, threshold_pct=0.5):
     """Compare correct and failed 20-session Shorts inside the pre-defined core cohort."""
     selected = [
         row for row in rows
@@ -368,7 +368,7 @@ def false_signal_forensics(rows):
         hits = sum(row.get("correct20d") is True for row in sample)
         net_hits = sum(
             number(row.get("return20dPct")) is not None
-            and number(row.get("return20dPct")) <= -0.7
+            and number(row.get("return20dPct")) <= -(threshold_pct + 0.2)
             for row in sample
         )
         precision = hits / n if n else None
@@ -450,7 +450,7 @@ def false_signal_forensics(rows):
     }
     return {
         "cohortDefinition": "HIGH rollover + HIGH positive roll cost + falling next-expiry OI share + rising roll cost over 5 sessions + SHORT_BUILD_UP",
-        "target": "20-session return <= -0.5% is a correct Short; flat and pending outcomes are excluded",
+        "target": f"20-session return <= -{threshold_pct:.2f}% is a correct Short; net 20bps hit requires return <= -{(threshold_pct + 0.2):.2f}%",
         "signals": len(selected), "evaluated": len(evaluated),
         "correct": sum(row.get("correct20d") is True for row in evaluated),
         "wrong": sum(row.get("correct20d") is False for row in evaluated),
@@ -908,13 +908,13 @@ def build():
         "marketTrendMethod": "NIFTY spot-close return over the signal date and five prior archived NIFTY sessions; UP above +0.25%, DOWN below -0.25%, otherwise FLAT. Missing index history is kept separate. No future index observations are used.",
         "rolloverZScoreDiagnostics": {"allCycleSignals": rollover_zscore_diagnostics(cycle_outcomes), "holdout": rollover_zscore_diagnostics(holdout), "walkForward": rollover_zscore_diagnostics(walk_forward_rows)},
         "falseSignalForensics": {
-            "development": false_signal_forensics(development),
-            "holdout": false_signal_forensics(holdout),
-            "walkForward": false_signal_forensics(walk_forward_rows),
+            "development": false_signal_forensics(development, threshold_pct),
+            "holdout": false_signal_forensics(holdout, threshold_pct),
+            "walkForward": false_signal_forensics(walk_forward_rows, threshold_pct),
             "walkForwardFolds": [
                 {"fold": fold["fold"], "testStartDate": fold["testStartDate"],
                  "testEndDate": fold["testEndDate"],
-                 "analysis": false_signal_forensics(fold["testRows"])}
+                 "analysis": false_signal_forensics(fold["testRows"], threshold_pct)}
                 for fold in walk_forward_folds
             ],
         },
