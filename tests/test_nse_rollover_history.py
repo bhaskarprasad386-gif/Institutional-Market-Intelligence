@@ -308,29 +308,6 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertAlmostEqual(result[5]["rolloverCostMomentum5dPct"], 0.05)
 
 
-    def test_joint_market_stock_cohorts_require_all_point_in_time_conditions(self):
-        base = {
-            "rolloverPctFlag": "HIGH", "rolloverCostFlag": "HIGH",
-            "nextShareMomentum5d": -1.0, "rolloverCostMomentum5dPct": 0.2,
-            "niftyTrend5d": "DOWN", "spotMomentum5dPct": -2.0,
-            "totalOiMomentum5dPct": 3.0,
-        }
-        rows = [
-            {**base, "symbol": "MATCH"},
-            {**base, "symbol": "WRONG_TREND", "niftyTrend5d": "UP"},
-            {**base, "symbol": "WRONG_PRICE", "spotMomentum5dPct": 1.0},
-            {**base, "symbol": "WRONG_OI", "totalOiMomentum5dPct": -1.0},
-            {**base, "symbol": "MISSING_PRICE", "spotMomentum5dPct": None},
-        ]
-        cohorts = builder.joint_market_stock_cohorts(rows)
-        key = "HIGH_BOTH_SHARE_DOWN_COST_RISING_NIFTY_DOWN_PRICE_DOWN_OI_UP"
-        self.assertEqual([row["symbol"] for row in cohorts[key]], ["MATCH"])
-        self.assertEqual(len(cohorts), 12)
-        self.assertEqual(cohorts["HIGH_BOTH_SHARE_DOWN_COST_RISING_NIFTY_UP_PRICE_DOWN_OI_UP"], [])
-
-if __name__ == "__main__":
-    unittest.main()
-
     def test_point_in_time_nifty_trend_uses_only_signal_and_prior_index_sessions(self):
         market = {
             "2026-01-01": 100.0,
@@ -354,3 +331,30 @@ if __name__ == "__main__":
         self.assertIsNone(result[2]["niftyMomentum5dPct"])
         self.assertEqual(result[2]["niftyTrend5d"], "INSUFFICIENT_HISTORY")
 
+    def test_joint_market_stock_cohorts_require_all_point_in_time_conditions(self):
+        base = {
+            "rolloverPctFlag": "HIGH", "rolloverCostFlag": "HIGH",
+            "nextShareMomentum5d": -1.0, "rolloverCostMomentum5dPct": 0.2,
+            "niftyTrend5d": "DOWN", "spotMomentum5dPct": -2.0,
+            "totalOiMomentum5dPct": 3.0,
+        }
+        rows = [
+            {**base, "symbol": "MATCH"},
+            {**base, "symbol": "WRONG_TREND", "niftyTrend5d": "UP"},
+            {**base, "symbol": "WRONG_PRICE", "spotMomentum5dPct": 1.0},
+            {**base, "symbol": "WRONG_OI", "totalOiMomentum5dPct": -1.0},
+            {**base, "symbol": "MISSING_PRICE", "spotMomentum5dPct": None},
+        ]
+        cohorts = builder.joint_market_stock_cohorts(rows)
+        key = "HIGH_BOTH_SHARE_DOWN_COST_RISING_NIFTY_DOWN_PRICE_DOWN_OI_UP"
+        self.assertEqual([row["symbol"] for row in cohorts[key]], ["MATCH"])
+        self.assertEqual(len(cohorts), 12)
+        up_key = "HIGH_BOTH_SHARE_DOWN_COST_RISING_NIFTY_UP_PRICE_DOWN_OI_UP"
+        self.assertEqual([row["symbol"] for row in cohorts[up_key]], ["WRONG_TREND"])
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+if __name__ == "__main__":
+    unittest.main()
