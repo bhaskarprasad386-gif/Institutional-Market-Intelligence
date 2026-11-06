@@ -651,6 +651,35 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertIsNone(result[6]["cashTradedValueProxyMomentum5dPct"])
         self.assertIsNotNone(result[6]["vwapStrengthPct"])
 
+    def test_systemically_inconsistent_delivery_date_is_quarantined(self):
+        daily = {}
+        for index in range(100):
+            symbol = f"STOCK{index}"
+            mismatch = index < 20
+            daily[symbol] = {
+                "deliveryPct": 60.0 if mismatch else 50.0,
+                "computedDeliveryPct": 30.0 if mismatch else 50.0,
+                "deliveryQuantity": 600,
+                "tradedQuantity": 1000,
+                "vwap": 100.0,
+                "closePrice": 101.0,
+            }
+        metrics = [{"symbol": "STOCK99", "tradeDate": "2026-09-11"}]
+        result = builder.attach_point_in_time_cash_delivery(
+            metrics, {"2026-09-11": daily}
+        )[0]
+        self.assertEqual(
+            result["cashDeliveryDayQualityStatus"],
+            "QUARANTINED_SYSTEMIC_MISMATCH",
+        )
+        self.assertEqual(
+            result["deliveryCoverageStatus"],
+            "DATE_DATA_QUALITY_QUARANTINED",
+        )
+        self.assertIsNone(result["deliveryPctTrusted"])
+        self.assertIsNone(result["deliveryQuantity"])
+        self.assertIsNone(result["cashVwap"])
+
     def test_legacy_delivery_rows_rederive_consistency_from_archived_percentages(self):
         rows = [{"symbol": "ABC", "tradeDate": f"2026-01-{day:02d}"} for day in range(1, 8)]
         archive = {}
