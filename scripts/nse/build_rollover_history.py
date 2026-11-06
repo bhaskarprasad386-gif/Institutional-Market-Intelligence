@@ -415,6 +415,11 @@ def false_signal_forensics(rows):
             "DOWN" if row["totalOiMomentum5dPct"] < 0 else "FLAT"
         ),
         "volatilityRegime": lambda row: row.get("volatilityRegime") or "MISSING",
+        "deliveryTrend5d": lambda row: (
+            "MISSING" if row.get("deliveryPctMomentum5d") is None else
+            "UP" if row["deliveryPctMomentum5d"] > 1.0 else
+            "DOWN" if row["deliveryPctMomentum5d"] < -1.0 else "FLAT"
+        ),
     }
     subgroup_results = {}
     for field, classify in categorical_fields.items():
@@ -434,6 +439,7 @@ def false_signal_forensics(rows):
         "rolloverCostMomentum5dPct", "spotMomentum5dPct",
         "totalOiMomentum5dPct", "niftyMomentum5dPct",
         "realizedVol20dAnnualizedPct",
+        "deliveryPct", "deliveryPctMomentum5d",
     )
     feature_comparison = {
         field: {
@@ -465,6 +471,9 @@ def false_signal_forensics(rows):
                 "nextShareMomentum5d": number(row.get("nextShareMomentum5d")),
                 "rolloverCostMomentum5dPct": number(row.get("rolloverCostMomentum5dPct")),
                 "volatilityRegime": row.get("volatilityRegime"),
+                "deliveryPct": number(row.get("deliveryPct")),
+                "deliveryPctMomentum5d": number(row.get("deliveryPctMomentum5d")),
+                "deliveryCoverageStatus": row.get("deliveryCoverageStatus"),
             }
             for row in selected
         ],
