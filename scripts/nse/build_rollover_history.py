@@ -663,10 +663,35 @@ def build():
             for name, selected in cohorts.items()
         }
 
+    def rollover_zscore_diagnostics(rows):
+        status_counts = {}
+        for row in rows:
+            status = row.get("rolloverZScoreStatus") or "MISSING_STATUS"
+            status_counts[status] = status_counts.get(status, 0) + 1
+        available = [
+            row for row in rows
+            if row.get("rolloverZScoreStatus") == "AVAILABLE"
+            and row.get("rolloverPctZScore63d") is not None
+        ]
+        high_both = [
+            row for row in available
+            if row.get("rolloverPctFlag") == "HIGH"
+            and row.get("rolloverCostFlag") == "HIGH"
+        ]
+        return {
+            "rows": len(rows),
+            "statusCounts": status_counts,
+            "availableZScoreRows": len(available),
+            "availableHighBothRows": len(high_both),
+            "highBothZScoreAtLeast15": sum(row["rolloverPctZScore63d"] >= 1.5 for row in high_both),
+            "highBothZScoreAtLeast20": sum(row["rolloverPctZScore63d"] >= 2.0 for row in high_both),
+        }
+
     rollover_condition_stats = {
         "flagMethod": "Same-day cross-sectional 75th percentile, matching live scanner; at least 5 total peers and 5 positive-cost peers. No future observations are used.",
         "momentumMethod": "Point-in-time 3/5 symbol-session change in next-expiry OI share (percentage points), total near+next+far OI (percent), and rollover cost (percentage points); current day compared only with prior archived symbol sessions.",
         "marketTrendMethod": "NIFTY spot-close return over the signal date and five prior archived NIFTY sessions; UP above +0.25%, DOWN below -0.25%, otherwise FLAT. Missing index history is kept separate. No future index observations are used.",
+        "rolloverZScoreDiagnostics": {"allCycleSignals": rollover_zscore_diagnostics(cycle_outcomes), "holdout": rollover_zscore_diagnostics(holdout), "walkForward": rollover_zscore_diagnostics(walk_forward_rows)},
         "development": rollover_condition_summary(development),
         "holdout": rollover_condition_summary(holdout),
         "walkForward": rollover_condition_summary(walk_forward_rows),
