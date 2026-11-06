@@ -78,7 +78,7 @@ def parse_cash_delivery_csv(payload, expected_day):
         # NSE occasionally publishes an EQ row with an empty DELIV_QTY.
         # Preserve the row and archive; null keeps downstream features partial.
         delivered = number(pick(raw, "DELIV_QTY", "DELIVERABLE_QTY"), "delivery quantity", allow_blank=True)
-        delivery_pct = number(pick(raw, "DELIV_PER", "DELIVERABLE_PERCENT"), "delivery percentage")
+        # Some NSE rows also omit DELIV_PER. Keep the security/date row and\n        # preserve the missing source value as null; never infer it from quantity.\n        delivery_pct = number(\n            pick(raw, "DELIV_PER", "DELIVERABLE_PERCENT"),\n            "delivery percentage", allow_blank=True\n        )
         close = number(pick(raw, "CLOSE_PRICE"), "close price")
         vwap = number(pick(raw, "AVG_PRICE", "VWAP"), "VWAP", allow_blank=True)
         trades = number(pick(raw, "NO_OF_TRADES"), "number of trades", allow_blank=True)
@@ -105,7 +105,7 @@ def parse_cash_delivery_csv(payload, expected_day):
             "closePrice": close, "vwap": vwap, "tradedQuantity": int(traded),
             "deliveryQuantity": int(delivered) if delivered is not None else None,
             "deliveryQuantityStatus": "AVAILABLE" if delivered is not None else "MISSING",
-            "deliveryPct": delivery_pct,
+            "deliveryPct": delivery_pct,\n            "deliveryPctStatus": "AVAILABLE" if delivery_pct is not None else "MISSING",
             "computedDeliveryPct": round(computed_pct, 4) if computed_pct is not None else None,
             "deliveryPctConsistencyStatus": pct_consistency,
             "tradeCount": int(trades) if trades is not None else None,
