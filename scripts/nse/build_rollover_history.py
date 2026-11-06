@@ -536,9 +536,9 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
         if near is None or nxt is None:
             return "MISSING"
         if near < 0 and nxt > 0:
-            return "CONFIRMED_MIGRATION"
+            return "NEAR_REDUCTION_NEXT_ADDITION_PROXY"
         if near >= 0 and nxt > 0:
-            return "FRESH_NEXT_EXPIRY_ADDITION"
+            return "NEXT_EXPIRY_OI_ADDITION"
         if near < 0 and nxt < 0:
             return "POSITION_REDUCTION_BOTH"
         return "MIXED_OR_UNCONFIRMED"
