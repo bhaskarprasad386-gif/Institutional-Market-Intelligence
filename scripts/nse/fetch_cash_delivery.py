@@ -3,6 +3,7 @@
 
 This is a separate research input. It does not alter rollover signals or trading rules.
 """
+import argparse
 import csv
 import datetime as dt
 import io
@@ -132,7 +133,41 @@ def save_history(day, filename, url, rows):
     print(f"Archived cash delivery {day}: {len(rows)} EQ securities")
 
 
+def backfill_existing_fo_dates():
+    fo_index = Path("public/data/nse-fo-history/index.json")
+    if not fo_index.exists():
+        raise SystemExit("F&O history index is missing; run the F&O historical backfill first.")
+    index = json.loads(fo_index.read_text(encoding="utf-8"))
+    dates = sorted({dt.date.fromisoformat(item["marketDate"]) for item in index.get("dates", [])})
+    if not dates:
+        raise SystemExit("F&O history index contains no trading dates.")
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    successes = skipped = failed = 0
+    for day in dates:
+        target = OUT_DIR / f"{day.isoformat()}.json"
+        if target.exists() and target.stat().st_size > 100:
+            skipped += 1
+            continue
+        try:
+            filename, url, rows = fetch_for_date(day)
+            save_history(day, filename, url, rows)
+            successes += 1
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError) as exc:
+            failed += 1
+            print(f"SKIP {day}: {exc}")
+        time.sleep(1)
+    print(f"Cash delivery backfill complete: {successes} fetched, {skipped} already archived, {failed} failed.")
+    if successes == 0 and failed:
+        raise SystemExit("No new cash delivery dates fetched; existing archive was left unchanged.")
+
+
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--backfill-existing-fo-dates", action="store_true")
+    args = parser.parse_args()
+    if args.backfill_existing_fo_dates:
+        backfill_existing_fo_dates()
+        return
     today = dt.datetime.now(dt.timezone.utc).date()
     errors = []
     for offset in range(8):
@@ -145,7 +180,6 @@ def main():
             errors.append(f"{day.isoformat()}: {exc}")
             time.sleep(1)
     raise SystemExit("Unable to fetch NSE cash delivery report:\n" + "\n".join(errors))
-
 
 if __name__ == "__main__":
     main()
