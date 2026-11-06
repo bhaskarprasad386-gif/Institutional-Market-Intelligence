@@ -152,9 +152,23 @@ def attach_point_in_time_cash_delivery(metrics, archive_by_date):
             delivery = daily.get(row["symbol"]) if daily is not None else None
             row["deliveryPct"] = number(delivery.get("deliveryPct")) if delivery else None
             row["computedDeliveryPct"] = number(delivery.get("computedDeliveryPct")) if delivery else None
+            stored_consistency = (
+                delivery.get("deliveryPctConsistencyStatus")
+                if delivery else None
+            )
+            # Older archived files predate the explicit consistency-status field,
+            # but already contain both source and computed percentages. Re-derive
+            # the status from those point-in-time values instead of discarding
+            # otherwise verifiable historical delivery data.
+            if delivery and stored_consistency is None:
+                source_pct = number(delivery.get("deliveryPct"))
+                computed_pct = number(delivery.get("computedDeliveryPct"))
+                stored_consistency = (
+                    "UNVERIFIED" if source_pct is None or computed_pct is None else
+                    "MATCH" if abs(source_pct - computed_pct) <= 1.0 else "MISMATCH"
+                )
             row["deliveryPctConsistencyStatus"] = (
-                delivery.get("deliveryPctConsistencyStatus", "UNVERIFIED")
-                if delivery else "ARCHIVE_UNAVAILABLE"
+                stored_consistency if delivery else "ARCHIVE_UNAVAILABLE"
             )
             row["deliveryPctTrusted"] = (
                 row["deliveryPct"] if delivery and
