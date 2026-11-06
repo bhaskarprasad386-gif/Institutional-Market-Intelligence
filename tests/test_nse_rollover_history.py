@@ -530,7 +530,11 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             for day in range(1, 8)
         ]
         archive = {
-            f"2026-11-0{day}": {"ABC": {"deliveryPct": value}}
+            f"2026-11-0{day}": {"ABC": {
+                "deliveryPct": value,
+                "computedDeliveryPct": value,
+                "deliveryPctConsistencyStatus": "MATCH",
+            }}
             for day, value in ((1, 20.0), (2, 22.0), (3, 24.0),
                                (4, 26.0), (5, 28.0), (6, 35.0), (7, 40.0))
         }
@@ -557,6 +561,8 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
             day = row["tradeDate"]
             archive[day] = {"ABC": {
                 "deliveryPct": 50.0,
+                "computedDeliveryPct": 50.0,
+                "deliveryPctConsistencyStatus": "MATCH",
                 "deliveryQuantity": 50 + index * 5,
                 "tradedQuantity": 100 + index * 10,
                 "vwap": 100 + index,
@@ -619,6 +625,56 @@ if __name__ == "__main__":
         self.assertEqual(result[1]["deliveryPctConsistencyStatus"], "MISMATCH")
         self.assertEqual(result[1]["deliveryPct"], 50.0)
         self.assertEqual(result[1]["computedDeliveryPct"], 30.0)
+
+
+    def test_unverified_or_mismatched_delivery_rows_do_not_feed_quantity_or_pct_trends(self):
+        rows = [
+            {"symbol": "ABC", "tradeDate": f"2026-01-{day:02d}"}
+            for day in range(1, 8)
+        ]
+        archive = {}
+        for day in range(1, 8):
+            status = "MISMATCH" if day == 2 else "MATCH"
+            archive[f"2026-01-{day:02d}"] = {"ABC": {
+                "deliveryPct": 55.0 if day == 2 else 50.0,
+                "computedDeliveryPct": 30.0 if day == 2 else 50.0,
+                "deliveryPctConsistencyStatus": status,
+                "deliveryQuantity": 100 + day * 10,
+                "tradedQuantity": 200 + day * 10,
+                "vwap": 100.0,
+                "closePrice": 101.0,
+            }}
+        result = builder.attach_point_in_time_cash_delivery(rows, archive)
+        self.assertIsNone(result[1]["deliveryPctTrusted"])
+        self.assertIsNone(result[1]["deliveryQuantity"])
+        self.assertIsNone(result[1]["tradedQuantity"])
+        self.assertIsNone(result[1]["cashTradedValueProxy"])
+        self.assertIsNone(result[6]["deliveryPctMomentum5d"])
+        self.assertIsNone(result[6]["deliveryQuantityMomentum5dPct"])
+        self.assertIsNone(result[6]["tradedQuantityMomentum5dPct"])
+        self.assertIsNone(result[6]["cashTradedValueProxyMomentum5dPct"])
+        self.assertIsNotNone(result[6]["vwapStrengthPct"])
+
+    def test_legacy_delivery_rows_without_consistency_status_are_unverified(self):
+        rows = [{"symbol": "ABC", "tradeDate": f"2026-01-{day:02d}"} for day in range(1, 8)]
+        archive = {
+            f"2026-01-{day:02d}": {"ABC": {
+                "deliveryPct": 50.0,
+                "deliveryQuantity": 100 + day,
+                "tradedQuantity": 200 + day,
+                "vwap": 100.0,
+                "closePrice": 101.0,
+            }}
+            for day in range(1, 8)
+        }
+        result = builder.attach_point_in_time_cash_delivery(rows, archive)
+        self.assertEqual(result[-1]["deliveryPctConsistencyStatus"], "UNVERIFIED")
+        self.assertIsNone(result[-1]["deliveryPctTrusted"])
+        self.assertIsNone(result[-1]["deliveryQuantity"])
+        self.assertIsNone(result[-1]["tradedQuantity"])
+        self.assertIsNone(result[-1]["deliveryPctMomentum5d"])
+        self.assertIsNone(result[-1]["deliveryQuantityMomentum5dPct"])
+
 
 
 if __name__ == "__main__":
