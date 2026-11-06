@@ -442,15 +442,18 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual([row["symbol"] for row in cohorts["HIGH_BOTH_ROLLOVER_ZSCORE_20"]], ["MATCH_20"])
 
         negative_rows = [
+            {**base, "symbol": "NEG_QUARTER", "rolloverPctZScore63d": -0.3},
             {**base, "symbol": "NEG_HALF", "rolloverPctZScore63d": -0.7},
             {**base, "symbol": "NEG_ONE", "rolloverPctZScore63d": -1.2},
             {**base, "symbol": "POSITIVE", "rolloverPctZScore63d": 0.1},
             {**base, "symbol": "NO_HISTORY_NEG", "rolloverZScoreStatus": "INSUFFICIENT_63_PRIOR_SESSIONS", "rolloverPctZScore63d": -2.0},
         ]
         negative_cohorts = builder.joint_rollover_zscore_cohorts(negative_rows)
+        self.assertEqual([row["symbol"] for row in negative_cohorts["HIGH_BOTH_ROLLOVER_ZSCORE_NEG025"]], ["NEG_QUARTER", "NEG_HALF", "NEG_ONE"])
         self.assertEqual([row["symbol"] for row in negative_cohorts["HIGH_BOTH_ROLLOVER_ZSCORE_NEG05"]], ["NEG_HALF", "NEG_ONE"])
+        self.assertEqual([row["symbol"] for row in negative_cohorts["HIGH_BOTH_ROLLOVER_ZSCORE_NEG075"]], ["NEG_ONE"])
         self.assertEqual([row["symbol"] for row in negative_cohorts["HIGH_BOTH_ROLLOVER_ZSCORE_NEG10"]], ["NEG_ONE"])
-        self.assertEqual(len(cohorts), 4)
+        self.assertEqual(len(cohorts), 6)
 
 
     def test_false_signal_forensics_separates_correct_wrong_and_point_in_time_groups(self):
