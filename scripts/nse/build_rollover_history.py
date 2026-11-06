@@ -347,7 +347,7 @@ def joint_rollover_zscore_cohorts(rows):
         ]
     # A cross-sectionally high rollover can still be below the same stock's
     # own prior-year norm. Keep these as research cohorts, not entry filters.
-    for threshold in (0.5, 1.0):
+    for threshold in (0.25, 0.5, 0.75, 1.0):
         label = str(threshold).replace(".", "")
         cohorts[f"HIGH_BOTH_ROLLOVER_ZSCORE_NEG{label}"] = [
             row for row in rows
