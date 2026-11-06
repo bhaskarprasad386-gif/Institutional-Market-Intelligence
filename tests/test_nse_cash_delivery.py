@@ -46,9 +46,9 @@ class CashDeliveryParserTests(unittest.TestCase):
     def test_preserves_eq_row_with_blank_delivery_quantity_as_partial_data(self):
         csv_text = (
             "SYMBOL,SERIES,DATE1,CLOSE_PRICE,AVG_PRICE,TTL_TRD_QNTY,"
-            "DELIV_QTY,DELIV_PER,NO_OF_TRADES\\n"
-            "ABC,EQ,05-Nov-2026,100,99.5,10000,,42,500\\n"
-            "XYZ,EQ,05-Nov-2026,200,199,5000,2000,40,250\\n"
+            "DELIV_QTY,DELIV_PER,NO_OF_TRADES\n"
+            "ABC,EQ,05-Nov-2026,100,99.5,10000,,42,500\n"
+            "XYZ,EQ,05-Nov-2026,200,199,5000,2000,40,250\n"
         )
         rows = delivery.parse_cash_delivery_csv(csv_text, dt.date(2026, 11, 5))
         self.assertEqual(len(rows), 2)
