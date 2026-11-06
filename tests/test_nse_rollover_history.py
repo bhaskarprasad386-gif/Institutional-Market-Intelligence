@@ -584,5 +584,41 @@ if __name__ == "__main__":
     unittest.main()
 
 
+    def test_delivery_percentage_momentum_excludes_mismatched_source_rows(self):
+        metrics = [
+            {"symbol": "ABC", "tradeDate": f"2026-01-{day:02d}"}
+            for day in range(1, 8)
+        ]
+        archive = {}
+        for day in range(1, 8):
+            date = f"2026-01-{day:02d}"
+            mismatch = day == 2
+            archive[date] = {
+                "ABC": {
+                    "deliveryPct": 50.0 if mismatch else 40.0 + day,
+                    "computedDeliveryPct": 30.0 if mismatch else 40.0 + day,
+                    "deliveryPctConsistencyStatus": "MISMATCH" if mismatch else "MATCH",
+                    "deliveryQuantity": 100 + day * 10,
+                    "tradedQuantity": 200 + day * 10,
+                    "vwap": 100.0,
+                    "closePrice": 101.0,
+                }
+            }
+
+        result = builder.attach_point_in_time_cash_delivery(metrics, archive)
+        # Day 7 compares to day 2: quantity momentum remains valid, but
+        # delivery-percentage momentum is blocked by the mismatched endpoint.
+        self.assertIsNone(result[6]["deliveryPctTrusted"] if result[1]["deliveryPctConsistencyStatus"] != "MATCH" else 0)
+        self.assertIsNone(result[6]["deliveryPctMomentum5d"])
+        self.assertEqual(
+            result[6]["deliveryPctTrendQualityStatus"],
+            "PRIOR_SOURCE_MISMATCH_OR_UNVERIFIED",
+        )
+        self.assertAlmostEqual(result[6]["deliveryQuantityMomentum5dPct"], (170 / 120 - 1) * 100)
+        self.assertEqual(result[1]["deliveryPctConsistencyStatus"], "MISMATCH")
+        self.assertEqual(result[1]["deliveryPct"], 50.0)
+        self.assertEqual(result[1]["computedDeliveryPct"], 30.0)
+
+
 if __name__ == "__main__":
     unittest.main()
