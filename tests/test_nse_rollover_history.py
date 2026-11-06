@@ -370,6 +370,40 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual([row["symbol"] for row in cohorts[key]], ["MATCH"])
         self.assertEqual(len(cohorts), 12)
 
+
+    def test_rollover_zscore_uses_exactly_63_prior_symbol_sessions_without_lookahead(self):
+        rows = [
+            {
+                "symbol": "ABC",
+                "tradeDate": f"2026-01-{index + 1:03d}",
+                "rolloverPct": 20.0 + (index % 7),
+            }
+            for index in range(65)
+        ]
+        rows[63]["rolloverPct"] = 40.0
+        rows[64]["rolloverPct"] = 99.0
+        result = builder.add_point_in_time_rollover_zscore(rows, window=63)
+
+        self.assertEqual(result[62]["rolloverZScoreStatus"], "INSUFFICIENT_63_PRIOR_SESSIONS")
+        self.assertIsNone(result[62]["rolloverPctZScore63d"])
+        self.assertEqual(result[63]["rolloverZScoreStatus"], "AVAILABLE")
+        self.assertEqual(result[63]["rolloverPctMean63d"], sum(20.0 + (i % 7) for i in range(63)) / 63)
+        self.assertGreater(result[63]["rolloverPctZScore63d"], 0)
+        # A later extreme observation must not change the earlier signal's score.
+        earlier_score = result[63]["rolloverPctZScore63d"]
+        result[64]["rolloverPct"] = 100000.0
+        builder.add_point_in_time_rollover_zscore(result, window=63)
+        self.assertEqual(result[63]["rolloverPctZScore63d"], earlier_score)
+
+    def test_rollover_zscore_marks_zero_variance_history_unavailable(self):
+        rows = [
+            {"symbol": "ABC", "tradeDate": f"2026-02-{index + 1:03d}", "rolloverPct": 50.0}
+            for index in range(64)
+        ]
+        result = builder.add_point_in_time_rollover_zscore(rows, window=63)
+        self.assertEqual(result[63]["rolloverZScoreStatus"], "ZERO_HISTORICAL_VARIANCE")
+        self.assertIsNone(result[63]["rolloverPctZScore63d"])
+
 if __name__ == "__main__":
     unittest.main()
 
