@@ -31,14 +31,17 @@ class CashDeliveryParserTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "quantities"):
             delivery.parse_cash_delivery_csv(csv_text, dt.date(2026, 11, 5))
 
-    def test_rejects_mismatched_delivery_percentage(self):
+    def test_preserves_mismatched_delivery_percentage_and_flags_quality(self):
         csv_text = (
             "SYMBOL,SERIES,DATE1,CLOSE_PRICE,AVG_PRICE,TTL_TRD_QNTY,"
             "DELIV_QTY,DELIV_PER,NO_OF_TRADES\n"
             "ABC,EQ,05-Nov-2026,100,99.5,10000,4200,20,500\n"
         )
-        with self.assertRaisesRegex(ValueError, "disagree"):
-            delivery.parse_cash_delivery_csv(csv_text, dt.date(2026, 11, 5))
+        rows = delivery.parse_cash_delivery_csv(csv_text, dt.date(2026, 11, 5))
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["deliveryPct"], 20.0)
+        self.assertEqual(rows[0]["computedDeliveryPct"], 42.0)
+        self.assertEqual(rows[0]["deliveryPctConsistencyStatus"], "MISMATCH")
 
     def test_rejects_wrong_date_and_missing_eq_rows(self):
         csv_text = (
