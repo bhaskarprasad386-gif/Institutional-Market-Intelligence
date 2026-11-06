@@ -60,6 +60,41 @@ def date_cluster_bootstrap_precision(rows, seed=20261106, replicates=2000):
     }
 
 
+
+def outcome_overlap_cluster_bootstrap_precision(rows, market_sessions, seed=20261106, replicates=2000):
+    """Bootstrap connected components of overlapping 20-session outcome intervals."""
+    session_index = {day: index for index, day in enumerate(market_sessions)}
+    intervals = []
+    for row in rows:
+        if row.get("correct20d") is None:
+            continue
+        start, end = session_index.get(row.get("signalDate")), session_index.get(row.get("outcomeEndDate"))
+        if start is not None and end is not None and end >= start:
+            intervals.append((start, end, row))
+    intervals.sort(key=lambda item: (item[0], item[1]))
+    clusters, current, current_end = [], [], -1
+    for start, end, row in intervals:
+        if current and start > current_end:
+            clusters.append(current)
+            current, current_end = [], -1
+        current.append(row)
+        current_end = max(current_end, end)
+    if current:
+        clusters.append(current)
+    if not clusters:
+        return {"clusterCount": 0, "evaluatedSignals": 0, "replicates": 0, "precisionBootstrap95Pct": None, "warning": "NO_VALID_OUTCOME_OVERLAP_CLUSTERS"}
+    rng, estimates = random.Random(seed), []
+    for _ in range(replicates):
+        sample = [row for _ in clusters for row in rng.choice(clusters)]
+        estimates.append(sum(row.get("correct20d") is True for row in sample) / len(sample) * 100)
+    estimates.sort()
+    def percentile(p):
+        position = (len(estimates) - 1) * p
+        lower, upper = int(position), min(int(position) + 1, len(estimates) - 1)
+        weight = position - lower
+        return round(estimates[lower] * (1 - weight) + estimates[upper] * weight, 2)
+    return {"clusterCount": len(clusters), "evaluatedSignals": sum(map(len, clusters)), "replicates": len(estimates), "precisionBootstrap95Pct": [percentile(0.025), percentile(0.975)], "warning": "FEWER_THAN_20_OVERLAP_CLUSTERS_WIDE_UNCERTAINTY" if len(clusters) < 20 else None, "method": "Resample connected components of actual 20-market-session outcome intervals; overlapping windows are merged transitively before resampling."}
+
 def direction(price_change_pct, oi_change):
     if price_change_pct is None or oi_change is None:
         return "INSUFFICIENT_DATA"
@@ -519,7 +554,7 @@ def joint_rollover_zscore_cohorts(rows):
 
 
 
-def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interactions=True):
+def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interactions=True, market_sessions=None):
     """Compare correct and failed 20-session Shorts inside the pre-defined core cohort."""
     selected = [
         row for row in rows
@@ -782,6 +817,8 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
         cohort_cluster_bootstrap = date_cluster_bootstrap_precision(
             matched_cohort, seed=20261106 + sum(ord(char) for char in migration_label)
         )
+        cohort_overlap_bootstrap = outcome_overlap_cluster_bootstrap_precision(matched_cohort, market_sessions, seed=20265106 + sum(ord(char) for char in migration_label)) if market_sessions else None
+        baseline_overlap_bootstrap = outcome_overlap_cluster_bootstrap_precision(matched_controls, market_sessions, seed=20266106 + sum(ord(char) for char in migration_label)) if market_sessions else None
         baseline_cluster_bootstrap = date_cluster_bootstrap_precision(
             matched_controls, seed=20262106 + sum(ord(char) for char in migration_label)
         )
@@ -827,6 +864,7 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
             "eligibleCohortSignals": len(subgroup),
             "matchedCohort": cohort_stats,
             "matchedNonCohortShortBaseline": baseline_stats,
+            "outcomeOverlapClusterBootstrap": {"cohortPrecision": cohort_overlap_bootstrap, "baselinePrecision": baseline_overlap_bootstrap, "interpretation": "Exploratory unpaired bootstrap of transitive clusters formed from actual 20-market-session outcome intervals; overlapping windows are kept together."},
             "dateClusterBootstrap": {
                 "cohortPrecision": cohort_cluster_bootstrap,
                 "baselinePrecision": baseline_cluster_bootstrap,
@@ -897,6 +935,7 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
         "signalDetails": [
             {
                 "symbol": row.get("symbol"), "signalDate": row.get("signalDate"),
+                "outcomeEndDate": row.get("outcomeEndDate"),
                 "correct20d": row.get("correct20d"), "outcome20d": row.get("outcome20d"),
                 "return20dPct": number(row.get("return20dPct")),
                 "niftyTrend5d": row.get("niftyTrend5d"),
@@ -1176,6 +1215,8 @@ def build():
             future_day = own_sessions[idx + horizon] if idx + horizon < len(own_sessions) else None
             future_price = number(spot_lookup.get((row["symbol"], future_day))) if future_day else None
             ret = (future_price / start_price - 1) * 100 if future_price is not None and future_price > 0 else None
+            if horizon == 20:
+                item["outcomeEndDate"] = future_day
             item[f"return{horizon}dPct"] = ret
             item[f"outcome{horizon}d"] = ("UP" if ret is not None and ret >= threshold_pct else
                 "DOWN" if ret is not None and ret <= -threshold_pct else
@@ -1368,13 +1409,13 @@ def build():
         "marketTrendMethod": "NIFTY spot-close return over the signal date and five prior archived NIFTY sessions; UP above +0.25%, DOWN below -0.25%, otherwise FLAT. Missing index history is kept separate. No future index observations are used.",
         "rolloverZScoreDiagnostics": {"allCycleSignals": rollover_zscore_diagnostics(cycle_outcomes), "holdout": rollover_zscore_diagnostics(holdout), "walkForward": rollover_zscore_diagnostics(walk_forward_rows)},
         "falseSignalForensics": {
-            "development": false_signal_forensics(development, threshold_pct),
-            "holdout": false_signal_forensics(holdout, threshold_pct, include_pairwise_interactions=False),
-            "walkForward": false_signal_forensics(walk_forward_rows, threshold_pct, include_pairwise_interactions=False),
+            "development": false_signal_forensics(development, threshold_pct, market_sessions=sessions),
+            "holdout": false_signal_forensics(holdout, threshold_pct, include_pairwise_interactions=False, market_sessions=sessions),
+            "walkForward": false_signal_forensics(walk_forward_rows, threshold_pct, include_pairwise_interactions=False, market_sessions=sessions),
             "walkForwardFolds": [
                 {"fold": fold["fold"], "testStartDate": fold["testStartDate"],
                  "testEndDate": fold["testEndDate"],
-                 "analysis": false_signal_forensics(fold["testRows"], threshold_pct, include_pairwise_interactions=False)}
+                 "analysis": false_signal_forensics(fold["testRows"], threshold_pct, include_pairwise_interactions=False, market_sessions=sessions)}
                 for fold in walk_forward_folds
             ],
         },
