@@ -167,8 +167,17 @@ def attach_point_in_time_cash_delivery(metrics, archive_by_date):
             )
             row["deliveryPctMomentum5d"] = None
             row["deliveryPctTrendQualityStatus"] = "INSUFFICIENT_HISTORY"
-            row["deliveryQuantity"] = number(delivery.get("deliveryQuantity")) if delivery else None
-            row["tradedQuantity"] = number(delivery.get("tradedQuantity")) if delivery else None
+            quantities_trusted = bool(
+                delivery and row["deliveryPctConsistencyStatus"] == "MATCH"
+            )
+            row["deliveryQuantity"] = (
+                number(delivery.get("deliveryQuantity"))
+                if quantities_trusted else None
+            )
+            row["tradedQuantity"] = (
+                number(delivery.get("tradedQuantity"))
+                if quantities_trusted else None
+            )
             row["cashVwap"] = number(delivery.get("vwap")) if delivery else None
             row["cashClosePrice"] = number(delivery.get("closePrice")) if delivery else None
             row["cashTradedValueProxy"] = (
