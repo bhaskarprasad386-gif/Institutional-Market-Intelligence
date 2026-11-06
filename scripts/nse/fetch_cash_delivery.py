@@ -80,7 +80,7 @@ def parse_cash_delivery_csv(payload, expected_day):
         close = number(pick(raw, "CLOSE_PRICE"), "close price")
         vwap = number(pick(raw, "AVG_PRICE", "VWAP"), "VWAP", allow_blank=True)
         trades = number(pick(raw, "NO_OF_TRADES"), "number of trades", allow_blank=True)
-        if traded < 0 or delivered < 0 or delivered > traded:
+        if traded < 0 or (delivered is not None and (delivered < 0 or delivered > traded)):
             raise ValueError(f"Invalid delivery/traded quantities for {symbol}: {delivered}/{traded}")
         if delivery_pct < 0 or delivery_pct > 100:
             raise ValueError(f"Invalid delivery percentage for {symbol}: {delivery_pct}")
