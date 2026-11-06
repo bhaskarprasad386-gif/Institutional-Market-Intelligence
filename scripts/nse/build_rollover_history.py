@@ -422,6 +422,25 @@ def build():
     walk_forward_rows = [item for fold in walk_forward_folds for item in fold["testRows"]]
     walk_forward_summary = summarize(walk_forward_rows)["overall"]
 
+    def cohort_breadth(selected):
+        """Measure symbol/date diversity and largest single-contributor concentration."""
+        symbol_counts = defaultdict(int)
+        date_counts = defaultdict(int)
+        for item in selected:
+            symbol_counts[item["symbol"]] += 1
+            date_counts[item["signalDate"]] += 1
+        total = len(selected)
+        max_symbol = max(symbol_counts.values(), default=0)
+        max_date = max(date_counts.values(), default=0)
+        return {
+            "uniqueSymbols": len(symbol_counts),
+            "uniqueSignalDates": len(date_counts),
+            "maxSymbolSignals": max_symbol,
+            "maxSymbolSharePct": round(max_symbol / total * 100, 2) if total else None,
+            "maxDateSignals": max_date,
+            "maxDateSharePct": round(max_date / total * 100, 2) if total else None,
+        }
+
     def rollover_condition_summary(rows):
         cohorts = {
             "ALL_DIRECTIONAL": rows,
@@ -446,6 +465,7 @@ def build():
         return {
             name: {
                 "signalCount": len(selected),
+                "breadth": cohort_breadth(selected),
                 "stats": summarize(selected)["overall"],
                 # Regime labels use only prior symbol-session spot returns.
                 # Keep the same cohort definitions across holdout and each fold.
