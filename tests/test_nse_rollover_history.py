@@ -586,10 +586,6 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(missing["cashDemandCoverageStatus"], "DATE_ARCHIVE_MISSING")
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
     def test_delivery_percentage_momentum_excludes_mismatched_source_rows(self):
         metrics = [
             {"symbol": "ABC", "tradeDate": f"2026-01-{day:02d}"}
@@ -612,8 +608,8 @@ if __name__ == "__main__":
             }
 
         result = builder.attach_point_in_time_cash_delivery(metrics, archive)
-        # Day 7 compares to day 2: quantity momentum remains valid, but
-        # delivery-percentage momentum is blocked by the mismatched endpoint.
+        # Day 7 compares to day 2: the mismatched endpoint blocks both
+        # delivery-percentage and quantity-derived cash demand momentum.
         self.assertIsNone(result[1]["deliveryPctTrusted"])
         self.assertIsNotNone(result[6]["deliveryPctTrusted"])
         self.assertIsNone(result[6]["deliveryPctMomentum5d"])
@@ -621,7 +617,7 @@ if __name__ == "__main__":
             result[6]["deliveryPctTrendQualityStatus"],
             "PRIOR_SOURCE_MISMATCH_OR_UNVERIFIED",
         )
-        self.assertAlmostEqual(result[6]["deliveryQuantityMomentum5dPct"], (170 / 120 - 1) * 100)
+        self.assertIsNone(result[6]["deliveryQuantityMomentum5dPct"])
         self.assertEqual(result[1]["deliveryPctConsistencyStatus"], "MISMATCH")
         self.assertEqual(result[1]["deliveryPct"], 50.0)
         self.assertEqual(result[1]["computedDeliveryPct"], 30.0)
