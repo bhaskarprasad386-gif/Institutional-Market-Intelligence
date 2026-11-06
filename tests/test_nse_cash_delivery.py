@@ -43,7 +43,22 @@ class CashDeliveryParserTests(unittest.TestCase):
         self.assertEqual(rows[0]["computedDeliveryPct"], 42.0)
         self.assertEqual(rows[0]["deliveryPctConsistencyStatus"], "MISMATCH")
 
-    def test_preserves_eq_row_with_blank_delivery_quantity_as_partial_data(self):\n        csv_text = (\n            "SYMBOL,SERIES,DATE1,CLOSE_PRICE,AVG_PRICE,TTL_TRD_QNTY,"\n            "DELIV_QTY,DELIV_PER,NO_OF_TRADES\\n"\n            "ABC,EQ,05-Nov-2026,100,99.5,10000,,42,500\\n"\n            "XYZ,EQ,05-Nov-2026,200,199,5000,2000,40,250\\n"\n        )\n        rows = delivery.parse_cash_delivery_csv(csv_text, dt.date(2026, 11, 5))\n        self.assertEqual(len(rows), 2)\n        self.assertIsNone(rows[0]["deliveryQuantity"])\n        self.assertEqual(rows[0]["deliveryQuantityStatus"], "MISSING")\n        self.assertIsNone(rows[0]["computedDeliveryPct"])\n        self.assertEqual(rows[0]["deliveryPct"], 42.0)\n        self.assertEqual(rows[1]["deliveryQuantity"], 2000)\n\n    def test_rejects_wrong_date_and_missing_eq_rows(self):
+    def test_preserves_eq_row_with_blank_delivery_quantity_as_partial_data(self):
+        csv_text = (
+            "SYMBOL,SERIES,DATE1,CLOSE_PRICE,AVG_PRICE,TTL_TRD_QNTY,"
+            "DELIV_QTY,DELIV_PER,NO_OF_TRADES\\n"
+            "ABC,EQ,05-Nov-2026,100,99.5,10000,,42,500\\n"
+            "XYZ,EQ,05-Nov-2026,200,199,5000,2000,40,250\\n"
+        )
+        rows = delivery.parse_cash_delivery_csv(csv_text, dt.date(2026, 11, 5))
+        self.assertEqual(len(rows), 2)
+        self.assertIsNone(rows[0]["deliveryQuantity"])
+        self.assertEqual(rows[0]["deliveryQuantityStatus"], "MISSING")
+        self.assertIsNone(rows[0]["computedDeliveryPct"])
+        self.assertEqual(rows[0]["deliveryPct"], 42.0)
+        self.assertEqual(rows[1]["deliveryQuantity"], 2000)
+
+    def test_rejects_wrong_date_and_missing_eq_rows(self):
         csv_text = (
             "SYMBOL,SERIES,DATE1,CLOSE_PRICE,AVG_PRICE,TTL_TRD_QNTY,"
             "DELIV_QTY,DELIV_PER,NO_OF_TRADES\n"
