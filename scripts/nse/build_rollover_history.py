@@ -198,6 +198,29 @@ def add_point_in_time_rollover_momentum(metrics):
     return metrics
 
 
+def joint_market_stock_cohorts(rows):
+    """Split the core high-rollover/share-down/cost-rising cohort by NIFTY and stock price/OI regimes."""
+    cohorts = {}
+    for trend in ("DOWN", "UP", "FLAT"):
+        for price, oi in (("DOWN", "UP"), ("DOWN", "DOWN"), ("UP", "UP"), ("UP", "DOWN")):
+            name = f"HIGH_BOTH_SHARE_DOWN_COST_RISING_NIFTY_{trend}_PRICE_{price}_OI_{oi}"
+            cohorts[name] = [
+                row for row in rows
+                if row.get("rolloverPctFlag") == "HIGH"
+                and row.get("rolloverCostFlag") == "HIGH"
+                and row.get("nextShareMomentum5d") is not None
+                and row["nextShareMomentum5d"] < 0
+                and row.get("rolloverCostMomentum5dPct") is not None
+                and row["rolloverCostMomentum5dPct"] > 0
+                and row.get("niftyTrend5d") == trend
+                and row.get("spotMomentum5dPct") is not None
+                and (row["spotMomentum5dPct"] < 0 if price == "DOWN" else row["spotMomentum5dPct"] > 0)
+                and row.get("totalOiMomentum5dPct") is not None
+                and (row["totalOiMomentum5dPct"] > 0 if oi == "UP" else row["totalOiMomentum5dPct"] < 0)
+            ]
+    return cohorts
+
+
 def build():
     index_path = ROOT / "index.json"
     index = json.loads(index_path.read_text(encoding="utf-8"))
@@ -498,24 +521,7 @@ def build():
             "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_DOWN_OI_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] < 0 and x.get("totalOiMomentum5dPct") is not None and x["totalOiMomentum5dPct"] < 0],
             "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_UP_OI_UP": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] > 0 and x.get("totalOiMomentum5dPct") is not None and x["totalOiMomentum5dPct"] > 0],
             "HIGH_BOTH_SHARE_DOWN_COST_RISING_PRICE_UP_OI_DOWN": [x for x in rows if x.get("rolloverPctFlag") == "HIGH" and x.get("rolloverCostFlag") == "HIGH" and x.get("nextShareMomentum5d") is not None and x["nextShareMomentum5d"] < 0 and x.get("rolloverCostMomentum5dPct") is not None and x["rolloverCostMomentum5dPct"] > 0 and x.get("spotMomentum5dPct") is not None and x["spotMomentum5dPct"] > 0 and x.get("totalOiMomentum5dPct") is not None and x["totalOiMomentum5dPct"] < 0],
-            **{
-                f"HIGH_BOTH_SHARE_DOWN_COST_RISING_{trend}_PRICE_{price}_OI_{oi}": [
-                    x for x in rows
-                    if x.get("rolloverPctFlag") == "HIGH"
-                    and x.get("rolloverCostFlag") == "HIGH"
-                    and x.get("nextShareMomentum5d") is not None
-                    and x["nextShareMomentum5d"] < 0
-                    and x.get("rolloverCostMomentum5dPct") is not None
-                    and x["rolloverCostMomentum5dPct"] > 0
-                    and x.get("niftyTrend5d") == trend
-                    and x.get("spotMomentum5dPct") is not None
-                    and (x["spotMomentum5dPct"] < 0 if price == "DOWN" else x["spotMomentum5dPct"] > 0)
-                    and x.get("totalOiMomentum5dPct") is not None
-                    and (x["totalOiMomentum5dPct"] > 0 if oi == "UP" else x["totalOiMomentum5dPct"] < 0)
-                ]
-                for trend in ("DOWN", "UP", "FLAT")
-                for price, oi in (("DOWN", "UP"), ("DOWN", "DOWN"), ("UP", "UP"), ("UP", "DOWN"))
-            },
+            **joint_market_stock_cohorts(rows),
         }
         return {
             name: {
