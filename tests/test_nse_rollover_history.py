@@ -471,6 +471,9 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(result["subgroups"]["niftyTrend5d"]["DOWN"]["evaluated"], 1)
         self.assertEqual(result["subgroups"]["niftyTrend5d"]["UP"]["wrong"], 1)
         self.assertEqual(result["overall"]["netPrecision20BpsPct"], 50.0)
+        self.assertEqual(result["overall"]["precisionWilson95Pct"], [9.45, 90.55])
+        self.assertEqual(len(result["signalDetails"]), 4)
+        self.assertEqual(result["signalDetails"][0]["symbol"], "A")
         self.assertIn("newly accrued prospective", result["interpretationGuard"])
 
 
