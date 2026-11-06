@@ -404,6 +404,26 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(result[63]["rolloverZScoreStatus"], "ZERO_HISTORICAL_VARIANCE")
         self.assertIsNone(result[63]["rolloverPctZScore63d"])
 
+
+    def test_cohort_evidence_gate_requires_sample_breadth_and_net_80_percent(self):
+        rows = [
+            {"symbol": f"S{i % 10}", "signalDate": f"2026-01-{i // 2 + 1:02d}"}
+            for i in range(30)
+        ]
+        summary = {"SHORT_BUILD_UP_20D": {
+            "evaluatedSignals": 30, "precisionPct": 83.33,
+            "costSensitivity": {"20": {"netPrecisionPct": 80.0}},
+        }}
+        gate = builder.cohort_evidence_gate(rows, summary)
+        self.assertEqual(gate["status"], "BREADTH_OK_NOT_PROOF")
+        self.assertTrue(gate["meets80PercentAfter20BpsGate"])
+        concentrated = [{"symbol": "ONE", "signalDate": "2026-01-01"} for _ in range(30)]
+        blocked = builder.cohort_evidence_gate(concentrated, summary)
+        self.assertEqual(blocked["status"], "INSUFFICIENT_EVIDENCE")
+        self.assertFalse(blocked["meets80PercentAfter20BpsGate"])
+        self.assertIn("SINGLE_SYMBOL_CONCENTRATION_OVER_20_PERCENT", blocked["failedChecks"])
+
+
 if __name__ == "__main__":
     unittest.main()
 
