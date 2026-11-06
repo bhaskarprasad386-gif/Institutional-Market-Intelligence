@@ -49,6 +49,16 @@ class CashDeliveryParserTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "No valid EQ"):
             delivery.parse_cash_delivery_csv(csv_text, dt.date(2026, 11, 5))
 
+    def test_partial_backfill_is_reported_as_failure(self):
+        with self.assertRaisesRegex(SystemExit, "backfill incomplete: 2 dates failed"):
+            delivery.ensure_backfill_complete(10, 3, 2)
+
+    def test_complete_backfill_passes(self):
+        self.assertIsNone(delivery.ensure_backfill_complete(10, 5, 0))
+
+    def test_already_archived_backfill_passes(self):
+        self.assertIsNone(delivery.ensure_backfill_complete(0, 603, 0))
+
 
 if __name__ == "__main__":
     unittest.main()
