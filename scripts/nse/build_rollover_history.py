@@ -141,7 +141,7 @@ def build_walk_forward_folds(cycle_outcomes, symbol_sessions, minimum_train_frac
     return folds
 
 def attach_point_in_time_cash_delivery(metrics, archive_by_date):
-    """Attach same-day delivery % and prior-five-symbol-session change; no lookahead."""
+    """Attach cash demand fields; only internally consistent delivery % enters trend features."""
     by_symbol = defaultdict(list)
     for row in metrics:
         by_symbol[row["symbol"]].append(row)
@@ -151,13 +151,22 @@ def attach_point_in_time_cash_delivery(metrics, archive_by_date):
             daily = archive_by_date.get(row["tradeDate"])
             delivery = daily.get(row["symbol"]) if daily is not None else None
             row["deliveryPct"] = number(delivery.get("deliveryPct")) if delivery else None
+            row["computedDeliveryPct"] = number(delivery.get("computedDeliveryPct")) if delivery else None
+            row["deliveryPctConsistencyStatus"] = (
+                delivery.get("deliveryPctConsistencyStatus", "UNVERIFIED")
+                if delivery else "ARCHIVE_UNAVAILABLE"
+            )
+            row["deliveryPctTrusted"] = (
+                row["deliveryPct"] if delivery and
+                row["deliveryPctConsistencyStatus"] == "MATCH" else None
+            )
             row["deliveryCoverageStatus"] = (
                 "AVAILABLE" if delivery else
                 "SYMBOL_NOT_REPORTED" if daily is not None else
                 "DATE_ARCHIVE_MISSING"
             )
             row["deliveryPctMomentum5d"] = None
-            # Raw NSE cash fields and same-symbol prior-session demand features.
+            row["deliveryPctTrendQualityStatus"] = "INSUFFICIENT_HISTORY"
             row["deliveryQuantity"] = number(delivery.get("deliveryQuantity")) if delivery else None
             row["tradedQuantity"] = number(delivery.get("tradedQuantity")) if delivery else None
             row["cashVwap"] = number(delivery.get("vwap")) if delivery else None
@@ -194,12 +203,19 @@ def attach_point_in_time_cash_delivery(metrics, archive_by_date):
                         row[output] = (current_value / prior_value - 1) * 100
             if index >= 5:
                 prior = rows[index - 5]
-                current_pct = number(row.get("deliveryPct"))
-                prior_pct = number(prior.get("deliveryPct"))
-                if current_pct is not None and prior_pct is not None:
-                    row["deliveryPctMomentum5d"] = current_pct - prior_pct
+                if (row.get("deliveryPctConsistencyStatus") == "MATCH"
+                        and prior.get("deliveryPctConsistencyStatus") == "MATCH"
+                        and row.get("deliveryPctTrusted") is not None
+                        and prior.get("deliveryPctTrusted") is not None):
+                    row["deliveryPctMomentum5d"] = (
+                        row["deliveryPctTrusted"] - prior["deliveryPctTrusted"]
+                    )
+                    row["deliveryPctTrendQualityStatus"] = "TRUSTED_MATCHED_ENDPOINTS"
+                elif row.get("deliveryPctConsistencyStatus") != "MATCH":
+                    row["deliveryPctTrendQualityStatus"] = "CURRENT_SOURCE_MISMATCH_OR_UNVERIFIED"
+                else:
+                    row["deliveryPctTrendQualityStatus"] = "PRIOR_SOURCE_MISMATCH_OR_UNVERIFIED"
     return metrics
-
 
 def load_cash_delivery_history(directory=Path("public/data/nse-cash-delivery")):
     """Load archived NSE cash delivery files keyed by date and symbol."""
@@ -875,6 +891,10 @@ def build():
                 "spotMomentum5dPct": calculate_prior_spot_momentum(
                     symbol_spot_series, row["symbol"], row["tradeDate"], 5),
                 "deliveryPct": row.get("deliveryPct"),
+                "computedDeliveryPct": row.get("computedDeliveryPct"),
+                "deliveryPctTrusted": row.get("deliveryPctTrusted"),
+                "deliveryPctConsistencyStatus": row.get("deliveryPctConsistencyStatus"),
+                "deliveryPctTrendQualityStatus": row.get("deliveryPctTrendQualityStatus"),
                 "deliveryPctMomentum5d": row.get("deliveryPctMomentum5d"),
                 "deliveryQuantity": row.get("deliveryQuantity"),
                 "deliveryQuantityMomentum5dPct": row.get("deliveryQuantityMomentum5dPct"),
