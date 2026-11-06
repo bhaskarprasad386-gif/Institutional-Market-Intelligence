@@ -473,7 +473,19 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
             )
         return row.get(field) or "MISSING"
 
+    def is_core_rollover_cohort(row):
+        return (
+            row.get("rolloverPctFlag") == "HIGH"
+            and row.get("rolloverCostFlag") == "HIGH"
+            and row.get("nextShareMomentum5d") is not None
+            and row["nextShareMomentum5d"] < 0
+            and row.get("rolloverCostMomentum5dPct") is not None
+            and row["rolloverCostMomentum5dPct"] > 0
+            and row.get("nextBuildUp") == "SHORT_BUILD_UP"
+        )
+
     pairwise_interactions = {}
+    matched_baseline_comparisons = {}
     if include_pairwise_interactions:
         for left_field, right_field in interaction_pairs:
             cells = defaultdict(list)
@@ -499,6 +511,53 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
                 ),
             }
 
+            if (left_field, right_field) == ("niftyTrend5d", "stockPriceTrend5d"):
+                baseline_cells = defaultdict(list)
+                cohort_cells = defaultdict(list)
+                for row in rows:
+                    if (row.get("nextBuildUp") == "SHORT_BUILD_UP"
+                            and row.get("correct20d") is not None
+                            and not is_core_rollover_cohort(row)):
+                        key = (interaction_label(row, left_field),
+                               interaction_label(row, right_field))
+                        baseline_cells[key].append(row)
+                for row in evaluated:
+                    key = (interaction_label(row, left_field),
+                           interaction_label(row, right_field))
+                    cohort_cells[key].append(row)
+                comparisons = []
+                for key in sorted(set(baseline_cells) | set(cohort_cells)):
+                    cohort_stats = result_stats(cohort_cells.get(key, []))
+                    baseline_stats = result_stats(baseline_cells.get(key, []))
+                    lift = (
+                        round(cohort_stats["precisionPct"] - baseline_stats["precisionPct"], 2)
+                        if cohort_stats["precisionPct"] is not None
+                        and baseline_stats["precisionPct"] is not None else None
+                    )
+                    comparisons.append({
+                        "niftyTrend5d": key[0],
+                        "stockPriceTrend5d": key[1],
+                        "cohort": cohort_stats,
+                        "matchedNonCohortShortBaseline": baseline_stats,
+                        "precisionLiftPercentagePoints": lift,
+                        "warning": (
+                            "LOW_SAMPLE_OR_MISSING_COMPARATOR"
+                            if cohort_stats["evaluated"] < 5
+                            or baseline_stats["evaluated"] < 5 else None
+                        ),
+                    })
+                matched_baseline_comparisons["niftyTrend5d__stockPriceTrend5d"] = {
+                    "baselineDefinition": (
+                        "Other SHORT_BUILD_UP rows excluding the core rollover cohort, "
+                        "matched on identical NIFTY and stock-price trend labels."
+                    ),
+                    "cells": comparisons,
+                    "interpretation": (
+                        "DEVELOPMENT_ONLY_DIAGNOSTIC; positive lift is not proof; "
+                        "do not select a trading filter from this same-sample comparison."
+                    ),
+                }
+
     numeric_fields = (
         "rolloverPct", "rolloverCostPct", "nextShareMomentum5d",
         "rolloverCostMomentum5dPct", "spotMomentum5dPct",
@@ -523,6 +582,7 @@ def false_signal_forensics(rows, threshold_pct=0.5, include_pairwise_interaction
         "pending": sum(row.get("outcome20d") == "PENDING" for row in selected),
         "overall": result_stats(evaluated), "subgroups": subgroup_results,
         "pairwiseInteractions": pairwise_interactions,
+        "matchedBaselineComparisons": matched_baseline_comparisons,
         "correctVsWrongFeatureDistributions": feature_comparison,
         "signalDetails": [
             {
