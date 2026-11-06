@@ -78,13 +78,18 @@ def parse_cash_delivery_csv(payload, expected_day):
         # NSE occasionally publishes an EQ row with an empty DELIV_QTY.
         # Preserve the row and archive; null keeps downstream features partial.
         delivered = number(pick(raw, "DELIV_QTY", "DELIVERABLE_QTY"), "delivery quantity", allow_blank=True)
-        # Some NSE rows also omit DELIV_PER. Keep the security/date row and\n        # preserve the missing source value as null; never infer it from quantity.\n        delivery_pct = number(\n            pick(raw, "DELIV_PER", "DELIVERABLE_PERCENT"),\n            "delivery percentage", allow_blank=True\n        )
+        # Some NSE rows also omit DELIV_PER. Keep the security/date row and
+        # preserve the missing source value as null; never infer it from quantity.
+        delivery_pct = number(
+            pick(raw, "DELIV_PER", "DELIVERABLE_PERCENT"),
+            "delivery percentage", allow_blank=True
+        )
         close = number(pick(raw, "CLOSE_PRICE"), "close price")
         vwap = number(pick(raw, "AVG_PRICE", "VWAP"), "VWAP", allow_blank=True)
         trades = number(pick(raw, "NO_OF_TRADES"), "number of trades", allow_blank=True)
         if traded < 0 or (delivered is not None and (delivered < 0 or delivered > traded)):
             raise ValueError(f"Invalid delivery/traded quantities for {symbol}: {delivered}/{traded}")
-        if delivery_pct < 0 or delivery_pct > 100:
+        if delivery_pct is not None and (delivery_pct < 0 or delivery_pct > 100):
             raise ValueError(f"Invalid delivery percentage for {symbol}: {delivery_pct}")
         if close <= 0:
             raise ValueError(f"Invalid cash close for {symbol}: {close}")
@@ -97,7 +102,7 @@ def parse_cash_delivery_csv(payload, expected_day):
         # flag the discrepancy for downstream quality filtering instead of
         # discarding an otherwise valid trading date.
         pct_consistency = (
-            "NOT_COMPUTABLE" if computed_pct is None else
+            "NOT_COMPUTABLE" if computed_pct is None or delivery_pct is None else
             "MATCH" if abs(computed_pct - delivery_pct) <= 1.0 else "MISMATCH"
         )
         rows.append({
@@ -105,7 +110,8 @@ def parse_cash_delivery_csv(payload, expected_day):
             "closePrice": close, "vwap": vwap, "tradedQuantity": int(traded),
             "deliveryQuantity": int(delivered) if delivered is not None else None,
             "deliveryQuantityStatus": "AVAILABLE" if delivered is not None else "MISSING",
-            "deliveryPct": delivery_pct,\n            "deliveryPctStatus": "AVAILABLE" if delivery_pct is not None else "MISSING",
+            "deliveryPct": delivery_pct,
+            "deliveryPctStatus": "AVAILABLE" if delivery_pct is not None else "MISSING",
             "computedDeliveryPct": round(computed_pct, 4) if computed_pct is not None else None,
             "deliveryPctConsistencyStatus": pct_consistency,
             "tradeCount": int(trades) if trades is not None else None,
@@ -208,7 +214,9 @@ def main():
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError) as exc:
             errors.append(f"{day.isoformat()}: {exc}")
             time.sleep(1)
-    raise SystemExit("Unable to fetch NSE cash delivery report:\n" + "\n".join(errors))
+    raise SystemExit("Unable to fetch NSE cash delivery report:
+" + "
+".join(errors))
 
 if __name__ == "__main__":
     main()
