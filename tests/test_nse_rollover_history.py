@@ -477,6 +477,29 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertIn("newly accrued prospective", result["interpretationGuard"])
 
 
+    def test_cash_delivery_momentum_uses_exact_prior_symbol_session(self):
+        rows = [
+            {"symbol": "ABC", "tradeDate": f"2026-11-0{day}"}
+            for day in range(1, 8)
+        ]
+        archive = {
+            f"2026-11-0{day}": {"ABC": {"deliveryPct": value}}
+            for day, value in ((1, 20.0), (2, 22.0), (3, 24.0),
+                               (4, 26.0), (5, 28.0), (6, 35.0), (7, 40.0))
+        }
+        result = builder.attach_point_in_time_cash_delivery(rows, archive)
+        self.assertEqual(result[5]["deliveryPctMomentum5d"], 15.0)
+        self.assertEqual(result[5]["deliveryCoverageStatus"], "AVAILABLE")
+        self.assertIsNone(result[4]["deliveryPctMomentum5d"])
+
+    def test_cash_delivery_missing_archive_is_not_zero_filled(self):
+        rows = [{"symbol": "ABC", "tradeDate": "2026-11-06"}]
+        result = builder.attach_point_in_time_cash_delivery(rows, {})
+        self.assertIsNone(result[0]["deliveryPct"])
+        self.assertIsNone(result[0]["deliveryPctMomentum5d"])
+        self.assertEqual(result[0]["deliveryCoverageStatus"], "DATE_ARCHIVE_MISSING")
+
+
 if __name__ == "__main__":
     unittest.main()
 
