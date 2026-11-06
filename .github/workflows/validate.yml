@@ -40,6 +40,7 @@ jobs:
               "holdoutStats": source["holdoutStats"],
               "walkForward": walk,
               "rolloverConditionStats": source["rolloverConditionStats"],
+              "falseSignalForensics": source["falseSignalForensics"],
           }
           Path("rollover-walk-forward-summary.json").write_text(json.dumps(summary, indent=2))
           for name, stats in (("DEVELOPMENT", source["developmentStats"]), ("HOLDOUT", source["holdoutStats"]), ("WALK_FORWARD", walk["stats"])):
