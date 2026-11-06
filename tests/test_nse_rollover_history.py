@@ -488,6 +488,17 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(len(result["signalDetails"]), 4)
         self.assertEqual(result["signalDetails"][0]["symbol"], "A")
         self.assertIn("newly accrued prospective", result["interpretationGuard"])
+        interactions = result["pairwiseInteractions"]
+        market_stock = interactions["niftyTrend5d__stockPriceTrend5d"]
+        self.assertEqual(market_stock["evaluatedSignals"], 2)
+        down_down = next(
+            cell for cell in market_stock["cells"]
+            if cell["left"] == "DOWN" and cell["right"] == "DOWN"
+        )
+        self.assertEqual(down_down["evaluated"], 1)
+        self.assertEqual(down_down["correct"], 1)
+        self.assertEqual(down_down["sampleWarning"], "LOW_SAMPLE_LT_5")
+        self.assertIn("EXPLORATORY_ONLY", market_stock["interpretation"])
         stricter_threshold = builder.false_signal_forensics([
             {**base, "symbol": "THRESHOLD", "correct20d": True,
              "return20dPct": -0.8, "outcome20d": "DOWN"}
