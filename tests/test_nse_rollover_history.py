@@ -755,6 +755,47 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertIsNone(result[-1]["deliveryQuantityMomentum5dPct"])
 
 
+    def test_paired_overlap_cluster_lift_resamples_shared_temporal_components(self):
+        sessions = [f"2026-01-{day:02d}" for day in range(1, 91)]
+        cohort = [
+            {"signalDate": sessions[0], "outcomeEndDate": sessions[19], "correct20d": True},
+            {"signalDate": sessions[30], "outcomeEndDate": sessions[49], "correct20d": False},
+            # This cohort-only interval is excluded from the paired estimand.
+            {"signalDate": sessions[70], "outcomeEndDate": sessions[89], "correct20d": True},
+        ]
+        baseline = [
+            {"signalDate": sessions[1], "outcomeEndDate": sessions[20], "correct20d": False},
+            {"signalDate": sessions[31], "outcomeEndDate": sessions[50], "correct20d": True},
+        ]
+        result = builder.paired_outcome_overlap_cluster_lift(
+            cohort, baseline, sessions, seed=7, replicates=250
+        )
+        self.assertEqual(result["unionOverlapClusterCount"], 3)
+        self.assertEqual(result["sharedClusterCount"], 2)
+        self.assertEqual(result["cohortSignalsInSharedClusters"], 2)
+        self.assertEqual(result["baselineSignalsInSharedClusters"], 2)
+        self.assertEqual(result["pointPrecisionLiftPercentagePoints"], 0.0)
+        self.assertEqual(result["precisionLiftBootstrap95Pct"], [0.0, 0.0])
+        self.assertEqual(result["replicates"], 250)
+        self.assertEqual(
+            result["warning"],
+            "FEWER_THAN_20_SHARED_OVERLAP_CLUSTERS_WIDE_UNCERTAINTY",
+        )
+
+    def test_paired_overlap_cluster_lift_requires_shared_temporal_support(self):
+        sessions = [f"2026-02-{day:02d}" for day in range(1, 29)]
+        cohort = [
+            {"signalDate": sessions[0], "outcomeEndDate": sessions[19], "correct20d": True}
+        ]
+        baseline = [
+            {"signalDate": sessions[21], "outcomeEndDate": sessions[27], "correct20d": False}
+        ]
+        result = builder.paired_outcome_overlap_cluster_lift(cohort, baseline, sessions)
+        self.assertEqual(result["sharedClusterCount"], 0)
+        self.assertIsNone(result["precisionLiftBootstrap95Pct"])
+        self.assertEqual(result["warning"], "INSUFFICIENT_SHARED_TEMPORAL_CLUSTERS_LT_2")
+
+
 
 if __name__ == "__main__":
     unittest.main()
