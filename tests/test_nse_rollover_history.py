@@ -475,6 +475,12 @@ class RolloverHistoryBuilderTests(unittest.TestCase):
         self.assertEqual(len(result["signalDetails"]), 4)
         self.assertEqual(result["signalDetails"][0]["symbol"], "A")
         self.assertIn("newly accrued prospective", result["interpretationGuard"])
+        stricter_threshold = builder.false_signal_forensics([
+            {**base, "symbol": "THRESHOLD", "correct20d": True,
+             "return20dPct": -0.8, "outcome20d": "DOWN"}
+        ], threshold_pct=1.0)
+        self.assertEqual(stricter_threshold["overall"]["precisionPct"], 100.0)
+        self.assertEqual(stricter_threshold["overall"]["netPrecision20BpsPct"], 0.0)
 
 
     def test_cash_delivery_momentum_uses_exact_prior_symbol_session(self):
