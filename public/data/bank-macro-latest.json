@@ -531,14 +531,21 @@
     },
     {
       "id": "sixth",
-      "name": "USD / INR Exchange Rate",
-      "value": 95.25,
-      "unit": "INR per USD",
-      "asOf": "2026-10-30",
+      "name": "USD/INR Spot Reference Rate",
+      "value": 93.8579,
+      "unit": "₹ per USD",
+      "asOf": "2026-11-09",
       "status": "VERIFIED",
-      "sourceName": "RBI Weekly Statistical Supplement — 06 Nov 2026",
-      "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+      "sourceName": "RBI Current Rates (FBIL reference rate), 09 Nov 2026",
+      "sourceUrl": "https://www.rbi.org.in/Home.aspx",
       "history": [
+        {
+          "date": "2026-11-09",
+          "value": 93.8579,
+          "unit": "₹ per USD",
+          "sourceUrl": "https://www.rbi.org.in/Home.aspx",
+          "sourceName": "RBI Current Rates, 09 Nov 2026"
+        },
         {
           "date": "2026-10-30",
           "value": 95.25,
@@ -570,13 +577,6 @@
         {
           "date": "2026-10-02",
           "value": 95.99,
-          "unit": "INR per USD",
-          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
-          "sourceName": "RBI WSS, 30 Oct 2026"
-        },
-        {
-          "date": "2026-09-25",
-          "value": 95.89,
           "unit": "INR per USD",
           "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
           "sourceName": "RBI WSS, 30 Oct 2026"
