@@ -393,6 +393,13 @@
           "unit": "%",
           "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
           "sourceName": "RBI WSS, 30 Oct 2026"
+        },
+        {
+          "date": "2026-09-18",
+          "value": 7.08,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28792",
+          "sourceName": "RBI WSS, 23 Oct 2026"
         }
       ]
     },
@@ -440,6 +447,13 @@
           "unit": "%",
           "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
           "sourceName": "RBI WSS, 30 Oct 2026"
+        },
+        {
+          "date": "2026-09-18",
+          "value": 5.25,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28792",
+          "sourceName": "RBI WSS, 23 Oct 2026"
         }
       ]
     },
@@ -447,10 +461,10 @@
       "id": "liquidity",
       "name": "RBI LTRO / Liquidity Window",
       "value": -182442,
-      "unit": "₹ crore net absorbed",
+      "unit": "₹ crore net injection (+) / absorption (-)",
       "asOf": "2026-11-01",
       "status": "VERIFIED",
-      "sourceName": "RBI Weekly Statistical Supplement — Liquidity Operations",
+      "sourceName": "RBI Weekly Statistical Supplement — Liquidity Operations, 06 Nov 2026",
       "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
       "history": [
         {
@@ -458,35 +472,49 @@
           "value": -182442,
           "unit": "₹ crore",
           "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
-          "sourceName": "RBI WSS"
+          "sourceName": "RBI WSS Liquidity Operations, 06 Nov 2026"
+        },
+        {
+          "date": "2026-10-31",
+          "value": -162539,
+          "unit": "₹ crore",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
+          "sourceName": "RBI WSS Liquidity Operations, 06 Nov 2026"
         },
         {
           "date": "2026-10-30",
           "value": -122343,
           "unit": "₹ crore",
           "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
-          "sourceName": "RBI WSS"
+          "sourceName": "RBI WSS Liquidity Operations, 06 Nov 2026"
         },
         {
           "date": "2026-10-29",
           "value": -163313,
           "unit": "₹ crore",
           "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
-          "sourceName": "RBI WSS"
+          "sourceName": "RBI WSS Liquidity Operations, 06 Nov 2026"
         },
         {
           "date": "2026-10-28",
           "value": -148247,
           "unit": "₹ crore",
           "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
-          "sourceName": "RBI WSS"
+          "sourceName": "RBI WSS Liquidity Operations, 06 Nov 2026"
         },
         {
           "date": "2026-10-27",
           "value": -165213,
           "unit": "₹ crore",
           "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
-          "sourceName": "RBI WSS"
+          "sourceName": "RBI WSS Liquidity Operations, 06 Nov 2026"
+        },
+        {
+          "date": "2026-10-26",
+          "value": -14938,
+          "unit": "₹ crore",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
+          "sourceName": "RBI WSS Liquidity Operations, 06 Nov 2026"
         }
       ]
     },
@@ -534,6 +562,13 @@
           "unit": "INR per USD",
           "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
           "sourceName": "RBI WSS, 30 Oct 2026"
+        },
+        {
+          "date": "2026-09-18",
+          "value": 95.79,
+          "unit": "INR per USD",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28792",
+          "sourceName": "RBI WSS, 23 Oct 2026"
         }
       ]
     }
