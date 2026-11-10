@@ -1,6 +1,8 @@
 name: NSE cash delivery historical backfill
 
 on:
+  schedule:
+    - cron: "30 16 * * 6"
   workflow_dispatch:
 
 permissions:
