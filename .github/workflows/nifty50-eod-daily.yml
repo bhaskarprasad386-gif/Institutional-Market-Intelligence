@@ -1,0 +1,57 @@
+name: NIFTY 50 end-of-day auto feed
+
+on:
+  schedule:
+    # 19:45 IST, after NSE cash-market close and normal report publication.
+    - cron: "15 14 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nifty50-eod-auto-feed
+  cancel-in-progress: false
+
+jobs:
+  collect-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch latest available NSE cash delivery report
+        run: python scripts/nse/fetch_cash_delivery.py
+      - name: Rebuild NIFTY 50 EOD technical matrix
+        run: python scripts/nse/build_nifty50_eod.py
+      - name: Validate NIFTY 50 EOD snapshot
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path("public/data/nifty50-eod-latest.json").read_text())
+          rows = p.get("rows", [])
+          ready = sum(r.get("close") is not None for r in rows)
+          print(f"marketDate={p.get('marketDate')} constituents={len(rows)} priceRows={ready} sessions={p.get('sessionsAvailable')}")
+          if len(rows) < 45:
+              raise SystemExit("NIFTY 50 snapshot has fewer than 45 verified constituents")
+          if not p.get("marketDate") or ready == 0:
+              raise SystemExit("No verified NSE cash EOD prices available; refusing to publish an empty snapshot")
+          PY
+      - name: Commit daily NSE archive and NIFTY 50 snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/nse-cash-delivery/ public/data/nifty50-eod-latest.json public/data/nifty50-constituents.json
+          if git diff --cached --quiet; then
+            echo "NIFTY 50 EOD data is already current."
+          else
+            git commit -m "data: refresh NIFTY 50 EOD stock matrix [skip ci]"
+            git push origin HEAD:main
+          fi
