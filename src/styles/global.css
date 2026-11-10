@@ -212,3 +212,19 @@
 .nifty50-full-table tbody tr{cursor:pointer}
 .nifty50-full-table tbody tr:focus{outline:2px solid #9acbfa;outline-offset:-2px}
 .nifty50-full-table tbody tr.selected{background:#24496b}
+
+
+/* NIFTY 50 matrix usability: keep identity columns visible while scanning wide metrics. */
+.nifty50-full-table th:nth-child(-n+4),
+.nifty50-full-table td:nth-child(-n+4){position:sticky;z-index:2;background:#101d2d}
+.nifty50-full-table thead th:nth-child(-n+4){z-index:6;background:#203a57}
+.nifty50-full-table thead tr:nth-child(2) th{z-index:5}
+.nifty50-full-table tbody tr:nth-child(even) td:nth-child(-n+4){background:#142338}
+.nifty50-full-table tbody tr:nth-child(odd) td:nth-child(-n+4){background:#101d2d}
+.nifty50-full-table tbody tr:hover td:nth-child(-n+4),
+.nifty50-full-table tbody tr.selected td:nth-child(-n+4){background:#24496b}
+.nifty50-full-table th:nth-child(1),.nifty50-full-table td:nth-child(1){left:0;min-width:54px;width:54px}
+.nifty50-full-table th:nth-child(2),.nifty50-full-table td:nth-child(2){left:54px;min-width:175px;width:175px}
+.nifty50-full-table th:nth-child(3),.nifty50-full-table td:nth-child(3){left:229px;min-width:105px;width:105px}
+.nifty50-full-table th:nth-child(4),.nifty50-full-table td:nth-child(4){left:334px;min-width:145px;width:145px;box-shadow:5px 0 8px -6px #000}
+.nifty50-full-table .nifty50-empty-row td{position:static!important;padding:24px;text-align:center;color:#c8d8ea;background:#142338!important;font-weight:800}
