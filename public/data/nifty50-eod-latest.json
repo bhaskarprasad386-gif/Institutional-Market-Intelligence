@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": null,
+  "marketDate": null,
+  "source": "NSE Full Bhavcopy and Security Deliverable Data",
+  "sourceUrl": "https://www.nseindia.com/all-reports",
+  "constituentSource": "https://www.niftyindices.com/IndexConstituent/ind_nifty50list.csv",
+  "constituentStatus": "WAITING_FOR_FIRST_EOD_RUN",
+  "constituentCount": 0,
+  "sessionsAvailable": 0,
+  "historyPolicy": "No values are populated until the scheduled NSE EOD collector runs and validates the official constituent list and cash archive.",
+  "rows": []
+}
