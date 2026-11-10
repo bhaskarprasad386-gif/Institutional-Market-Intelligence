@@ -95,7 +95,7 @@ export default function Nifty50Stocks() {
             <th>Debt / Equity</th><th>Bulk / Block Deal</th><th>Promoter Pledge</th><th>Promoter Buying</th><th>Company / Sector News</th><th>OPM %</th>
           </tr>
         </thead>
-        <tbody>{filtered.map((row,index)=><tr key={row.symbol} onClick={()=>setSelected(row)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSelected(row);}}} tabIndex={0} aria-label={`Open ${row.name} details`} className={selected?.symbol===row.symbol?"selected":""}>
+        <tbody>{filtered.length === 0 ? <tr className="nifty50-empty-row"><td colSpan={33}>{rows.length === 0 ? "NIFTY 50 constituent data is not loaded yet. The table structure is ready; waiting for the official constituent and NSE EOD data pipeline." : "No stocks match the current search or sector filter."}</td></tr> : filtered.map((row,index)=><tr key={row.symbol} onClick={()=>setSelected(row)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSelected(row);}}} tabIndex={0} aria-label={`Open ${row.name} details`} className={selected?.symbol===row.symbol?"selected":""}>
           <td>{index+1}</td><td>{row.name}</td><td><strong>{row.symbol}</strong></td><td>{textOrDash(row.sector)}</td><td>{fmt(row.close)}</td><td className={row.dailyChangePct == null ? "" : row.dailyChangePct >= 0 ? "positive" : "negative"}>{pct(row.dailyChangePct)}</td>
           <td>{fmt(row.rsiDaily14)}</td><td>{fmt(row.rsiWeekly14)}</td><td>{fmt(row.sma20Daily)}</td><td>{fmt(row.sma20Weekly)}</td><td>{fmt(row.sma50Daily)}</td><td>{fmt(row.sma50Weekly)}</td>
           <td>{qty(row.volume)}</td><td>{qty(row.deliveryQuantity)}</td><td>{pct(row.deliveryPct)}</td>
