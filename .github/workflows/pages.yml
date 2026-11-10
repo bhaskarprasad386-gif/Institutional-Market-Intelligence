@@ -24,6 +24,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Build banking SMA and delivery snapshot from archived NSE cash history
+        run: python scripts/nse/build_bank_market_daily.py
       - name: Build complete NSE rollover history from archived sessions
         run: python scripts/nse/build_rollover_history.py
       - name: Set up Node
