@@ -531,12 +531,12 @@
     },
     {
       "id": "sixth",
-      "name": "USD/INR Spot Reference Rate",
+      "name": "USD/INR FBIL Reference Rate",
       "value": 93.8579,
       "unit": "₹ per USD",
       "asOf": "2026-11-09",
       "status": "VERIFIED",
-      "sourceName": "RBI Current Rates (FBIL reference rate), 09 Nov 2026",
+      "sourceName": "RBI Current Rates / FBIL Reference Rate, 09 Nov 2026",
       "sourceUrl": "https://www.rbi.org.in/Home.aspx",
       "history": [
         {
@@ -544,42 +544,42 @@
           "value": 93.8579,
           "unit": "₹ per USD",
           "sourceUrl": "https://www.rbi.org.in/Home.aspx",
-          "sourceName": "RBI Current Rates, 09 Nov 2026"
+          "sourceName": "RBI Current Rates / FBIL, 09 Nov 2026"
         },
         {
-          "date": "2026-10-30",
-          "value": 95.25,
+          "date": "2026-11-06",
+          "value": 95.2492,
           "unit": "₹ per USD",
-          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
-          "sourceName": "RBI WSS, 06 Nov 2026"
+          "sourceUrl": "https://www.msei.in/markets/currency/historical-data/rbireferenceratearchives",
+          "sourceName": "MSE RBI Reference Rate Archive, 06 Nov 2026"
         },
         {
-          "date": "2026-10-23",
-          "value": 94.94,
-          "unit": "INR per USD",
-          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
-          "sourceName": "RBI WSS, 30 Oct 2026"
+          "date": "2026-11-05",
+          "value": 94.3996,
+          "unit": "₹ per USD",
+          "sourceUrl": "https://www.msei.in/markets/currency/historical-data/rbireferenceratearchives",
+          "sourceName": "MSE RBI Reference Rate Archive, 05 Nov 2026"
         },
         {
-          "date": "2026-10-16",
-          "value": 95.02,
-          "unit": "INR per USD",
-          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
-          "sourceName": "RBI WSS, 30 Oct 2026"
+          "date": "2026-11-04",
+          "value": 94.8416,
+          "unit": "₹ per USD",
+          "sourceUrl": "https://www.msei.in/markets/currency/historical-data/rbireferenceratearchives",
+          "sourceName": "MSE RBI Reference Rate Archive, 04 Nov 2026"
         },
         {
-          "date": "2026-10-09",
-          "value": 96.61,
-          "unit": "INR per USD",
-          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
-          "sourceName": "RBI WSS, 30 Oct 2026"
+          "date": "2026-11-03",
+          "value": 94.8606,
+          "unit": "₹ per USD",
+          "sourceUrl": "https://www.msei.in/markets/currency/historical-data/rbireferenceratearchives",
+          "sourceName": "MSE RBI Reference Rate Archive, 03 Nov 2026"
         },
         {
-          "date": "2026-10-02",
-          "value": 95.99,
-          "unit": "INR per USD",
-          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
-          "sourceName": "RBI WSS, 30 Oct 2026"
+          "date": "2026-11-02",
+          "value": 94.8755,
+          "unit": "₹ per USD",
+          "sourceUrl": "https://www.msei.in/markets/currency/historical-data/rbireferenceratearchives",
+          "sourceName": "MSE RBI Reference Rate Archive, 02 Nov 2026"
         }
       ]
     }
