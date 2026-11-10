@@ -28,7 +28,7 @@ jobs:
       - name: Fetch missing NSE cash delivery dates for archived F&O sessions
         run: python scripts/nse/fetch_cash_delivery.py --backfill-existing-fo-dates
       - name: Build NIFTY 50 EOD indicators from the completed cash archive
-        if: success()
+        if: always()
         run: python scripts/nse/build_nifty50_eod.py
       - name: Commit cash delivery archive and NIFTY 50 EOD dataset to main
         if: always()
