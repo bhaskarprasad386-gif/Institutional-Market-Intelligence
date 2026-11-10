@@ -97,3 +97,5 @@
  .brand-copy{flex:1 1 calc(100% - 70px)}
  .menu-toggle{margin-left:0}
 }
+
+.bank-stocks{border:2px solid #526982}.bank-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}.bank-kpis article{display:grid;gap:7px;padding:14px;border:1px solid #62758d;border-radius:9px;background:#142338}.bank-kpis article span{font-size:12px;color:#bdcadd;font-weight:800}.bank-kpis article strong{font-size:20px;color:#fff;font-weight:950}.bank-toolbar{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin:18px 0}.bank-toolbar label{display:grid;gap:7px;font-size:13px;font-weight:900;color:#e5edf8}.bank-toolbar input,.bank-toolbar select{min-width:0;width:100%;padding:10px 12px;border:2px solid #657992;border-radius:8px;background:#0b1524;color:#fff;font:inherit}.bank-stocks .table-wrap{max-height:65vh}.bank-stocks td strong{color:#d8eaff}@media(max-width:700px){.bank-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.bank-toolbar{grid-template-columns:1fr}}
