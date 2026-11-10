@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -30,6 +30,17 @@ jobs:
         run: python scripts/nse/build_rollover_history.py
       - name: Build NIFTY 50 constituents and EOD technical matrix
         run: python scripts/nse/build_nifty50_eod.py
+      - name: Persist verified NIFTY 50 constituent rows for the website
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/nifty50-eod-latest.json public/data/nifty50-constituents.json
+          if git diff --cached --quiet; then
+            echo "NIFTY 50 snapshot unchanged."
+          else
+            git commit -m "data: persist verified NIFTY 50 constituent snapshot [skip ci]"
+            git push origin HEAD:main
+          fi
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
