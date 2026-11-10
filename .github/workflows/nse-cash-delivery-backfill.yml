@@ -15,17 +15,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout rollover research branch
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: feature/advanced-positional-rollover-intelligence
+          ref: main
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Fetch missing NSE cash delivery dates for archived F&O sessions
         run: python scripts/nse/fetch_cash_delivery.py --backfill-existing-fo-dates
-      - name: Commit cash delivery archive to rollover research branch
+      - name: Commit cash delivery archive to main
         if: always()
         run: |
           git config user.name "github-actions[bot]"
@@ -35,5 +35,5 @@ jobs:
             echo "Cash delivery archive is already up to date."
           else
             git commit -m "data: archive NSE cash delivery history [skip ci]"
-            git push origin HEAD:feature/advanced-positional-rollover-intelligence
+            git push origin HEAD:main
           fi
