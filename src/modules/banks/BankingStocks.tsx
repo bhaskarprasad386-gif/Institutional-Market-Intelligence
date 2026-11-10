@@ -19,12 +19,12 @@ const LAYER_ONE_FACTORS = [
 ];
 
 const LAYER_TWO_FACTORS = [
-  { name: "Jefferies / Global Analyst Reports", target: "Upgrade / downgrade and estimate revisions" },
-  { name: "RBI Fortnightly Credit Growth", target: "12–15% reference; compare current trend" },
-  { name: "10-Year Government Bond Yield", target: "Yield movement and bank treasury impact" },
-  { name: "RBI Repo Rate Scenario", target: "Current policy rate and direction" },
-  { name: "RBI LTRO / Liquidity Window", target: "Policy announcements and liquidity impact" },
-  { name: "Sixth Macro / External Factor", target: "Not specified in supplied matrix" }
+  { id: "analyst", name: "Jefferies / Global Analyst Reports", target: "Upgrade / downgrade and estimate revisions" },
+  { id: "credit", name: "RBI Fortnightly Credit Growth", target: "Scheduled commercial bank credit YoY" },
+  { id: "gsec10y", name: "10-Year Government Bond Yield", target: "10-year benchmark G-Sec yield" },
+  { id: "repo", name: "RBI Repo Rate Scenario", target: "Policy repo rate and MPC stance" },
+  { id: "liquidity", name: "RBI LTRO / Liquidity Window", target: "Net liquidity injected (+) / absorbed (-)" },
+  { id: "sixth", name: "Sixth Macro / External Factor", target: "Original factor name not supplied; awaiting confirmation" }
 ];
 
 const BANK_STOCKS = [
@@ -43,9 +43,21 @@ const BANK_STOCKS = [
 export default function BankingStocks(_props: Props) {
   const [search, setSearch] = useState("");
   const [marketRows, setMarketRows] = useState<Record<string, any>>({});
+  const [macroRows, setMacroRows] = useState<Record<string, any>>({});
+  const [macroStatus, setMacroStatus] = useState("RBI macro snapshot loading…");
   const [marketStatus, setMarketStatus] = useState("NSE bank EOD snapshot loading…");
   useEffect(() => {
     let active = true;
+    fetch("data/bank-macro-latest.json", { cache: "no-store" })
+      .then(response => { if (!response.ok) throw new Error("RBI macro snapshot unavailable"); return response.json(); })
+      .then(data => {
+        if (!active) return;
+        const mapped: Record<string, any> = {};
+        for (const row of data.factors ?? []) mapped[row.id] = row;
+        setMacroRows(mapped);
+        setMacroStatus("Official-source macro data updated " + (data.updatedAt ?? "date unavailable"));
+      })
+      .catch(error => { if (active) setMacroStatus(error instanceof Error ? error.message : "Macro data unavailable"); });
     fetch("data/bank-market-daily.json", { cache: "no-store" })
       .then(response => { if (!response.ok) throw new Error("NSE bank snapshot unavailable"); return response.json(); })
       .then(data => {
@@ -98,11 +110,14 @@ export default function BankingStocks(_props: Props) {
         <span>6 FACTORS</span>
       </div>
       <div className="bank-factor-grid">
-        {LAYER_TWO_FACTORS.map((factor, index) => <article className="bank-factor" key={factor.name}>
-          <span className="bank-factor-number">{index + 1}</span><div><strong>{factor.name}</strong><small>{factor.target}</small></div>
-        </article>)}
+        {LAYER_TWO_FACTORS.map((factor, index) => {
+          const reading = macroRows[factor.id];
+          return <article className="bank-factor" key={factor.name}>
+            <span className="bank-factor-number">{index + 1}</span><div><strong>{factor.name}</strong><small>{reading?.value ?? "—"}{reading?.unit ? " " + reading.unit : ""}</small><small>{reading?.asOf ? "As of " + reading.asOf : factor.target}</small>{reading?.sourceUrl && <a href={reading.sourceUrl} target="_blank" rel="noreferrer">Official source</a>}{reading?.status === "PENDING" && <small>Awaiting verified publication</small>}</div>
+          </article>;
+        })}
       </div>
-      <p className="bank-layer-note">दिए गए screenshots में छह factors की category बताई गई है, लेकिन केवल पाँच के नाम स्पष्ट हैं। छठे factor का नाम मिलने तक placeholder रखा गया है। Current macro values official source और reporting date के साथ ही अपडेट होंगे।</p>
+      <p className="bank-layer-note" role="status">{macroStatus}. अलग-अलग indicators की observation dates अलग हैं; हर card पर reporting date और source दिया गया है। Jefferies reports और छठे factor का नाम verified input मिलने तक blank रहेगा।</p>
     </section>
 
     <p className="bank-layer-note">Table columns: LTP = latest traded price; SMA = simple moving average; RSI uses 14-period daily and weekly candles. FII holding is shown for the latest three reported quarters. Values remain blank until a timestamped, verifiable market/data feed is connected.</p>
