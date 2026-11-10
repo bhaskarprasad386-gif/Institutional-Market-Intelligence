@@ -130,7 +130,7 @@ export default function BankingStocks(_props: Props) {
         <p className="bank-layer-note">इसके नीचे latest broker recommendations और target prices की पूरी उपलब्ध सूची है; केवल BUY/HOLD को rating change नहीं माना गया है।</p>
         <div className="table-wrap bank-table-wrap"><table className="bank-data-table">
           <thead><tr><th>Bank</th><th>Report Date</th><th>Broker</th><th>Rating</th><th>Target (₹)</th><th>Source</th></tr></thead>
-          <tbody>{(macroRows.analyst?.reports ?? []).flatMap((bank: any) => (bank.items ?? []).map((item: any[], index: number) => <tr key={bank.symbol + "-" + index}><td>{bank.bank} ({bank.symbol})</td><td>{item[0]}</td><td>{item[1]}</td><td>{item[2]}</td><td>{item[3] ?? "—"}</td><td>{macroRows.analyst?.sourceUrl ? <a href={macroRows.analyst.sourceUrl} target="_blank" rel="noreferrer">Verify report</a> : "—"}</td></tr>))}</tbody>
+          <tbody>{(macroRows.analyst?.reports ?? []).flatMap((bank: any) => (bank.items ?? []).map((item: any[], index: number) => <tr key={bank.symbol + "-" + index}><td>{bank.bank} ({bank.symbol})</td><td>{item[0]}</td><td>{item[1]}</td><td>{item[2]}</td><td>{item[3] ?? "—"}</td><td>{bank.sourceUrl ? <a href={bank.sourceUrl} target="_blank" rel="noreferrer">Bank report archive</a> : "—"}</td></tr>))}</tbody>
         </table></div>
         {macroRows.analyst?.sourceUrl && <p className="bank-layer-note"><a href={macroRows.analyst.sourceUrl} target="_blank" rel="noreferrer">Broker research source and report archive</a></p>}
       </section>
