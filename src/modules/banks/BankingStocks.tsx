@@ -19,7 +19,139 @@ const LAYER_ONE_FACTORS = [
 ];
 
 const LAYER_TWO_FACTORS = [
-  { id: "analyst", name: "Jefferies / Global Analyst Reports", target: "Upgrade / downgrade and estimate revisions" },
+  { id: "analyst", name: "Bank-wise Broker Upgrade / Downgrade Reports", target: "Upgrade / downgrade and estimate revisions" },
+  { id: "credit", name: "RBI Fortnightly Credit Growth", target: "Scheduled commercial bank credit YoY" },
+  { id: "gsec10y", name: "10-Year Government Bond Yield", target: "10-year benchmark G-Sec yield" },
+  { id: "repo", name: "RBI Repo Rate Scenario", target: "Policy repo rate and MPC stance" },
+  { id: "liquidity", name: "RBI LTRO / Liquidity Window", target: "Net liquidity injected (+) / absorbed (-)" },
+  { id: "sixth", name: "Sixth Macro / External Factor", target: "Original factor name not supplied; awaiting confirmation" }
+];
+
+const BANK_STOCKS = [
+  { symbol: "HDFCBANK", name: "HDFC Bank" },
+  { symbol: "ICICIBANK", name: "ICICI Bank" },
+  { symbol: "SBIN", name: "State Bank of India" },
+  { symbol: "KOTAKBANK", name: "Kotak Mahindra Bank" },
+  { symbol: "AXISBANK", name: "Axis Bank" },
+  { symbol: "PNB", name: "Punjab National Bank" },
+  { symbol: "UNIONBANK", name: "Union Bank of India" },
+  { symbol: "BANKBARODA", name: "Bank of Baroda" },
+  { symbol: "CANBK", name: "Canara Bank" },
+  { symbol: "FEDERALBNK", name: "Federal Bank" }
+];
+
+export default function BankingStocks(_props: Props) {
+  const [search, setSearch] = useState("");
+  const [marketRows, setMarketRows] = useState<Record<string, any>>({});
+  const [macroRows, setMacroRows] = useState<Record<string, any>>({});
+  const [macroStatus, setMacroStatus] = useState("RBI macro snapshot loading…");
+  const [marketStatus, setMarketStatus] = useState("NSE bank EOD snapshot loading…");
+  useEffect(() => {
+    let active = true;
+    fetch("data/bank-macro-latest.json", { cache: "no-store" })
+      .then(response => { if (!response.ok) throw new Error("RBI macro snapshot unavailable"); return response.json(); })
+      .then(data => {
+        if (!active) return;
+        const mapped: Record<string, any> = {};
+        for (const row of data.factors ?? []) mapped[row.id] = row;
+        setMacroRows(mapped);
+        setMacroStatus("Official-source macro data updated " + (data.updatedAt ?? "date unavailable"));
+      })
+      .catch(error => { if (active) setMacroStatus(error instanceof Error ? error.message : "Macro data unavailable"); });
+    fetch("data/bank-market-daily.json", { cache: "no-store" })
+      .then(response => { if (!response.ok) throw new Error("NSE bank snapshot unavailable"); return response.json(); })
+      .then(data => {
+        if (!active) return;
+        const mapped: Record<string, any> = {};
+        for (const row of data.rows ?? []) mapped[row.symbol] = row;
+        setMarketRows(mapped);
+        setMarketStatus("NSE EOD · " + (data.marketDate ?? "history pending") + " · " + (data.sessionsAvailable ?? 0) + " sessions");
+      })
+      .catch(error => { if (active) setMarketStatus(error instanceof Error ? error.message : "NSE data unavailable"); });
+    return () => { active = false; };
+  }, []);
+  const filteredBanks = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return BANK_STOCKS;
+    return BANK_STOCKS.filter((bank) =>
+      bank.name.toLowerCase().includes(query) || bank.symbol.toLowerCase().includes(query)
+    );
+  }, [search]);
+
+  return <section className="panel bank-stocks">
+    <p className="eyebrow">NIFTY 100 · BANKING STOCKS</p>
+    <h2>Banking Stocks</h2>
+    <p className="muted">NIFTY 100 में शामिल बैंकिंग शेयरों की सूची।</p>
+
+    <section className="bank-layer-one" aria-labelledby="bank-layer-one-title">
+      <div className="bank-layer-heading">
+        <div><p className="eyebrow">LAYER 1 · FUNDAMENTAL INTELLIGENCE</p><h3 id="bank-layer-one-title">Core Banking Factors</h3></div>
+        <span>13 FACTORS</span>
+      </div>
+      <div className="bank-factor-grid">
+        {LAYER_ONE_FACTORS.map((factor, index) => <article className="bank-factor" key={factor.name}>
+          <span className="bank-factor-number">{index + 1}</span><div><strong>{factor.name}</strong><small>{factor.target}</small></div>
+        </article>)}
+      </div>
+      <h4 className="bank-matrix-title">Bank-wise Fundamental Intelligence Matrix</h4>
+      <p className="bank-layer-note">हर बैंक के सामने सभी 13 Layer 1 factors एक ही row में हैं। Verified financial-statement values जुड़ने तक cells खाली (—) रहेंगे।</p>
+      <div className="table-wrap bank-table-wrap bank-layer-one-table-wrap">
+        <table className="bank-data-table bank-layer-one-table">
+          <thead><tr><th>Sr. No.</th><th>Bank Name</th><th>NSE Symbol</th>{LAYER_ONE_FACTORS.map((factor, index) => <th key={factor.name} title={factor.target}>{index + 1}. {factor.name}</th>)}</tr></thead>
+          <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td>{LAYER_ONE_FACTORS.map((factor) => <td key={factor.name}>—</td>)}</tr>)}</tbody>
+        </table>
+      </div>
+      <p className="bank-layer-note">ये screening criteria हैं, verified bank-wise readings नहीं। Actual values, reporting period और source जुड़ने के बाद ही status या score दिखेगा। Thresholds को bank type और historical trend के अनुसार validate करना होगा।</p>
+    </section>
+
+    <section className="bank-layer-one bank-layer-two" aria-labelledby="bank-layer-two-title">
+      <div className="bank-layer-heading">
+        <div><p className="eyebrow">LAYER 2 · MACRO &amp; EXTERNAL INTELLIGENCE</p><h3 id="bank-layer-two-title">Macro / External Factors</h3></div>
+        <span>6 FACTORS</span>
+      </div>
+      <div className="bank-factor-grid">
+        {LAYER_TWO_FACTORS.filter(factor => factor.id !== "analyst").map((factor, index) => {
+          const reading = macroRows[factor.id];
+          return <article className="bank-factor" key={factor.name}>
+            <span className="bank-factor-number">{index + 2}</span><div><strong>{factor.name}</strong><small>Latest: {reading?.value ?? "—"}{reading?.unit ? " " + reading.unit : ""} · {reading?.asOf ?? "date unavailable"}</small>
+              {(reading?.history ?? []).slice(0, 5).map((point: any) => <small key={point.date}>{point.date}: {point.value} {point.unit}</small>)}
+              {reading?.sourceUrl && <a href={reading.sourceUrl} target="_blank" rel="noreferrer">Official source</a>}
+            </div>
+          </article>;
+        })}
+      </div>
+      <section className="bank-data-section" aria-labelledby="bank-broker-reports-title">
+        <div className="bank-layer-heading"><div><p className="eyebrow">BROKERAGE INTELLIGENCE</p><h4 id="bank-broker-reports-title">10 Banking Stocks — Upgrade / Downgrade &amp; Target Reports</h4></div><span>RESEARCH REPORTS</span></div>
+        <p className="bank-layer-note">हर बैंक के उपलब्ध नवीनतम broker calls, recommendation और target price। एक ही दिन के अलग-अलग brokers के reports अलग entries हैं; BUY/HOLD को automatic upgrade/downgrade नहीं माना गया है।</p>
+        <div className="table-wrap bank-table-wrap"><table className="bank-data-table">
+          <thead><tr><th>Bank</th><th>Report Date</th><th>Broker</th><th>Rating</th><th>Target (₹)</th></tr></thead>
+          <tbody>{(macroRows.analyst?.reports ?? []).flatMap((bank: any) => (bank.items ?? []).map((item: any[], index: number) => <tr key={bank.symbol + "-" + index}><td>{bank.bank} ({bank.symbol})</td><td>{item[0]}</td><td>{item[1]}</td><td>{item[2]}</td><td>{item[3] ?? "—"}</td></tr>))}</tbody>
+        </table></div>
+        {macroRows.analyst?.sourceUrl && <p className="bank-layer-note"><a href={macroRows.analyst.sourceUrl} target="_blank" rel="noreferrer">Broker research source and report archive</a></p>}
+      </section>
+      <p className="bank-layer-note" role="status">{macroStatus}. Macro cards में latest सहित पिछले उपलब्ध observations दिखते हैं। Credit growth fortnightly प्रकाशित होता है, इसलिए अभी पाँच verified observations उपलब्ध नहीं हैं; पुराने आंकड़े अनुमान से नहीं भरे गए हैं।</p>
+Effect, useMemo, useState } from "react";
+
+type Props = { futures: unknown[]; status: string };
+
+const LAYER_ONE_FACTORS = [
+  { name: "Net Interest Margin (NIM)", target: "> 4%" },
+  { name: "Net NPA", target: "< 1%" },
+  { name: "Slippage Run-Rate", target: "Declining trend" },
+  { name: "Core PPOP Growth", target: "> 20%" },
+  { name: "Cost-to-Income", target: "< 45%" },
+  { name: "Credit-Deposit (CD) Ratio", target: "75–80%" },
+  { name: "Provision Coverage Ratio (PCR)", target: "≥ 75%" },
+  { name: "CASA Ratio", target: "> 40%" },
+  { name: "Restructured Book", target: "< 1%" },
+  { name: "NPA Upgrade", target: "Improving trend" },
+  { name: "TLAC / AT1 Bond", target: "Capital strength review" },
+  { name: "RAM Mix Shift", target: "Quality mix improvement" },
+  { name: "Opex Savings", target: "Sustainable cost reduction" }
+];
+
+const LAYER_TWO_FACTORS = [
+  { id: "analyst", name: "Bank-wise Broker Upgrade / Downgrade Reports", target: "Upgrade / downgrade and estimate revisions" },
   { id: "credit", name: "RBI Fortnightly Credit Growth", target: "Scheduled commercial bank credit YoY" },
   { id: "gsec10y", name: "10-Year Government Bond Yield", target: "10-year benchmark G-Sec yield" },
   { id: "repo", name: "RBI Repo Rate Scenario", target: "Policy repo rate and MPC stance" },
