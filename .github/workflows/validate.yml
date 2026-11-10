@@ -18,6 +18,8 @@ jobs:
           python-version: "3.12"
       - name: Test NSE historical backfill parser
         run: python -m unittest discover -s tests -p "test_*.py" -v
+      - name: Compile NSE EOD collectors and builders
+        run: python -m compileall -q scripts/nse
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
