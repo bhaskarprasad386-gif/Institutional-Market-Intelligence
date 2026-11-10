@@ -114,7 +114,7 @@ export default function BankingStocks(_props: Props) {
           const reading = macroRows[factor.id];
           return <article className="bank-factor" key={factor.name}>
             <span className="bank-factor-number">{index + 2}</span><div><strong>{factor.name}</strong><small>Latest: {reading?.value ?? "—"}{reading?.unit ? " " + reading.unit : ""} · {reading?.asOf ?? "date unavailable"}</small>
-              {(reading?.history ?? []).slice(0, 5).map((point: any) => <small key={point.date}>{point.date}: {point.value} {point.unit}</small>)}
+              {(reading?.history ?? []).slice(0, 6).map((point: any) => <small key={point.date}>{point.date}: {point.value} {point.unit}</small>)}
               {reading?.sourceUrl && <a href={reading.sourceUrl} target="_blank" rel="noreferrer">Official source</a>}
             </div>
           </article>;
