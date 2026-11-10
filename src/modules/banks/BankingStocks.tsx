@@ -57,7 +57,8 @@ const LAYER_FOUR_FACTORS = [
   { name: "RSI — Daily", target: "14-period RSI on daily candles" },
   { name: "RSI — Weekly", target: "14-period RSI on weekly candles" }
 ];
-\nconst BANK_STOCKS = [
+
+const BANK_STOCKS = [
   { symbol: "HDFCBANK", name: "HDFC Bank" },
   { symbol: "ICICIBANK", name: "ICICI Bank" },
   { symbol: "SBIN", name: "State Bank of India" },
