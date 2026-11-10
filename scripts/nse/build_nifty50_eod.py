@@ -109,19 +109,19 @@ def main():
         weekly_closes = [float(row["closePrice"]) for row in weeks]
         output.append({
             **stock,
-            "marketDate": latest.get("tradeDate") if latest else None,
-            "open": latest.get("openPrice"), "high": latest.get("highPrice"), "low": latest.get("lowPrice"),
-            "close": latest.get("closePrice"),
-            "lastPrice": latest.get("closePrice"), "vwap": latest.get("vwap"),
-            "volume": latest.get("tradedQuantity"), "deliveryQuantity": latest.get("deliveryQuantity"),
-            "deliveryPct": latest.get("deliveryPct"), "tradeCount": latest.get("tradeCount"),
+            "marketDate": (latest or {}).get("tradeDate") if latest else None,
+            "open": (latest or {}).get("openPrice"), "high": (latest or {}).get("highPrice"), "low": (latest or {}).get("lowPrice"),
+            "close": (latest or {}).get("closePrice"),
+            "lastPrice": (latest or {}).get("closePrice"), "vwap": (latest or {}).get("vwap"),
+            "volume": (latest or {}).get("tradedQuantity"), "deliveryQuantity": (latest or {}).get("deliveryQuantity"),
+            "deliveryPct": (latest or {}).get("deliveryPct"), "tradeCount": (latest or {}).get("tradeCount"),
             "previousClose": rows[-2].get("closePrice") if len(rows) >= 2 else None,
             "dailyChangePct": round((float(latest["closePrice"]) / float(rows[-2]["closePrice"]) - 1) * 100, 2) if len(rows) >= 2 and float(rows[-2]["closePrice"]) > 0 else None,
             "sma20Daily": sma(closes, 20), "sma50Daily": sma(closes, 50),
             "sma20Weekly": sma(weekly_closes, 20), "sma50Weekly": sma(weekly_closes, 50),
             "rsiDaily14": rsi(closes, 14), "rsiWeekly14": rsi(weekly_closes, 14),
             "dailyHistorySessions": len(rows), "weeklyHistorySessions": len(weeks),
-            "deliveryStatus": "AVAILABLE" if latest and latest.get("deliveryQuantity") is not None and latest.get("deliveryPct") is not None else "PARTIAL",
+            "deliveryStatus": "AVAILABLE" if latest and (latest or {}).get("deliveryQuantity") is not None and (latest or {}).get("deliveryPct") is not None else "PARTIAL",
             "technicalStatus": "READY" if latest else "WAITING_FOR_NSE_CASH_HISTORY",
         })
     OUT.parent.mkdir(parents=True, exist_ok=True)
