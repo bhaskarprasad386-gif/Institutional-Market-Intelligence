@@ -28,6 +28,8 @@ jobs:
         run: python scripts/nse/build_bank_market_daily.py
       - name: Build complete NSE rollover history from archived sessions
         run: python scripts/nse/build_rollover_history.py
+      - name: Build NIFTY 50 constituents and EOD technical matrix
+        run: python scripts/nse/build_nifty50_eod.py
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
