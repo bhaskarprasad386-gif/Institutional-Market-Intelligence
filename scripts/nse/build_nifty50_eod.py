@@ -13,6 +13,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chr
 CASH_DIR = Path("public/data/nse-cash-delivery")
 OUT = Path("public/data/nifty50-eod-latest.json")
 CONSTITUENTS_CACHE = Path("public/data/nifty50-constituents.json")
+SHAREHOLDING = Path("public/data/nifty50-shareholding-latest.json")
 
 
 def fetch_constituents():
@@ -98,6 +99,7 @@ def load_history():
 def main():
     stocks, constituent_status = fetch_constituents()
     history, dates = load_history()
+    shareholding = json.loads(SHAREHOLDING.read_text(encoding="utf-8")).get("rows", {}) if SHAREHOLDING.exists() else {}
     latest_date = max(dates) if dates else None
     output = []
     for stock in stocks:
@@ -109,6 +111,7 @@ def main():
         weekly_closes = [float(row["closePrice"]) for row in weeks]
         output.append({
             **stock,
+            **shareholding.get(symbol, {}),
             "marketDate": (latest or {}).get("tradeDate") if latest else None,
             "open": (latest or {}).get("openPrice"), "high": (latest or {}).get("highPrice"), "low": (latest or {}).get("lowPrice"),
             "close": (latest or {}).get("closePrice"),
@@ -132,6 +135,8 @@ def main():
         "constituentSource": CONSTITUENTS_URL, "constituentStatus": constituent_status,
         "constituentCount": len(stocks), "sessionsAvailable": len(dates),
         "historyPolicy": "Only archived NSE EQ observations are used. Missing indicators remain null until sufficient history exists.",
+        "shareholdingSource": "NSE Shareholding Pattern XBRL",
+        "shareholdingGeneratedAt": json.loads(SHAREHOLDING.read_text(encoding="utf-8")).get("generatedAt") if SHAREHOLDING.exists() else None,
         "rows": output
     }, separators=(",", ":")), encoding="utf-8")
     ready = sum(1 for row in output if row["close"] is not None)
