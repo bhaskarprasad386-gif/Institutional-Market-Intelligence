@@ -174,3 +174,21 @@
 .nifty50-table .positive{color:#55d69e;font-weight:900}
 .nifty50-table .negative{color:#ff8585;font-weight:900}
 @media(max-width:760px){.nifty50-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.nifty50-toolbar{grid-template-columns:1fr}}
+
+
+.nifty50-table-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 10px}
+.nifty50-table-heading h3{margin:0;color:#f2f7ff;font-size:17px;font-weight:950}
+.nifty50-table-heading span{color:#b9c7d8;font-size:11px;font-weight:800}
+.nifty50-table tbody tr{cursor:pointer}
+.nifty50-table tbody tr:focus{outline:2px solid #9acbfa;outline-offset:-2px}
+.nifty50-table tbody tr.selected{background:#24496b}
+.nifty50-detail{margin:18px 0;padding:16px;border:2px solid #6d91b5;border-radius:12px;background:#101d2d}
+.nifty50-detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.nifty50-detail-head h3{margin:3px 0;color:#f3f7fc;font-size:20px;font-weight:950}
+.nifty50-detail-head .muted{margin:4px 0}
+.nifty50-detail-head button{padding:8px 12px;border:1px solid #7892b1;border-radius:7px;background:#1b3048;color:#fff;font-weight:900;cursor:pointer}
+.nifty50-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:14px 0}
+.nifty50-detail-grid article{display:grid;gap:6px;min-width:0;padding:11px;border:1px solid #526982;border-radius:8px;background:#17283c}
+.nifty50-detail-grid small{color:#b9cbe0;font-size:11px;font-weight:800}
+.nifty50-detail-grid strong{color:#f2f7ff;font-size:14px;font-weight:950;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+@media(max-width:760px){.nifty50-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.nifty50-detail{padding:12px}}
