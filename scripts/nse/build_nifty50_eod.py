@@ -111,7 +111,7 @@ def main():
             **stock,
             "marketDate": latest.get("tradeDate") if latest else None,
             "open": latest.get("openPrice"), "high": latest.get("highPrice"), "low": latest.get("lowPrice"),
-            "close": latest.get("closePrice"), "previousClose": latest.get("previousClose"),
+            "close": latest.get("closePrice"),
             "lastPrice": latest.get("closePrice"), "vwap": latest.get("vwap"),
             "volume": latest.get("tradedQuantity"), "deliveryQuantity": latest.get("deliveryQuantity"),
             "deliveryPct": latest.get("deliveryPct"), "tradeCount": latest.get("tradeCount"),
