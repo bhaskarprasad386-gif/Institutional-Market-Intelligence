@@ -8,8 +8,11 @@ import math
 import urllib.request
 from pathlib import Path
 
-CONSTITUENTS_URL = "https://www.niftyindices.com/IndexConstituent/ind_nifty50list.csv"
-HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124 Safari/537.36", "Accept": "text/csv,*/*", "Referer": "https://www.niftyindices.com/"}
+CONSTITUENTS_URLS = [
+    "https://nsearchives.nseindia.com/content/indices/ind_nifty50list.csv",
+    "https://www.niftyindices.com/IndexConstituent/ind_nifty50list.csv",
+]
+HEADERS = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124 Safari/537.36", "Accept": "text/csv,application/octet-stream,*/*", "Referer": "https://www.nseindia.com/"}
 CASH_DIR = Path("public/data/nse-cash-delivery")
 OUT = Path("public/data/nifty50-eod-latest.json")
 CONSTITUENTS_CACHE = Path("public/data/nifty50-constituents.json")
@@ -17,30 +20,50 @@ SHAREHOLDING = Path("public/data/nifty50-shareholding-latest.json")
 
 
 def fetch_constituents():
-    req = urllib.request.Request(CONSTITUENTS_URL, headers=HEADERS)
-    try:
-        with urllib.request.urlopen(req, timeout=30) as response:
-            raw = response.read().decode("utf-8-sig")
-        rows = list(csv.DictReader(io.StringIO(raw)))
-        stocks = []
-        for row in rows:
-            symbol = (row.get("Symbol") or row.get("symbol") or "").strip().upper()
-            name = (row.get("Company Name") or row.get("CompanyName") or row.get("company_name") or "").strip()
-            sector = (row.get("Industry") or row.get("industry") or "").strip()
-            if symbol:
-                stocks.append({"symbol": symbol, "name": name or symbol, "sector": sector or None})
-        if len(stocks) < 45:
-            raise ValueError(f"Constituent file returned only {len(stocks)} symbols")
-        CONSTITUENTS_CACHE.parent.mkdir(parents=True, exist_ok=True)
-        CONSTITUENTS_CACHE.write_text(json.dumps({"sourceUrl": CONSTITUENTS_URL, "updatedAt": dt.datetime.now(dt.timezone.utc).isoformat(), "count": len(stocks), "stocks": stocks}, separators=(",", ":")), encoding="utf-8")
-        return stocks, "LIVE_NIFTY_INDICES_CONSTITUENTS"
-    except Exception as exc:
-        if CONSTITUENTS_CACHE.exists():
-            cached = json.loads(CONSTITUENTS_CACHE.read_text(encoding="utf-8"))
-            stocks = cached.get("stocks", [])
-            if len(stocks) >= 45:
-                return stocks, "CACHED_NIFTY_INDICES_CONSTITUENTS"
-        raise RuntimeError(f"Unable to verify current NIFTY 50 constituents: {exc}") from exc
+    errors = []
+    for source_url in CONSTITUENTS_URLS:
+        try:
+            req = urllib.request.Request(source_url, headers=HEADERS)
+            with urllib.request.urlopen(req, timeout=30) as response:
+                raw = response.read().decode("utf-8-sig")
+            # NSE archive downloads may include a title before the CSV header.
+            lines = raw.splitlines()
+            header_index = next(
+                (i for i, line in enumerate(lines)
+                 if "company name" in line.lower() and "symbol" in line.lower()),
+                None,
+            )
+            if header_index is None:
+                raise ValueError(f"CSV header not found; response starts with {raw[:120]!r}")
+            rows = list(csv.DictReader(io.StringIO("\n".join(lines[header_index:]))))
+            stocks = []
+            for row in rows:
+                normalized = {str(k or "").strip().lower(): (v or "").strip() for k, v in row.items()}
+                symbol = normalized.get("symbol", "").upper()
+                name = normalized.get("company name", "")
+                sector = normalized.get("industry", "")
+                series = normalized.get("series", "EQ").upper()
+                if symbol and series == "EQ":
+                    stocks.append({"symbol": symbol, "name": name or symbol, "sector": sector or None})
+            if not 45 <= len(stocks) <= 55:
+                raise ValueError(f"Expected around 50 NIFTY constituents, received {len(stocks)}")
+            if len({stock["symbol"] for stock in stocks}) != len(stocks):
+                raise ValueError("Duplicate symbols in NIFTY 50 constituent file")
+            CONSTITUENTS_CACHE.parent.mkdir(parents=True, exist_ok=True)
+            CONSTITUENTS_CACHE.write_text(json.dumps({
+                "sourceUrl": source_url,
+                "updatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+                "count": len(stocks), "stocks": stocks
+            }, separators=(",", ":")), encoding="utf-8")
+            return stocks, "LIVE_NSE_ARCHIVES_CONSTITUENTS"
+        except Exception as exc:
+            errors.append(f"{source_url}: {exc}")
+    if CONSTITUENTS_CACHE.exists():
+        cached = json.loads(CONSTITUENTS_CACHE.read_text(encoding="utf-8"))
+        stocks = cached.get("stocks", [])
+        if 45 <= len(stocks) <= 55:
+            return stocks, "CACHED_NIFTY_INDICES_CONSTITUENTS"
+    raise RuntimeError("Unable to verify current NIFTY 50 constituents: " + " | ".join(errors))
 
 
 def rsi(values, period=14):
@@ -132,7 +155,7 @@ def main():
         "schemaVersion": 1, "generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
         "marketDate": latest_date, "source": "NSE Full Bhavcopy and Security Deliverable Data",
         "sourceUrl": "https://www.nseindia.com/all-reports",
-        "constituentSource": CONSTITUENTS_URL, "constituentStatus": constituent_status,
+        "constituentSource": (json.loads(CONSTITUENTS_CACHE.read_text(encoding="utf-8")).get("sourceUrl") if CONSTITUENTS_CACHE.exists() else None), "constituentStatus": constituent_status,
         "constituentCount": len(stocks), "sessionsAvailable": len(dates),
         "historyPolicy": "Only archived NSE EQ observations are used. Missing indicators remain null until sufficient history exists.",
         "shareholdingSource": "NSE Shareholding Pattern XBRL",
