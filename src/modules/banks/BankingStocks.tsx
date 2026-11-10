@@ -53,7 +53,9 @@ const LAYER_THREE_FACTORS = [
 const LAYER_FOUR_FACTORS = [
   { name: "Relative Strength", target: "Bank stock performance versus NIFTY 100 / sector benchmark" },
   { name: "Quiet Price + High Delivery %", target: "Price compression with elevated delivery; confirm volume and multi-session context" },
-  { name: "Positional Rollover", target: "F&O rollover quantity and cost; distinguish fresh positions from rollovers" }
+  { name: "Positional Rollover", target: "F&O rollover quantity and cost; distinguish fresh positions from rollovers" },
+  { name: "RSI — Daily", target: "14-period RSI on daily candles" },
+  { name: "RSI — Weekly", target: "14-period RSI on weekly candles" }
 ];
 \nconst BANK_STOCKS = [
   { symbol: "HDFCBANK", name: "HDFC Bank" },
@@ -117,7 +119,7 @@ export default function BankingStocks(_props: Props) {
     <section className="bank-layer-one bank-layer-four" aria-labelledby="bank-layer-four-title">
       <div className="bank-layer-heading">
         <div><p className="eyebrow">LAYER 4 · MARKET FOOTPRINT</p><h3 id="bank-layer-four-title">Price, Delivery &amp; Positioning Factors</h3></div>
-        <span>3 FACTORS</span>
+        <span>5 FACTORS</span>
       </div>
       <div className="bank-factor-grid">
         {LAYER_FOUR_FACTORS.map((factor, index) => <article className="bank-factor" key={factor.name}>
@@ -127,11 +129,12 @@ export default function BankingStocks(_props: Props) {
       <p className="bank-layer-note">Delivery percentage या rollover अकेले accumulation / bullish signal नहीं हैं। इन्हें traded volume, price trend, futures open interest, expiry और multi-session history के साथ verify करना होगा। जिन stocks में F&amp;O उपलब्ध नहीं है, वहाँ positional rollover लागू नहीं होगा।</p>
     </section>
 
+    <p className="bank-layer-note">Table columns: LTP = latest traded price; FII Position = stock-specific disclosed FII holding / activity trend (Positive / Negative); RS = relative strength versus the selected benchmark (Positive / Negative); RSI uses 14-period daily and weekly candles. Values remain blank until a timestamped, verifiable market/data feed is connected.</p>
     <h3 className="bank-list-title">NIFTY 100 Banking Stocks</h3>
     <div className="table-wrap">
       <table>
-        <thead><tr><th>Serial No.</th><th>Bank Name</th><th>NSE Symbol</th></tr></thead>
-        <tbody>{BANK_STOCKS.map((bank, index) => <tr key={bank.symbol}><td>{index + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td></tr>)}</tbody>
+        <thead><tr><th>Serial No.</th><th>Bank Name</th><th>NSE Symbol</th><th>LTP</th><th>FII Position</th><th>RS</th><th>RSI Daily</th><th>RSI Weekly</th></tr></thead>
+        <tbody>{BANK_STOCKS.map((bank, index) => <tr key={bank.symbol}><td>{index + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>)}</tbody>
       </table>
     </div>
   </section>;
