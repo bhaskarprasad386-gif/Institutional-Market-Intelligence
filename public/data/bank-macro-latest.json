@@ -318,33 +318,9 @@
           "target": 280,
           "sourceName": "NDTV Profit",
           "sourceUrl": "https://www.ndtvprofit.com/markets/kotak-bank-of-baroda-paytm-pb-fintech-macquarie-upgrades-nine-stocks-downgrades-one-check-full-list-target-prices-12119471"
-        },
-        {
-          "symbol": "CANBK",
-          "bank": "Canara Bank",
-          "broker": "PL Capital",
-          "date": "2026-09-06",
-          "previousRating": "Hold",
-          "currentRating": "Accumulate",
-          "action": "UPGRADE",
-          "target": null,
-          "sourceName": "PL Capital India Strategy report",
-          "sourceUrl": "https://plindia.com/ResReport/IndiaStrategy-9-6-26-PL.pdf"
-        },
-        {
-          "symbol": "FEDERALBNK",
-          "bank": "Federal Bank",
-          "broker": "PL Capital",
-          "date": "2026-09-06",
-          "previousRating": "Buy",
-          "currentRating": "Accumulate",
-          "action": "DOWNGRADE",
-          "target": null,
-          "sourceName": "PL Capital India Strategy report",
-          "sourceUrl": "https://plindia.com/ResReport/IndiaStrategy-9-6-26-PL.pdf"
         }
       ],
-      "actionNote": "Only explicit rating changes with both previous and current recommendations are classified as upgrades/downgrades. Other rows in reports are broker ratings/targets, not confirmed rating changes."
+      "actionNote": "Confirmed changes only: Macquarie upgraded Kotak Mahindra Bank and Bank of Baroda from Neutral to Outperform (published 01 Oct 2026). Other broker rows are current recommendations/targets, not confirmed rating changes; no upgrade/downgrade is inferred without a source explicitly stating both ratings."
     },
     {
       "id": "credit",
