@@ -8,7 +8,7 @@
       "name": "Broker Upgrade / Downgrade Reports — 10 Banks",
       "status": "PARTIAL",
       "asOf": "2026-11-10",
-      "sourceName": "Trendlyne bank-specific research report archives; archive links are not individual PDF links",
+      "sourceName": "Trendlyne bank-specific research report archives (listing pages; individual PDF links are shown within each archive)",
       "sourceUrl": "https://trendlyne.com/research-reports/filtered/recent-downgrades/industry/11/banks/",
       "reports": [
         {
@@ -16,7 +16,7 @@
           "bank": "HDFC Bank",
           "items": [
             [
-              "21 Oct 2026",
+              "27 Oct 2026",
               "Deven Choksey",
               "BUY",
               981
@@ -34,7 +34,7 @@
               1050
             ]
           ],
-          "sourceUrl": "https://trendlyne.com/research-reports/stock/533/HDFCBANK/hdfc-bank-ltd/"
+          "sourceUrl": "https://trendlyne.com/research-reports/post/HDFCBANK/533/hdfc-bank-ltd/"
         },
         {
           "symbol": "ICICIBANK",
@@ -59,7 +59,7 @@
               1750
             ]
           ],
-          "sourceUrl": "https://trendlyne.com/research-reports/stock/584/ICICIBANK/icici-bank-ltd/"
+          "sourceUrl": "https://trendlyne.com/research-reports/post/ICICIBANK/584/icici-bank-ltd/"
         },
         {
           "symbol": "SBIN",
@@ -96,7 +96,7 @@
               1200
             ]
           ],
-          "sourceUrl": "https://trendlyne.com/research-reports/stock/1193/SBIN/state-bank-of-india/"
+          "sourceUrl": "https://trendlyne.com/research-reports/post/SBIN/1193/state-bank-of-india/"
         },
         {
           "symbol": "KOTAKBANK",
@@ -127,7 +127,7 @@
               500
             ]
           ],
-          "sourceUrl": "https://trendlyne.com/research-reports/stock/758/KOTAKBANK/kotak-mahindra-bank-ltd/"
+          "sourceUrl": "https://trendlyne.com/research-reports/post/KOTAKBANK/758/kotak-mahindra-bank-ltd/"
         },
         {
           "symbol": "AXISBANK",
@@ -164,7 +164,7 @@
               1620
             ]
           ],
-          "sourceUrl": "https://trendlyne.com/equity/140/AXISBANK/axis-bank-ltd/"
+          "sourceUrl": "https://trendlyne.com/research-reports/post/AXISBANK/140/axis-bank-ltd/"
         },
         {
           "symbol": "PNB",
@@ -183,7 +183,7 @@
               135
             ]
           ],
-          "sourceUrl": "https://trendlyne.com/research-reports/stock/1048/PNB/punjab-national-bank/"
+          "sourceUrl": "https://trendlyne.com/research-reports/post/PNB/1048/punjab-national-bank/"
         },
         {
           "symbol": "UNIONBANK",
@@ -208,7 +208,7 @@
               200
             ]
           ],
-          "sourceUrl": "https://trendlyne.com/research-reports/stock/1447/UNIONBANK/union-bank-of-india/"
+          "sourceUrl": "https://trendlyne.com/research-reports/post/UNIONBANK/1447/union-bank-of-india/"
         },
         {
           "symbol": "BANKBARODA",
@@ -239,7 +239,7 @@
               285
             ]
           ],
-          "sourceUrl": "https://trendlyne.com/research-reports/stock/162/BANKBARODA/bank-of-baroda/"
+          "sourceUrl": "https://trendlyne.com/research-reports/post/BANKBARODA/162/bank-of-baroda/"
         },
         {
           "symbol": "CANBK",
@@ -252,19 +252,13 @@
               150
             ],
             [
-              "15 Oct 2026",
-              "Prabhudas Lilladher",
-              "BUY",
-              160
-            ],
-            [
               "27 Jul 2026",
               "Motilal Oswal",
               "BUY",
               160
             ]
           ],
-          "sourceUrl": "https://trendlyne.com/research-reports/stock/232/CANBK/canara-bank/"
+          "sourceUrl": "https://trendlyne.com/research-reports/post/CANBK/232/canara-bank/"
         },
         {
           "symbol": "FEDERALBNK",
@@ -301,7 +295,7 @@
               385
             ]
           ],
-          "sourceUrl": "https://trendlyne.com/research-reports/stock/412/FEDERALBNK/federal-bank-ltd/"
+          "sourceUrl": "https://trendlyne.com/research-reports/post/FEDERALBNK/412/federal-bank-ltd/"
         }
       ],
       "actionReports": [
