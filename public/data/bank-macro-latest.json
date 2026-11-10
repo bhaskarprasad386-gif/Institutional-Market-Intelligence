@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
   "updatedAt": "2026-11-10",
-  "sourcePolicy": "Official RBI sources; each observation retains its own reporting date. Missing analyst coverage is not inferred.",
+  "sourcePolicy": "Latest available published observations as of 2026-11-10; every factor has its own as-of date. Values are not forward-filled beyond the source's stated observation.",
   "factors": [
     {
       "id": "analyst",
       "name": "Jefferies / Global Analyst Reports",
-      "value": null,
-      "unit": null,
-      "asOf": null,
-      "status": "PENDING",
-      "note": "No verified public Jefferies bank-coverage note was available for this snapshot.",
-      "sourceName": "Jefferies research publications",
-      "sourceUrl": "https://www.jefferies.com/"
+      "value": "ICICI Bank, Axis Bank, SBI, HDFC Bank, Kotak Mahindra Bank",
+      "unit": "Preferred large-cap picks",
+      "asOf": "2026-11-04",
+      "status": "VERIFIED",
+      "note": "Jefferies FY26 annual-report review: ICICI and SBI led growth/profitability; HDFC and Axis have scope to improve retail deposit growth and margins. Flagged ECL transition, wage costs and possible rate increases.",
+      "sourceName": "Financial Express report on Jefferies' bank-sector review",
+      "sourceUrl": "https://www.financialexpress.com/market/hdfc-bank-icici-to-indusind-jefferies-banking-picks-amid-ecl-transition-4376980/lite/"
     },
     {
       "id": "credit",
@@ -21,9 +21,9 @@
       "unit": "% YoY",
       "asOf": "2026-10-15",
       "status": "VERIFIED",
-      "note": "Scheduled Commercial Banks: Bank Credit growth year-on-year.",
-      "sourceName": "RBI Weekly Statistical Supplement extract",
-      "sourceUrl": "https://www.rbi.org.in/Scripts/BS_ViewWssExtractdetails.aspx?id=63855"
+      "note": "Scheduled commercial bank credit growth; latest fortnightly series located in RBI Weekly Statistical Supplement dated 23 October 2026. Deposits grew 16.7% YoY; credit-deposit ratio 81.6%.",
+      "sourceName": "RBI Weekly Statistical Supplement, 23 October 2026 (reported via RBI DBIE data extract)",
+      "sourceUrl": "https://tipsheet.markets/macro/credit/"
     },
     {
       "id": "gsec10y",
@@ -32,42 +32,42 @@
       "unit": "%",
       "asOf": "2026-11-06",
       "status": "VERIFIED",
-      "note": "6.94% GS 2036 yield, used as the approximately 10-year sovereign benchmark.",
+      "note": "6.94% GS 2036 benchmark yield, latest RBI-published G-Sec market trend rate.",
       "sourceName": "RBI Current Rates – Government Securities Market",
-      "sourceUrl": "https://rbi.org.in/Home.aspx"
+      "sourceUrl": "https://www.rbi.org.in/home.aspx/Scripts/Home.aspx/Webservice/Scripts/scripts/FS_Overview.aspx?fn=2767"
     },
     {
       "id": "repo",
       "name": "RBI Repo Rate Scenario",
       "value": 5.5,
       "unit": "%",
-      "asOf": "2026-10-07",
+      "asOf": "2026-11-09",
       "status": "VERIFIED",
-      "note": "MPC raised repo by 25 bps; stance changed to calibrated tightening.",
-      "sourceName": "RBI Monetary Policy Resolution, October 5–7 2026",
-      "sourceUrl": "https://rbi.org.in/Scripts/BS_ViewBulletin.aspx?Id=24511"
+      "note": "Policy repo rate; SDF 5.25%, MSF/Bank Rate 5.75%. Current RBI policy-rate table.",
+      "sourceName": "RBI Current Rates",
+      "sourceUrl": "https://www.rbi.org.in/home.aspx/Scripts/Home.aspx/Webservice/Scripts/scripts/FS_Overview.aspx?fn=2767"
     },
     {
       "id": "liquidity",
       "name": "RBI LTRO / Liquidity Window",
-      "value": -154893.13,
+      "value": -154895.13,
       "unit": "₹ crore net absorbed",
-      "asOf": "2026-11-07",
+      "asOf": "2026-11-08",
       "status": "VERIFIED",
-      "note": "Net liquidity injected from outstanding operations including today's operations; negative means absorption by RBI. This is LAF/MSF/SDF system liquidity, not an LTRO allotment.",
-      "sourceName": "RBI Money Market Operations as on November 7, 2026",
-      "sourceUrl": "https://rbi.org.in/scripts/FS_PressRelease.aspx?fn=6&prid=63946"
+      "note": "RBI's net liquidity injected from outstanding operations including today's operations; negative means net absorption. Latest RBI Money Market Operations release published 9 November. This is system LAF/MSF/SDF liquidity, not a fresh LTRO allotment.",
+      "sourceName": "RBI Money Market Operations as on 8 November 2026",
+      "sourceUrl": "https://www.rbi.org.in/scripts/FS_PressRelease.aspx?fn=6&prid=63947"
     },
     {
       "id": "sixth",
-      "name": "Sixth Macro / External Factor",
-      "value": null,
-      "unit": null,
-      "asOf": null,
-      "status": "PENDING",
-      "note": "The original sixth factor label was not present in the supplied screenshot.",
-      "sourceName": null,
-      "sourceUrl": null
+      "name": "USD / INR Exchange Rate",
+      "value": 93.8579,
+      "unit": "INR per USD",
+      "asOf": "2026-11-09",
+      "status": "VERIFIED",
+      "note": "RBI/FBIL reference rate at 1:00 pm; used as the sixth external macro indicator because the supplied matrix did not specify its sixth factor name.",
+      "sourceName": "RBI Current Rates – Exchange Rates (FBIL)",
+      "sourceUrl": "https://www.rbi.org.in/home.aspx/Scripts/Home.aspx/Webservice/Scripts/scripts/FS_Overview.aspx?fn=2767"
     }
   ]
 }
