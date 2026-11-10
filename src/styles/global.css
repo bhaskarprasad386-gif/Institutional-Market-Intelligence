@@ -116,3 +116,22 @@
 .bank-list-title{margin:0 0 12px;color:#f2f7ff;font-size:18px;font-weight:950}
 @media(max-width:900px){.bank-factor-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.bank-layer-one{padding:12px}.bank-factor-grid{grid-template-columns:1fr}.bank-layer-heading h3{font-size:18px}}
+
+
+/* Banking Stocks table: compact, high-contrast data grid matching the reference layout. */
+.bank-stocks .bank-table-wrap{width:100%;max-height:65vh;overflow:auto;border:1px solid #60758f;border-radius:10px;background:#0d1929;overscroll-behavior:contain}
+.bank-stocks .bank-data-table{width:100%;min-width:760px;border-collapse:separate;border-spacing:0;font-size:12px;font-variant-numeric:tabular-nums}
+.bank-stocks .bank-data-table thead{position:sticky;top:0;z-index:3}
+.bank-stocks .bank-data-table th{padding:11px 12px;background:#1c3048;color:#f0f6ff;text-align:left;white-space:nowrap;font-size:11px;font-weight:950;border-bottom:1px solid #71869e}
+.bank-stocks .bank-data-table td{padding:10px 12px;color:#dce6f3;white-space:nowrap;border-bottom:1px solid #40536b}
+.bank-stocks .bank-data-table tbody tr:nth-child(even){background:#142338}
+.bank-stocks .bank-data-table tbody tr:nth-child(odd){background:#101d2d}
+.bank-stocks .bank-data-table tbody tr:last-child td{border-bottom:0}
+.bank-stocks .bank-data-table tbody tr:hover{background:#203852}
+.bank-stocks .bank-data-table th:first-child,.bank-stocks .bank-data-table td:first-child{width:76px;text-align:center}
+.bank-stocks .bank-data-table th:nth-child(2){min-width:165px}
+.bank-stocks .bank-data-table th:nth-child(3){min-width:125px}
+.bank-stocks .bank-data-table td strong{font-weight:950;color:#e5f1ff}
+.bank-stocks .bank-toolbar{align-items:end}
+.bank-stocks .bank-toolbar .bank-layer-note{margin:0 0 10px}
+@media(max-width:600px){.bank-stocks .bank-data-table{min-width:720px}.bank-stocks .bank-data-table th,.bank-stocks .bank-data-table td{padding:10px 9px}.bank-stocks .bank-table-wrap{border-radius:9px}}
