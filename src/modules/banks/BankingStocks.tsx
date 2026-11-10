@@ -122,7 +122,12 @@ export default function BankingStocks(_props: Props) {
       </div>
       <section className="bank-data-section" aria-labelledby="bank-broker-reports-title">
         <div className="bank-layer-heading"><div><p className="eyebrow">BROKERAGE INTELLIGENCE</p><h4 id="bank-broker-reports-title">10 Banking Stocks — Upgrade / Downgrade &amp; Target Reports</h4></div><span>RESEARCH REPORTS</span></div>
-        <p className="bank-layer-note">हर बैंक के उपलब्ध नवीनतम broker calls, recommendation और target price। एक ही दिन के अलग-अलग brokers के reports अलग entries हैं; BUY/HOLD को automatic upgrade/downgrade नहीं माना गया है।</p>
+        <p className="bank-layer-note">पहले केवल वे reports यहाँ हैं जिनमें broker की पुरानी और नई rating दोनों साफ दी गई हैं।</p>
+        <div className="table-wrap bank-table-wrap"><table className="bank-data-table">
+          <thead><tr><th>Bank</th><th>Broker</th><th>Date</th><th>Previous Rating</th><th>Current Rating</th><th>Action</th><th>Target (₹)</th><th>Source</th></tr></thead>
+          <tbody>{(macroRows.analyst?.actionReports ?? []).map((item: any, index: number) => <tr key={item.symbol + "-" + index}><td>{item.bank} ({item.symbol})</td><td>{item.broker}</td><td>{item.date}</td><td>{item.previousRating}</td><td>{item.currentRating}</td><td><strong>{item.action}</strong></td><td>{item.target ?? "—"}</td><td><a href={item.sourceUrl} target="_blank" rel="noreferrer">{item.sourceName}</a></td></tr>)}</tbody>
+        </table></div>
+        <p className="bank-layer-note">इसके नीचे latest broker recommendations और target prices की पूरी उपलब्ध सूची है; केवल BUY/HOLD को rating change नहीं माना गया है।</p>
         <div className="table-wrap bank-table-wrap"><table className="bank-data-table">
           <thead><tr><th>Bank</th><th>Report Date</th><th>Broker</th><th>Rating</th><th>Target (₹)</th></tr></thead>
           <tbody>{(macroRows.analyst?.reports ?? []).flatMap((bank: any) => (bank.items ?? []).map((item: any[], index: number) => <tr key={bank.symbol + "-" + index}><td>{bank.bank} ({bank.symbol})</td><td>{item[0]}</td><td>{item[1]}</td><td>{item[2]}</td><td>{item[3] ?? "—"}</td></tr>))}</tbody>
