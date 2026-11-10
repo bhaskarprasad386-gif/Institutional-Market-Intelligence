@@ -89,7 +89,7 @@ export default function BankingStocks(_props: Props) {
       <p className="bank-layer-note">दिए गए screenshots में छह factors की category बताई गई है, लेकिन केवल पाँच के नाम स्पष्ट हैं। छठे factor का नाम मिलने तक placeholder रखा गया है। Current macro values official source और reporting date के साथ ही अपडेट होंगे।</p>
     </section>
 
-    <p className="bank-layer-note">Table columns: LTP = latest traded price; FII Position = stock-specific disclosed FII holding / activity trend (Positive / Negative); RS = relative strength versus the selected benchmark (Positive / Negative); RSI uses 14-period daily and weekly candles. Values remain blank until a timestamped, verifiable market/data feed is connected.</p>
+    <p className="bank-layer-note">Table columns: LTP = latest traded price; SMA = simple moving average; RSI uses 14-period daily and weekly candles. FII holding is shown for the latest three reported quarters. Values remain blank until a timestamped, verifiable market/data feed is connected.</p>
     <h3 className="bank-list-title">NIFTY 100 Banking Stocks</h3>
     <div className="bank-toolbar">
       <label>Search bank or NSE symbol
@@ -99,9 +99,40 @@ export default function BankingStocks(_props: Props) {
     </div>
     <div className="table-wrap bank-table-wrap">
       <table className="bank-data-table">
-        <thead><tr><th>Serial No.</th><th>Bank Name</th><th>NSE Symbol</th><th>LTP</th><th>FII Position</th><th>RS</th><th>RSI Daily</th><th>RSI Weekly</th></tr></thead>
-        <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>)}</tbody>
+        <thead>
+          <tr><th rowSpan={2}>Serial No.</th><th rowSpan={2}>Bank Name</th><th rowSpan={2}>NSE Symbol</th><th rowSpan={2}>LTP</th><th rowSpan={2}>RS</th><th colSpan={2}>20 SMA</th><th colSpan={2}>50 SMA</th><th rowSpan={2}>RSI Daily</th><th rowSpan={2}>RSI Weekly</th></tr>
+          <tr><th>Daily</th><th>Weekly</th><th>Daily</th><th>Weekly</th></tr>
+        </thead>
+        <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>)}</tbody>
       </table>
     </div>
+
+    <section className="bank-layer-one bank-data-section" aria-labelledby="bank-fii-title">
+      <div className="bank-layer-heading">
+        <div><p className="eyebrow">OWNERSHIP INTELLIGENCE</p><h3 id="bank-fii-title">FII Holding — Last 3 Reported Quarters</h3></div>
+        <span>QUARTERLY</span>
+      </div>
+      <p className="bank-layer-note">हर बैंक के लिए latest reported quarter और उससे पहले के दो quarters की FII shareholding (%)। Quarter labels, filing date और source verified filings से populate होंगे।</p>
+      <div className="table-wrap bank-table-wrap">
+        <table className="bank-data-table">
+          <thead><tr><th>Serial No.</th><th>Bank Name</th><th>NSE Symbol</th><th>Latest Quarter FII %</th><th>Previous Quarter FII %</th><th>2 Quarters Back FII %</th><th>QoQ Change</th></tr></thead>
+          <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>—</td><td>—</td><td>—</td><td>—</td></tr>)}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section className="bank-layer-one bank-data-section" aria-labelledby="bank-delivery-title">
+      <div className="bank-layer-heading">
+        <div><p className="eyebrow">DELIVERY INTELLIGENCE</p><h3 id="bank-delivery-title">Daily Delivery Percentage</h3></div>
+        <span>DAILY · EOD</span>
+      </div>
+      <p className="bank-layer-note">Delivery % = exchange-reported deliverable quantity ÷ traded quantity × 100. Latest session और previous sessions के आंकड़े date-stamped NSE bhavcopy से आएँगे; unavailable या invalid rows blank रहेंगी।</p>
+      <div className="table-wrap bank-table-wrap">
+        <table className="bank-data-table">
+          <thead><tr><th>Serial No.</th><th>Bank Name</th><th>NSE Symbol</th><th>Latest Session Delivery %</th><th>Previous Session %</th><th>5-Session Average %</th><th>20-Session Average %</th></tr></thead>
+          <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>—</td><td>—</td><td>—</td><td>—</td></tr>)}</tbody>
+        </table>
+      </div>
+    </section>
   </section>;
 }
