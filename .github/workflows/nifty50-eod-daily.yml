@@ -30,7 +30,11 @@ jobs:
           python-version: "3.12"
       - name: Fetch latest available NSE cash delivery report
         run: python scripts/nse/fetch_cash_delivery.py
-      - name: Rebuild NIFTY 50 EOD technical matrix
+      - name: Build NIFTY 50 constituent cache and technical matrix
+        run: python scripts/nse/build_nifty50_eod.py
+      - name: Fetch latest three NSE shareholding quarters for FII and DII
+        run: python scripts/nse/fetch_nifty50_shareholding.py
+      - name: Merge shareholding data into NIFTY 50 EOD matrix
         run: python scripts/nse/build_nifty50_eod.py
       - name: Validate NIFTY 50 EOD snapshot
         run: |
@@ -62,7 +66,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/nse-cash-delivery/ public/data/nifty50-eod-latest.json public/data/nifty50-constituents.json
+          git add public/data/nse-cash-delivery/ public/data/nifty50-eod-latest.json public/data/nifty50-constituents.json public/data/nifty50-shareholding-latest.json
           if git diff --cached --quiet; then
             echo "NIFTY 50 EOD data is already current."
           else
