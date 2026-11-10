@@ -197,3 +197,18 @@
 .nifty50-quick-open{padding:10px 13px;border:2px solid #8fc5ff;border-radius:9px;background:#23486b;color:#fff;font-size:13px;font-weight:950;white-space:nowrap;cursor:pointer}
 .nifty50-quick-open:hover{background:#2d5b87}
 @media(max-width:520px){.nifty50-quick-open{width:100%;order:3}}
+
+
+/* Full-width NIFTY 50 intelligence matrix: grouped multi-row headers and readable long-text cells. */
+.nifty50-full-table{min-width:3900px;font-size:11px}
+.nifty50-full-table th{max-width:210px;white-space:normal;vertical-align:middle;line-height:1.35;text-align:center}
+.nifty50-full-table thead tr:first-child th{background:#203a57;color:#fff;font-size:11px}
+.nifty50-full-table thead tr:nth-child(2) th{background:#182d45;color:#e6f0fc}
+.nifty50-full-table td{max-width:260px;min-width:95px;white-space:normal;vertical-align:top;line-height:1.45}
+.nifty50-full-table td:nth-child(2){min-width:175px}
+.nifty50-full-table td:nth-child(3){min-width:105px;white-space:nowrap}
+.nifty50-full-table td:nth-child(17),.nifty50-full-table td:nth-child(18){min-width:210px}
+.nifty50-full-table td:nth-child(n+19){min-width:150px}
+.nifty50-full-table tbody tr{cursor:pointer}
+.nifty50-full-table tbody tr:focus{outline:2px solid #9acbfa;outline-offset:-2px}
+.nifty50-full-table tbody tr.selected{background:#24496b}
