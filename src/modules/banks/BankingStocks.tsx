@@ -98,6 +98,14 @@ export default function BankingStocks(_props: Props) {
           <span className="bank-factor-number">{index + 1}</span><div><strong>{factor.name}</strong><small>{factor.target}</small></div>
         </article>)}
       </div>
+      <h4 className="bank-matrix-title">Bank-wise Fundamental Intelligence Matrix</h4>
+      <p className="bank-layer-note">हर बैंक के सामने सभी 13 Layer 1 factors एक ही row में हैं। Verified financial-statement values जुड़ने तक cells खाली (—) रहेंगे।</p>
+      <div className="table-wrap bank-table-wrap bank-layer-one-table-wrap">
+        <table className="bank-data-table bank-layer-one-table">
+          <thead><tr><th>Sr. No.</th><th>Bank Name</th><th>NSE Symbol</th>{LAYER_ONE_FACTORS.map((factor, index) => <th key={factor.name} title={factor.target}>{index + 1}. {factor.name}</th>)}</tr></thead>
+          <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td>{LAYER_ONE_FACTORS.map((factor) => <td key={factor.name}>—</td>)}</tr>)}</tbody>
+        </table>
+      </div>
       <p className="bank-layer-note">ये screening criteria हैं, verified bank-wise readings नहीं। Actual values, reporting period और source जुड़ने के बाद ही status या score दिखेगा। Thresholds को bank type और historical trend के अनुसार validate करना होगा।</p>
     </section>
 
