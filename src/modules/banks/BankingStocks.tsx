@@ -149,8 +149,8 @@ export default function BankingStocks(_props: Props) {
       </label>
       <p className="bank-layer-note" aria-live="polite">Showing {filteredBanks.length} of {BANK_STOCKS.length} banks</p>
     </div>
-    <div className="table-wrap">
-      <table>
+    <div className="table-wrap bank-table-wrap">
+      <table className="bank-data-table">
         <thead><tr><th>Serial No.</th><th>Bank Name</th><th>NSE Symbol</th><th>LTP</th><th>FII Position</th><th>RS</th><th>RSI Daily</th><th>RSI Weekly</th></tr></thead>
         <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>)}</tbody>
       </table>
