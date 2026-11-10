@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Props = { futures: unknown[]; status: string };
 
@@ -42,6 +42,22 @@ const BANK_STOCKS = [
 
 export default function BankingStocks(_props: Props) {
   const [search, setSearch] = useState("");
+  const [marketRows, setMarketRows] = useState<Record<string, any>>({});
+  const [marketStatus, setMarketStatus] = useState("NSE bank EOD snapshot loading…");
+  useEffect(() => {
+    let active = true;
+    fetch("data/bank-market-daily.json", { cache: "no-store" })
+      .then(response => { if (!response.ok) throw new Error("NSE bank snapshot unavailable"); return response.json(); })
+      .then(data => {
+        if (!active) return;
+        const mapped: Record<string, any> = {};
+        for (const row of data.rows ?? []) mapped[row.symbol] = row;
+        setMarketRows(mapped);
+        setMarketStatus("NSE EOD · " + (data.marketDate ?? "history pending") + " · " + (data.sessionsAvailable ?? 0) + " sessions");
+      })
+      .catch(error => { if (active) setMarketStatus(error instanceof Error ? error.message : "NSE data unavailable"); });
+    return () => { active = false; };
+  }, []);
   const filteredBanks = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return BANK_STOCKS;
@@ -90,7 +106,7 @@ export default function BankingStocks(_props: Props) {
     </section>
 
     <p className="bank-layer-note">Table columns: LTP = latest traded price; SMA = simple moving average; RSI uses 14-period daily and weekly candles. FII holding is shown for the latest three reported quarters. Values remain blank until a timestamped, verifiable market/data feed is connected.</p>
-    <h3 className="bank-list-title">NIFTY 100 Banking Stocks</h3>
+    <h3 className="bank-list-title">NIFTY 100 Banking Stocks</h3>\n    <p className="bank-layer-note" role="status">{marketStatus}</p>
     <div className="bank-toolbar">
       <label>Search bank or NSE symbol
         <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="e.g. HDFC or SBIN" aria-label="Search banking stocks by bank name or NSE symbol" />
@@ -103,7 +119,7 @@ export default function BankingStocks(_props: Props) {
           <tr><th rowSpan={2}>Serial No.</th><th rowSpan={2}>Bank Name</th><th rowSpan={2}>NSE Symbol</th><th rowSpan={2}>LTP</th><th rowSpan={2}>RS</th><th colSpan={2}>20 SMA</th><th colSpan={2}>50 SMA</th><th rowSpan={2}>RSI Daily</th><th rowSpan={2}>RSI Weekly</th></tr>
           <tr><th>Daily</th><th>Weekly</th><th>Daily</th><th>Weekly</th></tr>
         </thead>
-        <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>)}</tbody>
+        <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>—</td><td>{marketRows[bank.symbol]?.close ?? "—"}</td><td>{marketRows[bank.symbol]?.sma20Daily ?? "—"}</td><td>{marketRows[bank.symbol]?.sma20Weekly ?? "—"}</td><td>{marketRows[bank.symbol]?.sma50Daily ?? "—"}</td><td>{marketRows[bank.symbol]?.sma50Weekly ?? "—"}</td><td>—</td><td>—</td></tr>)}</tbody>
       </table>
     </div>
 
