@@ -150,3 +150,27 @@
 .bank-stocks .bank-layer-one-table th:nth-child(1),.bank-stocks .bank-layer-one-table td:nth-child(1){left:0;min-width:64px}
 .bank-stocks .bank-layer-one-table th:nth-child(2),.bank-stocks .bank-layer-one-table td:nth-child(2){left:64px;min-width:160px}
 .bank-stocks .bank-layer-one-table th:nth-child(3),.bank-stocks .bank-layer-one-table td:nth-child(3){left:224px;min-width:120px}
+
+
+/* NIFTY 50 EOD stock intelligence */
+.nifty50-page{min-width:0}
+.nifty50-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.nifty50-kpis article{display:grid;gap:5px;padding:13px;border:1px solid #526982;border-radius:9px;background:#142338}
+.nifty50-kpis small{color:#b9cbe0;font-size:11px;font-weight:800}
+.nifty50-kpis strong{color:#f2f7ff;font-size:18px;font-weight:950;font-variant-numeric:tabular-nums}
+.nifty50-status,.nifty50-note{margin:12px 0;color:#b9c7d8;font-size:12px;line-height:1.55}
+.nifty50-toolbar{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;align-items:end;margin:16px 0}
+.nifty50-toolbar label{display:grid;gap:6px;color:#e6effb;font-size:12px;font-weight:850}
+.nifty50-toolbar input,.nifty50-toolbar select{min-width:0;width:100%;padding:10px 12px;border:2px solid #657992;border-radius:8px;background:#0b1524;color:#fff;font:inherit}
+.nifty50-table-wrap{width:100%;max-height:70vh;overflow:auto;border:1px solid #60758f;border-radius:10px;background:#0d1929;overscroll-behavior:contain}
+.nifty50-table{width:100%;min-width:1550px;border-collapse:separate;border-spacing:0;font-size:12px;font-variant-numeric:tabular-nums}
+.nifty50-table thead{position:sticky;top:0;z-index:3}
+.nifty50-table th{padding:11px 10px;background:#1c3048;color:#f0f6ff;text-align:left;white-space:nowrap;font-size:11px;font-weight:950;border-bottom:1px solid #71869e}
+.nifty50-table td{padding:10px;color:#dce6f3;white-space:nowrap;border-bottom:1px solid #40536b}
+.nifty50-table tbody tr:nth-child(even){background:#142338}
+.nifty50-table tbody tr:nth-child(odd){background:#101d2d}
+.nifty50-table tbody tr:hover{background:#203852}
+.nifty50-table td strong{color:#e5f1ff;font-weight:950}
+.nifty50-table .positive{color:#55d69e;font-weight:900}
+.nifty50-table .negative{color:#ff8585;font-weight:900}
+@media(max-width:760px){.nifty50-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.nifty50-toolbar{grid-template-columns:1fr}}
