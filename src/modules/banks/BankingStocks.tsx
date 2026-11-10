@@ -122,33 +122,6 @@ export default function BankingStocks(_props: Props) {
       <p className="bank-layer-note">दिए गए screenshots में छह factors की category बताई गई है, लेकिन केवल पाँच के नाम स्पष्ट हैं। छठे factor का नाम मिलने तक placeholder रखा गया है। Current macro values official source और reporting date के साथ ही अपडेट होंगे।</p>
     </section>
 
-    <section className="bank-layer-one bank-layer-three" aria-labelledby="bank-layer-three-title">
-      <div className="bank-layer-heading">
-        <div><p className="eyebrow">LAYER 3 · INSTITUTIONAL &amp; HIDDEN FLOW INTELLIGENCE</p><h3 id="bank-layer-three-title">Institutional / Hidden Liquidity Factors</h3></div>
-        <span>21 VISIBLE ITEMS · SOURCE SAYS 20</span>
-      </div>
-      <div className="bank-factor-grid">
-        {LAYER_THREE_FACTORS.map((factor, index) => <article className="bank-factor" key={factor.name}>
-          <span className="bank-factor-number">{index + 1}</span><div><strong>{factor.name}</strong><small>{factor.target}</small></div>
-        </article>)}
-      </div>
-      <p className="bank-layer-note">आपके screenshots में इस category को 20 factors कहा गया है, लेकिन दिखाई देने वाली numbering से 21 entries मिलती हैं। सभी 21 visible entries सुरक्षित रखी गई हैं; final Mother Matrix count reconcile होने तक count mismatch स्पष्ट रखा है। कुछ indicators का granular data public नहीं होता—ऐसे मामलों में अनुमानित value या fabricated signal नहीं दिखेगा।</p>
-    </section>
-
-
-    <section className="bank-layer-one bank-layer-four" aria-labelledby="bank-layer-four-title">
-      <div className="bank-layer-heading">
-        <div><p className="eyebrow">LAYER 4 · MARKET FOOTPRINT</p><h3 id="bank-layer-four-title">Price, Delivery &amp; Positioning Factors</h3></div>
-        <span>5 FACTORS</span>
-      </div>
-      <div className="bank-factor-grid">
-        {LAYER_FOUR_FACTORS.map((factor, index) => <article className="bank-factor" key={factor.name}>
-          <span className="bank-factor-number">{index + 1}</span><div><strong>{factor.name}</strong><small>{factor.target}</small></div>
-        </article>)}
-      </div>
-      <p className="bank-layer-note">Delivery percentage या rollover अकेले accumulation / bullish signal नहीं हैं। इन्हें traded volume, price trend, futures open interest, expiry और multi-session history के साथ verify करना होगा। जिन stocks में F&amp;O उपलब्ध नहीं है, वहाँ positional rollover लागू नहीं होगा।</p>
-    </section>
-
     <p className="bank-layer-note">Table columns: LTP = latest traded price; FII Position = stock-specific disclosed FII holding / activity trend (Positive / Negative); RS = relative strength versus the selected benchmark (Positive / Negative); RSI uses 14-period daily and weekly candles. Values remain blank until a timestamped, verifiable market/data feed is connected.</p>
     <h3 className="bank-list-title">NIFTY 100 Banking Stocks</h3>
     <div className="bank-toolbar">
