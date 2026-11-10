@@ -30,13 +30,15 @@ jobs:
           python-version: "3.12"
       - name: Fetch official NSE F&O UDiFF EOD bhavcopy
         run: python scripts/nse/fetch_fo_bhavcopy.py
+      - name: Fetch official NSE cash-market delivery and closing-price report
+        run: python scripts/nse/fetch_cash_delivery.py
       - name: Build compact full-history rollover metrics
         run: python scripts/nse/build_rollover_history.py
       - name: Commit dated NSE history archive
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/nse-fo-latest.json public/data/nse-fo-history/
+          git add public/data/nse-fo-latest.json public/data/nse-fo-history/ public/data/nse-cash-delivery/
           if git diff --cached --quiet; then
             echo "NSE archive is already up to date."
           else
