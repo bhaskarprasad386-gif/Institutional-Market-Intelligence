@@ -5,14 +5,295 @@
   "factors": [
     {
       "id": "analyst",
-      "name": "Jefferies / Global Analyst Reports",
-      "value": "ICICI Bank, Axis Bank, SBI, HDFC Bank, Kotak Mahindra Bank",
-      "unit": "Preferred large-cap picks",
-      "asOf": "2026-11-04",
-      "status": "VERIFIED",
-      "note": "Jefferies FY26 annual-report review: ICICI and SBI led growth/profitability; HDFC and Axis have scope to improve retail deposit growth and margins. Flagged ECL transition, wage costs and possible rate increases.",
-      "sourceName": "Financial Express report on Jefferies' bank-sector review",
-      "sourceUrl": "https://www.financialexpress.com/market/hdfc-bank-icici-to-indusind-jefferies-banking-picks-amid-ecl-transition-4376980/lite/"
+      "name": "Broker Upgrade / Downgrade Reports — 10 Banks",
+      "status": "PARTIAL",
+      "asOf": "2026-11-10",
+      "sourceName": "Trendlyne broker research listings and linked research coverage",
+      "sourceUrl": "https://trendlyne.com/research-reports/filtered/recent-downgrades/industry/11/banks/",
+      "reports": [
+        {
+          "symbol": "HDFCBANK",
+          "bank": "HDFC Bank",
+          "items": [
+            [
+              "21 Oct 2026",
+              "Deven Choksey",
+              "BUY",
+              981
+            ],
+            [
+              "19 Oct 2026",
+              "BOB Capital Markets",
+              "BUY",
+              944
+            ],
+            [
+              "18 Oct 2026",
+              "Emkay",
+              "BUY",
+              1050
+            ]
+          ]
+        },
+        {
+          "symbol": "ICICIBANK",
+          "bank": "ICICI Bank",
+          "items": [
+            [
+              "19 Oct 2026",
+              "BOB Capital Markets",
+              "BUY",
+              1771
+            ],
+            [
+              "10 Jul 2026",
+              "Deven Choksey",
+              "BUY",
+              1691
+            ],
+            [
+              "03 Jun 2026",
+              "Motilal Oswal",
+              "BUY",
+              1750
+            ]
+          ]
+        },
+        {
+          "symbol": "SBIN",
+          "bank": "State Bank of India",
+          "items": [
+            [
+              "04 Nov 2026",
+              "Emkay",
+              "BUY",
+              1350
+            ],
+            [
+              "04 Nov 2026",
+              "Axis Direct",
+              "BUY",
+              1275
+            ],
+            [
+              "04 Nov 2026",
+              "BOB Capital Markets",
+              "BUY",
+              1350
+            ],
+            [
+              "04 Nov 2026",
+              "ICICI Securities",
+              "BUY",
+              1300
+            ],
+            [
+              "04 Nov 2026",
+              "ICICI Direct",
+              "BUY",
+              1200
+            ]
+          ]
+        },
+        {
+          "symbol": "KOTAKBANK",
+          "bank": "Kotak Mahindra Bank",
+          "items": [
+            [
+              "26 Oct 2026",
+              "Deven Choksey",
+              "BUY",
+              509
+            ],
+            [
+              "25 Oct 2026",
+              "Motilal Oswal",
+              "BUY",
+              500
+            ],
+            [
+              "25 Oct 2026",
+              "ICICI Securities",
+              "BUY",
+              520
+            ],
+            [
+              "01 Oct 2026",
+              "Prabhudas Lilladher",
+              "BUY",
+              500
+            ]
+          ]
+        },
+        {
+          "symbol": "AXISBANK",
+          "bank": "Axis Bank",
+          "items": [
+            [
+              "21 Oct 2026",
+              "Deven Choksey",
+              "BUY",
+              1507
+            ],
+            [
+              "19 Oct 2026",
+              "BOB Capital Markets",
+              "BUY",
+              1496
+            ],
+            [
+              "18 Oct 2026",
+              "Motilal Oswal",
+              "NEUTRAL",
+              1475
+            ],
+            [
+              "17 Oct 2026",
+              "Emkay",
+              "BUY",
+              1600
+            ],
+            [
+              "17 Oct 2026",
+              "ICICI Securities",
+              "BUY",
+              1620
+            ]
+          ]
+        },
+        {
+          "symbol": "PNB",
+          "bank": "Punjab National Bank",
+          "items": [
+            [
+              "18 Oct 2026",
+              "ICICI Securities",
+              "BUY",
+              140
+            ],
+            [
+              "19 Jul 2026",
+              "Motilal Oswal",
+              "BUY",
+              135
+            ]
+          ]
+        },
+        {
+          "symbol": "UNIONBANK",
+          "bank": "Union Bank of India",
+          "items": [
+            [
+              "20 Oct 2026",
+              "Anand Rathi",
+              "BUY",
+              221
+            ],
+            [
+              "20 Oct 2026",
+              "ICICI Securities",
+              "BUY",
+              230
+            ],
+            [
+              "19 Oct 2026",
+              "Motilal Oswal",
+              "NEUTRAL",
+              200
+            ]
+          ]
+        },
+        {
+          "symbol": "BANKBARODA",
+          "bank": "Bank of Baroda",
+          "items": [
+            [
+              "02 Nov 2026",
+              "JM Financial",
+              "BUY",
+              280
+            ],
+            [
+              "01 Nov 2026",
+              "Anand Rathi",
+              "BUY",
+              344
+            ],
+            [
+              "01 Nov 2026",
+              "Emkay",
+              "BUY",
+              300
+            ],
+            [
+              "31 Oct 2026",
+              "ICICI Direct",
+              "BUY",
+              285
+            ]
+          ]
+        },
+        {
+          "symbol": "CANBK",
+          "bank": "Canara Bank",
+          "items": [
+            [
+              "15 Oct 2026",
+              "BOB Capital Markets",
+              "BUY",
+              150
+            ],
+            [
+              "15 Oct 2026",
+              "Prabhudas Lilladher",
+              "BUY",
+              160
+            ],
+            [
+              "27 Jul 2026",
+              "Motilal Oswal",
+              "BUY",
+              160
+            ]
+          ]
+        },
+        {
+          "symbol": "FEDERALBNK",
+          "bank": "Federal Bank",
+          "items": [
+            [
+              "19 Oct 2026",
+              "Axis Direct",
+              "BUY",
+              405
+            ],
+            [
+              "18 Oct 2026",
+              "Emkay",
+              "BUY",
+              420
+            ],
+            [
+              "17 Oct 2026",
+              "ICICI Securities",
+              "HOLD",
+              330
+            ],
+            [
+              "17 Oct 2026",
+              "BOB Capital Markets",
+              "HOLD",
+              362
+            ],
+            [
+              "16 Oct 2026",
+              "Motilal Oswal",
+              "BUY",
+              385
+            ]
+          ]
+        }
+      ]
     },
     {
       "id": "credit",
@@ -20,54 +301,214 @@
       "value": 18.2,
       "unit": "% YoY",
       "asOf": "2026-10-15",
-      "status": "VERIFIED",
-      "note": "Scheduled commercial bank credit growth; latest fortnightly series located in RBI Weekly Statistical Supplement dated 23 October 2026. Deposits grew 16.7% YoY; credit-deposit ratio 81.6%.",
-      "sourceName": "RBI Weekly Statistical Supplement, 23 October 2026 (reported via RBI DBIE data extract)",
-      "sourceUrl": "https://tipsheet.markets/macro/credit/"
+      "status": "PARTIAL",
+      "sourceName": "RBI Weekly Statistical Supplement extract",
+      "sourceUrl": "https://www.rbi.org.in/Scripts/BS_ViewWssExtractdetails.aspx?id=63855",
+      "history": [
+        {
+          "date": "2026-10-15",
+          "value": 18.2,
+          "unit": "% YoY",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/BS_ViewWssExtractdetails.aspx?id=63855",
+          "sourceName": "RBI WSS extract"
+        },
+        {
+          "date": "2026-09-30",
+          "value": 16.7,
+          "unit": "% YoY",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/BS_ViewWssExtractdetails.aspx?id=63855",
+          "sourceName": "RBI WSS extract"
+        }
+      ],
+      "note": "Only the latest two official fortnightly growth observations are verified in the currently retrieved WSS extracts; older points are not fabricated."
     },
     {
       "id": "gsec10y",
       "name": "10-Year Government Bond Yield",
-      "value": 7.193,
+      "value": 7.45,
       "unit": "%",
-      "asOf": "2026-11-06",
+      "asOf": "2026-10-30",
       "status": "VERIFIED",
-      "note": "6.94% GS 2036 benchmark yield, latest RBI-published G-Sec market trend rate.",
-      "sourceName": "RBI Current Rates – Government Securities Market",
-      "sourceUrl": "https://www.rbi.org.in/home.aspx/Scripts/Home.aspx/Webservice/Scripts/scripts/FS_Overview.aspx?fn=2767"
+      "sourceName": "RBI Weekly Statistical Supplement",
+      "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+      "history": [
+        {
+          "date": "2026-10-30",
+          "value": 7.45,
+          "unit": "% ",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS"
+        },
+        {
+          "date": "2026-10-23",
+          "value": 7.52,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS"
+        },
+        {
+          "date": "2026-10-16",
+          "value": 7.4,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS"
+        },
+        {
+          "date": "2026-10-09",
+          "value": 7.37,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS"
+        },
+        {
+          "date": "2026-10-02",
+          "value": 7.23,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS"
+        }
+      ]
     },
     {
       "id": "repo",
       "name": "RBI Repo Rate Scenario",
       "value": 5.5,
       "unit": "%",
-      "asOf": "2026-11-09",
+      "asOf": "2026-10-30",
       "status": "VERIFIED",
-      "note": "Policy repo rate; SDF 5.25%, MSF/Bank Rate 5.75%. Current RBI policy-rate table.",
-      "sourceName": "RBI Current Rates",
-      "sourceUrl": "https://www.rbi.org.in/home.aspx/Scripts/Home.aspx/Webservice/Scripts/scripts/FS_Overview.aspx?fn=2767"
+      "sourceName": "RBI Weekly Statistical Supplement",
+      "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+      "history": [
+        {
+          "date": "2026-10-30",
+          "value": 5.5,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS"
+        },
+        {
+          "date": "2026-10-23",
+          "value": 5.5,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS"
+        },
+        {
+          "date": "2026-10-16",
+          "value": 5.5,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS"
+        },
+        {
+          "date": "2026-10-09",
+          "value": 5.5,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS"
+        },
+        {
+          "date": "2026-10-02",
+          "value": 5.25,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS"
+        }
+      ]
     },
     {
       "id": "liquidity",
       "name": "RBI LTRO / Liquidity Window",
-      "value": -154895.13,
+      "value": -182442,
       "unit": "₹ crore net absorbed",
-      "asOf": "2026-11-08",
+      "asOf": "2026-11-01",
       "status": "VERIFIED",
-      "note": "RBI's net liquidity injected from outstanding operations including today's operations; negative means net absorption. Latest RBI Money Market Operations release published 9 November. This is system LAF/MSF/SDF liquidity, not a fresh LTRO allotment.",
-      "sourceName": "RBI Money Market Operations as on 8 November 2026",
-      "sourceUrl": "https://www.rbi.org.in/scripts/FS_PressRelease.aspx?fn=6&prid=63947"
+      "sourceName": "RBI Weekly Statistical Supplement — Liquidity Operations",
+      "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "value": -182442,
+          "unit": "₹ crore",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
+          "sourceName": "RBI WSS"
+        },
+        {
+          "date": "2026-10-30",
+          "value": -122343,
+          "unit": "₹ crore",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
+          "sourceName": "RBI WSS"
+        },
+        {
+          "date": "2026-10-29",
+          "value": -163313,
+          "unit": "₹ crore",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
+          "sourceName": "RBI WSS"
+        },
+        {
+          "date": "2026-10-28",
+          "value": -148247,
+          "unit": "₹ crore",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
+          "sourceName": "RBI WSS"
+        },
+        {
+          "date": "2026-10-27",
+          "value": -165213,
+          "unit": "₹ crore",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28825",
+          "sourceName": "RBI WSS"
+        }
+      ]
     },
     {
       "id": "sixth",
       "name": "USD / INR Exchange Rate",
-      "value": 93.8579,
+      "value": 95.25,
       "unit": "INR per USD",
-      "asOf": "2026-11-09",
+      "asOf": "2026-10-30",
       "status": "VERIFIED",
-      "note": "RBI/FBIL reference rate at 1:00 pm; used as the sixth external macro indicator because the supplied matrix did not specify its sixth factor name.",
-      "sourceName": "RBI Current Rates – Exchange Rates (FBIL)",
-      "sourceUrl": "https://www.rbi.org.in/home.aspx/Scripts/Home.aspx/Webservice/Scripts/scripts/FS_Overview.aspx?fn=2767"
+      "sourceName": "RBI Weekly Statistical Supplement / FBIL",
+      "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+      "history": [
+        {
+          "date": "2026-10-30",
+          "value": 95.25,
+          "unit": "INR/USD",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS / FBIL"
+        },
+        {
+          "date": "2026-10-23",
+          "value": 94.94,
+          "unit": "INR/USD",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS / FBIL"
+        },
+        {
+          "date": "2026-10-16",
+          "value": 95.02,
+          "unit": "INR/USD",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS / FBIL"
+        },
+        {
+          "date": "2026-10-09",
+          "value": 96.61,
+          "unit": "INR/USD",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS / FBIL"
+        },
+        {
+          "date": "2026-10-02",
+          "value": 95.99,
+          "unit": "INR/USD",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS / FBIL"
+        }
+      ]
     }
   ]
 }
