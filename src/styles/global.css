@@ -97,3 +97,22 @@
  .brand-copy{flex:1 1 calc(100% - 70px)}
  .menu-toggle{margin-left:0}
 }
+
+.bank-stocks{border:2px solid #526982}.bank-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}.bank-kpis article{display:grid;gap:7px;padding:14px;border:1px solid #62758d;border-radius:9px;background:#142338}.bank-kpis article span{font-size:12px;color:#bdcadd;font-weight:800}.bank-kpis article strong{font-size:20px;color:#fff;font-weight:950}.bank-toolbar{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin:18px 0}.bank-toolbar label{display:grid;gap:7px;font-size:13px;font-weight:900;color:#e5edf8}.bank-toolbar input,.bank-toolbar select{min-width:0;width:100%;padding:10px 12px;border:2px solid #657992;border-radius:8px;background:#0b1524;color:#fff;font:inherit}.bank-stocks .table-wrap{max-height:65vh}.bank-stocks td strong{color:#d8eaff}@media(max-width:700px){.bank-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.bank-toolbar{grid-template-columns:1fr}}
+
+
+/* Banking stocks: Layer 1 fundamental intelligence sits above the stock list. */
+.bank-layer-one{margin:22px 0 26px;padding:18px;border:2px solid #58718e;border-radius:12px;background:#101d2d}
+.bank-layer-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:15px}
+.bank-layer-heading h3{margin:3px 0 0;color:#f2f7ff;font-size:20px;font-weight:950}
+.bank-layer-heading>span{padding:6px 9px;border:1px solid #7892b1;border-radius:7px;color:#dceaff;font-size:11px;font-weight:950}
+.bank-factor-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.bank-factor{display:flex;align-items:flex-start;gap:10px;min-width:0;padding:11px;border:1px solid #526982;border-radius:9px;background:#17283c}
+.bank-factor-number{display:grid;place-items:center;flex:0 0 25px;width:25px;height:25px;border-radius:6px;background:#294866;color:#fff;font-size:12px;font-weight:950}
+.bank-factor div{display:grid;gap:4px;min-width:0}
+.bank-factor strong{color:#f3f7fc;font-size:13px;line-height:1.35}
+.bank-factor small{color:#b9cbe0;font-size:11px;line-height:1.35}
+.bank-layer-note{margin:13px 0 0;color:#b9c7d8;font-size:12px;line-height:1.55}
+.bank-list-title{margin:0 0 12px;color:#f2f7ff;font-size:18px;font-weight:950}
+@media(max-width:900px){.bank-factor-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.bank-layer-one{padding:12px}.bank-factor-grid{grid-template-columns:1fr}.bank-layer-heading h3{font-size:18px}}

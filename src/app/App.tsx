@@ -31,6 +31,7 @@ import LmeDataSources from "../modules/lme/LmeDataSources";
 import { archiveRawLmeFile } from "../data/rawLmeArchive";
 import OpportunityScanner from "../modules/opportunities/OpportunityScanner";
 import BrokerScorecard from "../modules/research/BrokerScorecard";
+import BankingStocks from "../modules/banks/BankingStocks";
 
 export default function App() {
   const [file, setFile] = useState<File | null>(null);
@@ -166,6 +167,7 @@ export default function App() {
     {menuOpen && <nav id="workspace-navigation" className="strategy-menu" aria-label="Strategy and research menu">
       <p className="eyebrow">WORKSPACE MENU</p>
       <button className={activeView==="futures"?"active":""} onClick={()=>setActiveView("futures")}>Futures & Rollover</button>
+      <button className={activeView==="banks"?"active":""} onClick={()=>setActiveView("banks")}>Banking Stocks</button>
       <button className={activeView==="eod"?"active":""} onClick={()=>setActiveView("eod")}>Equity EOD Import</button>
       <button className={activeView==="flows"?"active":""} onClick={()=>setActiveView("flows")}>Sector / Delivery / FII-DII</button>
       <button className={activeView==="options"?"active":""} onClick={()=>setActiveView("options")}>Options Analytics</button>
@@ -175,6 +177,7 @@ export default function App() {
       <button className={activeView==="history"?"active":""} onClick={()=>setActiveView("history")}>Import History</button>
     </nav>}
     <div className="workspace-content">
+    {activeView === "banks" && <BankingStocks futures={foMetrics} status={nseAutoStatus} />}
     {activeView === "eod" && (
     <section className="panel">
       <p className="eyebrow">EXCHANGE DATA CENTRE</p><h2>NSE / BSE Equity EOD Import</h2>
