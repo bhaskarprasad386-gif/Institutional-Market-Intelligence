@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-10",
+  "sourcePolicy": "Official RBI sources; each observation retains its own reporting date. Missing analyst coverage is not inferred.",
+  "factors": [
+    {
+      "id": "analyst",
+      "name": "Jefferies / Global Analyst Reports",
+      "value": null,
+      "unit": null,
+      "asOf": null,
+      "status": "PENDING",
+      "note": "No verified public Jefferies bank-coverage note was available for this snapshot.",
+      "sourceName": "Jefferies research publications",
+      "sourceUrl": "https://www.jefferies.com/"
+    },
+    {
+      "id": "credit",
+      "name": "RBI Fortnightly Credit Growth",
+      "value": 18.2,
+      "unit": "% YoY",
+      "asOf": "2026-10-15",
+      "status": "VERIFIED",
+      "note": "Scheduled Commercial Banks: Bank Credit growth year-on-year.",
+      "sourceName": "RBI Weekly Statistical Supplement extract",
+      "sourceUrl": "https://www.rbi.org.in/Scripts/BS_ViewWssExtractdetails.aspx?id=63855"
+    },
+    {
+      "id": "gsec10y",
+      "name": "10-Year Government Bond Yield",
+      "value": 7.193,
+      "unit": "%",
+      "asOf": "2026-11-06",
+      "status": "VERIFIED",
+      "note": "6.94% GS 2036 yield, used as the approximately 10-year sovereign benchmark.",
+      "sourceName": "RBI Current Rates – Government Securities Market",
+      "sourceUrl": "https://rbi.org.in/Home.aspx"
+    },
+    {
+      "id": "repo",
+      "name": "RBI Repo Rate Scenario",
+      "value": 5.5,
+      "unit": "%",
+      "asOf": "2026-10-07",
+      "status": "VERIFIED",
+      "note": "MPC raised repo by 25 bps; stance changed to calibrated tightening.",
+      "sourceName": "RBI Monetary Policy Resolution, October 5–7 2026",
+      "sourceUrl": "https://rbi.org.in/Scripts/BS_ViewBulletin.aspx?Id=24511"
+    },
+    {
+      "id": "liquidity",
+      "name": "RBI LTRO / Liquidity Window",
+      "value": -154893.13,
+      "unit": "₹ crore net absorbed",
+      "asOf": "2026-11-07",
+      "status": "VERIFIED",
+      "note": "Net liquidity injected from outstanding operations including today's operations; negative means absorption by RBI. This is LAF/MSF/SDF system liquidity, not an LTRO allotment.",
+      "sourceName": "RBI Money Market Operations as on November 7, 2026",
+      "sourceUrl": "https://rbi.org.in/scripts/FS_PressRelease.aspx?fn=6&prid=63946"
+    },
+    {
+      "id": "sixth",
+      "name": "Sixth Macro / External Factor",
+      "value": null,
+      "unit": null,
+      "asOf": null,
+      "status": "PENDING",
+      "note": "The original sixth factor label was not present in the supplied screenshot.",
+      "sourceName": null,
+      "sourceUrl": null
+    }
+  ]
+}
