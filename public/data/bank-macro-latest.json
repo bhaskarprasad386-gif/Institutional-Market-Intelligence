@@ -363,13 +363,20 @@
     {
       "id": "gsec10y",
       "name": "10-Year Government Bond Yield",
-      "value": 7.52,
+      "value": 7.45,
       "unit": "%",
-      "asOf": "2026-10-23",
+      "asOf": "2026-10-30",
       "status": "VERIFIED",
-      "sourceName": "RBI Weekly Statistical Supplement — 30 Oct 2026",
-      "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
+      "sourceName": "RBI Weekly Statistical Supplement — 06 Nov 2026",
+      "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
       "history": [
+        {
+          "date": "2026-10-30",
+          "value": 7.45,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS, 06 Nov 2026"
+        },
         {
           "date": "2026-10-23",
           "value": 7.52,
@@ -404,13 +411,6 @@
           "unit": "%",
           "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
           "sourceName": "RBI WSS, 30 Oct 2026"
-        },
-        {
-          "date": "2026-09-18",
-          "value": 7.08,
-          "unit": "%",
-          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28792",
-          "sourceName": "RBI WSS, 23 Oct 2026"
         }
       ]
     },
@@ -419,11 +419,18 @@
       "name": "RBI Repo Rate Scenario",
       "value": 5.5,
       "unit": "%",
-      "asOf": "2026-10-23",
+      "asOf": "2026-10-30",
       "status": "VERIFIED",
-      "sourceName": "RBI Weekly Statistical Supplement — 30 Oct 2026",
-      "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
+      "sourceName": "RBI Weekly Statistical Supplement — 06 Nov 2026",
+      "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
       "history": [
+        {
+          "date": "2026-10-30",
+          "value": 5.5,
+          "unit": "%",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS, 06 Nov 2026"
+        },
         {
           "date": "2026-10-23",
           "value": 5.5,
@@ -458,13 +465,6 @@
           "unit": "%",
           "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
           "sourceName": "RBI WSS, 30 Oct 2026"
-        },
-        {
-          "date": "2026-09-18",
-          "value": 5.25,
-          "unit": "%",
-          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28792",
-          "sourceName": "RBI WSS, 23 Oct 2026"
         }
       ]
     },
@@ -532,13 +532,20 @@
     {
       "id": "sixth",
       "name": "USD / INR Exchange Rate",
-      "value": 94.94,
+      "value": 95.25,
       "unit": "INR per USD",
-      "asOf": "2026-10-23",
+      "asOf": "2026-10-30",
       "status": "VERIFIED",
-      "sourceName": "RBI Weekly Statistical Supplement — 30 Oct 2026",
-      "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
+      "sourceName": "RBI Weekly Statistical Supplement — 06 Nov 2026",
+      "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
       "history": [
+        {
+          "date": "2026-10-30",
+          "value": 95.25,
+          "unit": "₹ per USD",
+          "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28822",
+          "sourceName": "RBI WSS, 06 Nov 2026"
+        },
         {
           "date": "2026-10-23",
           "value": 94.94,
@@ -573,13 +580,6 @@
           "unit": "INR per USD",
           "sourceUrl": "https://www.rbi.org.in/scripts/WSSView.aspx?Id=28807",
           "sourceName": "RBI WSS, 30 Oct 2026"
-        },
-        {
-          "date": "2026-09-18",
-          "value": 95.79,
-          "unit": "INR per USD",
-          "sourceUrl": "https://www.rbi.org.in/Scripts/WSSView.aspx?Id=28792",
-          "sourceName": "RBI WSS, 23 Oct 2026"
         }
       ]
     }
