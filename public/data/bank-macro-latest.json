@@ -329,25 +329,32 @@
       "unit": "% YoY",
       "asOf": "2026-10-15",
       "status": "PARTIAL",
-      "sourceName": "RBI Weekly Statistical Supplement extract",
-      "sourceUrl": "https://www.rbi.org.in/Scripts/BS_ViewWssExtractdetails.aspx?id=63855",
+      "sourceName": "RBI Weekly Statistical Supplement — 06 Nov 2026",
+      "sourceUrl": "https://www.rbi.org.in/Scripts/BS_ViewWssExtractdetails.aspx?id=63939",
       "history": [
         {
           "date": "2026-10-15",
           "value": 18.2,
           "unit": "% YoY",
-          "sourceUrl": "https://www.rbi.org.in/Scripts/BS_ViewWssExtractdetails.aspx?id=63855",
-          "sourceName": "RBI WSS extract"
+          "sourceUrl": "https://www.rbi.org.in/Scripts/BS_ViewWssExtractdetails.aspx?id=63939",
+          "sourceName": "RBI WSS, 06 Nov 2026"
         },
         {
           "date": "2026-09-30",
-          "value": 16.7,
+          "value": 19.4,
           "unit": "% YoY",
-          "sourceUrl": "https://www.rbi.org.in/Scripts/BS_ViewWssExtractdetails.aspx?id=63855",
-          "sourceName": "RBI WSS extract"
+          "sourceUrl": "https://www.rbi.org.in/Scripts/BS_ViewWssExtractdetails.aspx?id=63819",
+          "sourceName": "RBI WSS, 16 Oct 2026"
+        },
+        {
+          "date": "2026-09-15",
+          "value": 18.1,
+          "unit": "% YoY",
+          "sourceUrl": "https://www.rbi.org.in/Scripts/BS_ViewWssExtractdetails.aspx?id=63718",
+          "sourceName": "RBI WSS, 25 Sep 2026"
         }
       ],
-      "note": "Only the latest two official fortnightly growth observations are verified in the currently retrieved WSS extracts; older points are not fabricated."
+      "note": "Three directly verified fortnightly observations are available. Older periods are not filled until the matching RBI WSS releases are checked."
     },
     {
       "id": "gsec10y",
