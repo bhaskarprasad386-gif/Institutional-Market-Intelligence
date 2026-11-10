@@ -56,8 +56,8 @@ def parse_xbrl(payload):
         members = set()
         for child in node.iter():
             name = local_name(child.tag)
-            if name.endswith("Member"):
-                members.add(name)
+            if name in ("explicitMember", "typedMember") and child.text:
+                members.add(local_name(child.text.strip()))
         contexts[node.attrib.get("id", "")] = members
     facts = {}
     for node in root.iter():
