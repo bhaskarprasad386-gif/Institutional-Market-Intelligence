@@ -192,3 +192,8 @@
 .nifty50-detail-grid small{color:#b9cbe0;font-size:11px;font-weight:800}
 .nifty50-detail-grid strong{color:#f2f7ff;font-size:14px;font-weight:950;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 @media(max-width:760px){.nifty50-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.nifty50-detail{padding:12px}}
+
+
+.nifty50-quick-open{padding:10px 13px;border:2px solid #8fc5ff;border-radius:9px;background:#23486b;color:#fff;font-size:13px;font-weight:950;white-space:nowrap;cursor:pointer}
+.nifty50-quick-open:hover{background:#2d5b87}
+@media(max-width:520px){.nifty50-quick-open{width:100%;order:3}}
