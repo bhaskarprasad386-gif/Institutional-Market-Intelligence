@@ -27,39 +27,6 @@ const LAYER_TWO_FACTORS = [
   { name: "Sixth Macro / External Factor", target: "Not specified in supplied matrix" }
 ];
 
-const LAYER_THREE_FACTORS = [
-  { name: "Foreign Room Availability", target: "FPI headroom / ownership limit" },
-  { name: "Liquidity Coverage Ratio (LCR)", target: "120%–135% reference; verify RBI rules" },
-  { name: "Risk-Weighted Assets (RWA) Optimization", target: "Capital efficiency and risk mix" },
-  { name: "Insider Buying", target: "Disclosed insider purchases" },
-  { name: "Bulk / Block Deals", target: "Exchange-disclosed large transactions" },
-  { name: "FII Positions Matrix", target: "Available disclosed institutional positioning" },
-  { name: "MSCI / FTSE Inflows", target: "Index inclusion, weight changes and flows" },
-  { name: "Off-Market Clearing", target: "Verified disclosed transfer activity" },
-  { name: "SLB Short Recall", target: "Stock-lending availability / recall data" },
-  { name: "Margin Stress", target: "Margin requirements and stress indicators" },
-  { name: "Custodian Fails", target: "Settlement-fail data, if accessible" },
-  { name: "Asset Repricing", target: "Material disclosed asset valuation changes" },
-  { name: "Iceberg Orders", target: "Only where reliable order-book evidence exists" },
-  { name: "Pool Transfer", target: "Verified depository / settlement disclosures" },
-  { name: "FPI Re-classification", target: "Official ownership-category changes" },
-  { name: "Clearing Stress", target: "Clearing and settlement risk indicators" },
-  { name: "P-Notes / ODI Flow", target: "Published regulatory / market disclosures" },
-  { name: "OTC Swap Unwind", target: "Only verified reported activity" },
-  { name: "Float Reduction", target: "Change in tradable public float" },
-  { name: "ADR / GDR Premium", target: "Where a comparable listed instrument exists" },
-  { name: "RBI Ban Status", target: "Official RBI restrictions / supervisory notices" }
-];
-
-
-const LAYER_FOUR_FACTORS = [
-  { name: "Relative Strength", target: "Bank stock performance versus NIFTY 100 / sector benchmark" },
-  { name: "Quiet Price + High Delivery %", target: "Price compression with elevated delivery; confirm volume and multi-session context" },
-  { name: "Positional Rollover", target: "F&O rollover quantity and cost; distinguish fresh positions from rollovers" },
-  { name: "RSI — Daily", target: "14-period RSI on daily candles" },
-  { name: "RSI — Weekly", target: "14-period RSI on weekly candles" }
-];
-
 const BANK_STOCKS = [
   { symbol: "HDFCBANK", name: "HDFC Bank" },
   { symbol: "ICICIBANK", name: "ICICI Bank" },
