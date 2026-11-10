@@ -8,7 +8,7 @@
       "name": "Broker Upgrade / Downgrade Reports — 10 Banks",
       "status": "PARTIAL",
       "asOf": "2026-11-10",
-      "sourceName": "Trendlyne broker research listings and linked research coverage",
+      "sourceName": "Trendlyne bank-specific research report archives; archive links are not individual PDF links",
       "sourceUrl": "https://trendlyne.com/research-reports/filtered/recent-downgrades/industry/11/banks/",
       "reports": [
         {
@@ -33,7 +33,8 @@
               "BUY",
               1050
             ]
-          ]
+          ],
+          "sourceUrl": "https://trendlyne.com/research-reports/stock/533/HDFCBANK/hdfc-bank-ltd/"
         },
         {
           "symbol": "ICICIBANK",
@@ -57,7 +58,8 @@
               "BUY",
               1750
             ]
-          ]
+          ],
+          "sourceUrl": "https://trendlyne.com/research-reports/stock/584/ICICIBANK/icici-bank-ltd/"
         },
         {
           "symbol": "SBIN",
@@ -93,7 +95,8 @@
               "BUY",
               1200
             ]
-          ]
+          ],
+          "sourceUrl": "https://trendlyne.com/research-reports/stock/1193/SBIN/state-bank-of-india/"
         },
         {
           "symbol": "KOTAKBANK",
@@ -123,7 +126,8 @@
               "BUY",
               500
             ]
-          ]
+          ],
+          "sourceUrl": "https://trendlyne.com/research-reports/stock/758/KOTAKBANK/kotak-mahindra-bank-ltd/"
         },
         {
           "symbol": "AXISBANK",
@@ -159,7 +163,8 @@
               "BUY",
               1620
             ]
-          ]
+          ],
+          "sourceUrl": "https://trendlyne.com/equity/140/AXISBANK/axis-bank-ltd/"
         },
         {
           "symbol": "PNB",
@@ -177,7 +182,8 @@
               "BUY",
               135
             ]
-          ]
+          ],
+          "sourceUrl": "https://trendlyne.com/research-reports/stock/1048/PNB/punjab-national-bank/"
         },
         {
           "symbol": "UNIONBANK",
@@ -201,7 +207,8 @@
               "NEUTRAL",
               200
             ]
-          ]
+          ],
+          "sourceUrl": "https://trendlyne.com/research-reports/stock/1447/UNIONBANK/union-bank-of-india/"
         },
         {
           "symbol": "BANKBARODA",
@@ -231,7 +238,8 @@
               "BUY",
               285
             ]
-          ]
+          ],
+          "sourceUrl": "https://trendlyne.com/research-reports/stock/162/BANKBARODA/bank-of-baroda/"
         },
         {
           "symbol": "CANBK",
@@ -255,7 +263,8 @@
               "BUY",
               160
             ]
-          ]
+          ],
+          "sourceUrl": "https://trendlyne.com/research-reports/stock/232/CANBK/canara-bank/"
         },
         {
           "symbol": "FEDERALBNK",
@@ -291,7 +300,8 @@
               "BUY",
               385
             ]
-          ]
+          ],
+          "sourceUrl": "https://trendlyne.com/research-reports/stock/412/FEDERALBNK/federal-bank-ltd/"
         }
       ],
       "actionReports": [
