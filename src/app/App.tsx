@@ -164,7 +164,7 @@ export default function App() {
     finally { setBusy(false); }
   }
   return <main className={`shell ${menuOpen ? "menu-open" : "menu-collapsed"}`}>
-    <header><div className="mark">IM</div><div className="brand-copy"><p className="eyebrow">DATA FOUNDATION · BATCH 2 / 3</p><h1>Institutional Market Intelligence</h1><p className="muted">NSE / BSE EOD data mapping · local-first research workspace</p></div><button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="workspace-navigation" onClick={()=>setMenuOpen(open=>!open)}>{menuOpen ? "✕ Hide menu" : "☰ Workspace Menu"}</button></header>
+    <header><div className="mark">IM</div><div className="brand-copy"><p className="eyebrow">DATA FOUNDATION · BATCH 2 / 3</p><h1>Institutional Market Intelligence</h1><p className="muted">NSE / BSE EOD data mapping · local-first research workspace</p></div><button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="workspace-navigation" onClick={()=>setMenuOpen(open=>!open)}>{menuOpen ? "✕ Hide menu" : "☰ Workspace Menu"}</button><button className="nifty50-quick-open" type="button" onClick={()=>{setActiveView("nifty50");setMenuOpen(true);}}>Open NIFTY 50 Page ↗</button></header>
     {menuOpen && <nav id="workspace-navigation" className="strategy-menu" aria-label="Strategy and research menu">
       <p className="eyebrow">WORKSPACE MENU</p>
       <button className={activeView==="futures"?"active":""} onClick={()=>setActiveView("futures")}>Futures & Rollover</button>
