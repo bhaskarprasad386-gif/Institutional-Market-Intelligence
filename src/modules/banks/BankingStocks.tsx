@@ -106,7 +106,8 @@ export default function BankingStocks(_props: Props) {
     </section>
 
     <p className="bank-layer-note">Table columns: LTP = latest traded price; SMA = simple moving average; RSI uses 14-period daily and weekly candles. FII holding is shown for the latest three reported quarters. Values remain blank until a timestamped, verifiable market/data feed is connected.</p>
-    <h3 className="bank-list-title">NIFTY 100 Banking Stocks</h3>\n    <p className="bank-layer-note" role="status">{marketStatus}</p>
+    <h3 className="bank-list-title">NIFTY 100 Banking Stocks</h3>
+    <p className="bank-layer-note" role="status">{marketStatus}</p>
     <div className="bank-toolbar">
       <label>Search bank or NSE symbol
         <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="e.g. HDFC or SBIN" aria-label="Search banking stocks by bank name or NSE symbol" />
@@ -119,7 +120,7 @@ export default function BankingStocks(_props: Props) {
           <tr><th rowSpan={2}>Serial No.</th><th rowSpan={2}>Bank Name</th><th rowSpan={2}>NSE Symbol</th><th rowSpan={2}>LTP</th><th rowSpan={2}>RS</th><th colSpan={2}>20 SMA</th><th colSpan={2}>50 SMA</th><th rowSpan={2}>RSI Daily</th><th rowSpan={2}>RSI Weekly</th></tr>
           <tr><th>Daily</th><th>Weekly</th><th>Daily</th><th>Weekly</th></tr>
         </thead>
-        <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>—</td><td>{marketRows[bank.symbol]?.close ?? "—"}</td><td>{marketRows[bank.symbol]?.sma20Daily ?? "—"}</td><td>{marketRows[bank.symbol]?.sma20Weekly ?? "—"}</td><td>{marketRows[bank.symbol]?.sma50Daily ?? "—"}</td><td>{marketRows[bank.symbol]?.sma50Weekly ?? "—"}</td><td>—</td><td>—</td></tr>)}</tbody>
+        <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>{marketRows[bank.symbol]?.close ?? "—"}</td><td>—</td><td>{marketRows[bank.symbol]?.sma20Daily ?? "—"}</td><td>{marketRows[bank.symbol]?.sma20Weekly ?? "—"}</td><td>{marketRows[bank.symbol]?.sma50Daily ?? "—"}</td><td>{marketRows[bank.symbol]?.sma50Weekly ?? "—"}</td><td>—</td><td>—</td></tr>)}</tbody>
       </table>
     </div>
 
@@ -146,7 +147,7 @@ export default function BankingStocks(_props: Props) {
       <div className="table-wrap bank-table-wrap">
         <table className="bank-data-table">
           <thead><tr><th>Serial No.</th><th>Bank Name</th><th>NSE Symbol</th><th>Latest Session Delivery %</th><th>Previous Session %</th><th>5-Session Average %</th><th>20-Session Average %</th></tr></thead>
-          <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>—</td><td>—</td><td>—</td><td>—</td></tr>)}</tbody>
+          <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>{marketRows[bank.symbol]?.deliveryPct ?? "—"}</td><td>{marketRows[bank.symbol]?.deliveryPctPrevious ?? "—"}</td><td>{marketRows[bank.symbol]?.deliveryPct5SessionAvg ?? "—"}</td><td>{marketRows[bank.symbol]?.deliveryPct20SessionAvg ?? "—"}</td></tr>)}</tbody>
         </table>
       </div>
     </section>
