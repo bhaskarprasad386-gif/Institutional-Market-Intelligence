@@ -135,3 +135,18 @@
 .bank-stocks .bank-toolbar{align-items:end}
 .bank-stocks .bank-toolbar .bank-layer-note{margin:0 0 10px}
 @media(max-width:600px){.bank-stocks .bank-data-table{min-width:720px}.bank-stocks .bank-data-table th,.bank-stocks .bank-data-table td{padding:10px 9px}.bank-stocks .bank-table-wrap{border-radius:9px}}
+
+
+/* Layer 1 bank-wise matrix: all 13 fundamental factors remain visible as columns. */
+.bank-matrix-title{margin:18px 0 6px;color:#f0f6ff;font-size:15px;font-weight:950}
+.bank-layer-one-table-wrap{max-height:62vh}
+.bank-stocks .bank-layer-one-table{min-width:1900px}
+.bank-stocks .bank-layer-one-table th{max-width:170px;white-space:normal;vertical-align:bottom;line-height:1.35}
+.bank-stocks .bank-layer-one-table td{min-width:82px;text-align:center}
+.bank-stocks .bank-layer-one-table td:nth-child(2),.bank-stocks .bank-layer-one-table td:nth-child(3){text-align:left}
+.bank-stocks .bank-layer-one-table th:nth-child(1),.bank-stocks .bank-layer-one-table th:nth-child(2),.bank-stocks .bank-layer-one-table th:nth-child(3){position:sticky;z-index:4;background:#1c3048}
+.bank-stocks .bank-layer-one-table td:nth-child(1),.bank-stocks .bank-layer-one-table td:nth-child(2),.bank-stocks .bank-layer-one-table td:nth-child(3){position:sticky;z-index:2;background:#101d2d}
+.bank-stocks .bank-layer-one-table tbody tr:nth-child(even) td:nth-child(-n+3){background:#142338}
+.bank-stocks .bank-layer-one-table th:nth-child(1),.bank-stocks .bank-layer-one-table td:nth-child(1){left:0;min-width:64px}
+.bank-stocks .bank-layer-one-table th:nth-child(2),.bank-stocks .bank-layer-one-table td:nth-child(2){left:64px;min-width:160px}
+.bank-stocks .bank-layer-one-table th:nth-child(3),.bank-stocks .bank-layer-one-table td:nth-child(3){left:224px;min-width:120px}
