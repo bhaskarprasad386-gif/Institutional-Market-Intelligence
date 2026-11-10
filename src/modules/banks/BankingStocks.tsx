@@ -49,7 +49,13 @@ const LAYER_THREE_FACTORS = [
   { name: "RBI Ban Status", target: "Official RBI restrictions / supervisory notices" }
 ];
 
-const BANK_STOCKS = [
+
+const LAYER_FOUR_FACTORS = [
+  { name: "Relative Strength", target: "Bank stock performance versus NIFTY 100 / sector benchmark" },
+  { name: "Quiet Price + High Delivery %", target: "Price compression with elevated delivery; confirm volume and multi-session context" },
+  { name: "Positional Rollover", target: "F&O rollover quantity and cost; distinguish fresh positions from rollovers" }
+];
+\nconst BANK_STOCKS = [
   { symbol: "HDFCBANK", name: "HDFC Bank" },
   { symbol: "ICICIBANK", name: "ICICI Bank" },
   { symbol: "SBIN", name: "State Bank of India" },
@@ -105,6 +111,20 @@ export default function BankingStocks(_props: Props) {
         </article>)}
       </div>
       <p className="bank-layer-note">आपके screenshots में इस category को 20 factors कहा गया है, लेकिन दिखाई देने वाली numbering से 21 entries मिलती हैं। सभी 21 visible entries सुरक्षित रखी गई हैं; final Mother Matrix count reconcile होने तक count mismatch स्पष्ट रखा है। कुछ indicators का granular data public नहीं होता—ऐसे मामलों में अनुमानित value या fabricated signal नहीं दिखेगा।</p>
+    </section>
+
+
+    <section className="bank-layer-one bank-layer-four" aria-labelledby="bank-layer-four-title">
+      <div className="bank-layer-heading">
+        <div><p className="eyebrow">LAYER 4 · MARKET FOOTPRINT</p><h3 id="bank-layer-four-title">Price, Delivery &amp; Positioning Factors</h3></div>
+        <span>3 FACTORS</span>
+      </div>
+      <div className="bank-factor-grid">
+        {LAYER_FOUR_FACTORS.map((factor, index) => <article className="bank-factor" key={factor.name}>
+          <span className="bank-factor-number">{index + 1}</span><div><strong>{factor.name}</strong><small>{factor.target}</small></div>
+        </article>)}
+      </div>
+      <p className="bank-layer-note">Delivery percentage या rollover अकेले accumulation / bullish signal नहीं हैं। इन्हें traded volume, price trend, futures open interest, expiry और multi-session history के साथ verify करना होगा। जिन stocks में F&amp;O उपलब्ध नहीं है, वहाँ positional rollover लागू नहीं होगा।</p>
     </section>
 
     <h3 className="bank-list-title">NIFTY 100 Banking Stocks</h3>
