@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: nifty50-eod-auto-feed
@@ -44,6 +46,18 @@ jobs:
           if not p.get("marketDate") or ready == 0:
               raise SystemExit("No verified NSE cash EOD prices available; refusing to publish an empty snapshot")
           PY
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install frontend dependencies
+        run: npm install
+      - name: Build website with refreshed NIFTY 50 snapshot
+        run: npm run build
+      - name: Upload refreshed website artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
       - name: Commit daily NSE archive and NIFTY 50 snapshot
         run: |
           git config user.name "github-actions[bot]"
@@ -55,3 +69,14 @@ jobs:
             git commit -m "data: refresh NIFTY 50 EOD stock matrix [skip ci]"
             git push origin HEAD:main
           fi
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: collect-and-build
+    steps:
+      - name: Deploy refreshed NIFTY 50 website
+        id: deployment
+        uses: actions/deploy-pages@v4
