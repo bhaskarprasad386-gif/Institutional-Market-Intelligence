@@ -1,3 +1,5 @@
+import { useMemo, useState } from "react";
+
 type Props = { futures: unknown[]; status: string };
 
 const LAYER_ONE_FACTORS = [
@@ -72,6 +74,15 @@ const BANK_STOCKS = [
 ];
 
 export default function BankingStocks(_props: Props) {
+  const [search, setSearch] = useState("");
+  const filteredBanks = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return BANK_STOCKS;
+    return BANK_STOCKS.filter((bank) =>
+      bank.name.toLowerCase().includes(query) || bank.symbol.toLowerCase().includes(query)
+    );
+  }, [search]);
+
   return <section className="panel bank-stocks">
     <p className="eyebrow">NIFTY 100 · BANKING STOCKS</p>
     <h2>Banking Stocks</h2>
@@ -132,10 +143,16 @@ export default function BankingStocks(_props: Props) {
 
     <p className="bank-layer-note">Table columns: LTP = latest traded price; FII Position = stock-specific disclosed FII holding / activity trend (Positive / Negative); RS = relative strength versus the selected benchmark (Positive / Negative); RSI uses 14-period daily and weekly candles. Values remain blank until a timestamped, verifiable market/data feed is connected.</p>
     <h3 className="bank-list-title">NIFTY 100 Banking Stocks</h3>
+    <div className="bank-toolbar">
+      <label>Search bank or NSE symbol
+        <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="e.g. HDFC or SBIN" aria-label="Search banking stocks by bank name or NSE symbol" />
+      </label>
+      <p className="bank-layer-note" aria-live="polite">Showing {filteredBanks.length} of {BANK_STOCKS.length} banks</p>
+    </div>
     <div className="table-wrap">
       <table>
         <thead><tr><th>Serial No.</th><th>Bank Name</th><th>NSE Symbol</th><th>LTP</th><th>FII Position</th><th>RS</th><th>RSI Daily</th><th>RSI Weekly</th></tr></thead>
-        <tbody>{BANK_STOCKS.map((bank, index) => <tr key={bank.symbol}><td>{index + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>)}</tbody>
+        <tbody>{filteredBanks.map((bank) => <tr key={bank.symbol}><td>{BANK_STOCKS.findIndex((item) => item.symbol === bank.symbol) + 1}</td><td>{bank.name}</td><td><strong>{bank.symbol}</strong></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>)}</tbody>
       </table>
     </div>
   </section>;
