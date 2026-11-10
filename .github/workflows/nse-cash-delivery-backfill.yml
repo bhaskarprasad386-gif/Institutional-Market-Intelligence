@@ -2,7 +2,8 @@ name: NSE cash delivery historical backfill
 
 on:
   schedule:
-    - cron: "30 16 * * 6"
+    # Retry missing NSE cash sessions every weekday at 20:30 IST.
+    - cron: "0 15 * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -15,7 +16,7 @@ concurrency:
 jobs:
   backfill:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
