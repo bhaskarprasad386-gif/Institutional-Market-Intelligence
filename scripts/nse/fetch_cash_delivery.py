@@ -12,6 +12,7 @@ import math
 import time
 import urllib.error
 import urllib.request
+import http.cookiejar
 from pathlib import Path
 
 BASE = "https://nsearchives.nseindia.com/products/content"
@@ -121,11 +122,27 @@ def parse_cash_delivery_csv(payload, expected_day):
     return rows
 
 
-def fetch_for_date(day):
+def nse_opener():
+    """Use a cookie-aware NSE session; archive nodes may reject cold requests."""
+    jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+    warmup = urllib.request.Request("https://www.nseindia.com/", headers={
+        **HEADERS, "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    })
+    try:
+        with opener.open(warmup, timeout=30) as response:
+            response.read(1024)
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as exc:
+        print(f"NSE session warm-up warning: {exc}")
+    return opener
+
+
+def fetch_for_date(day, opener=None):
     filename = f"sec_bhavdata_full_{day.strftime('%d%m%Y')}.csv"
     url = f"{BASE}/{filename}"
+    opener = opener or nse_opener()
     request = urllib.request.Request(url, headers=HEADERS)
-    with urllib.request.urlopen(request, timeout=45) as response:
+    with opener.open(request, timeout=45) as response:
         payload = response.read()
     if not payload or payload.lstrip().startswith(b"<"):
         raise ValueError(f"NSE returned an invalid cash delivery response for {day}")
@@ -163,18 +180,22 @@ def backfill_existing_fo_dates():
         raise SystemExit("F&O history index contains no trading dates.")
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     successes = skipped = failed = 0
+    opener = nse_opener()
     for day in dates:
         target = OUT_DIR / f"{day.isoformat()}.json"
         if target.exists() and target.stat().st_size > 100:
             skipped += 1
             continue
         try:
-            filename, url, rows = fetch_for_date(day)
+            filename, url, rows = fetch_for_date(day, opener=opener)
             save_history(day, filename, url, rows)
             successes += 1
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError) as exc:
             failed += 1
             print(f"SKIP {day}: {exc}")
+            if isinstance(exc, urllib.error.HTTPError) and exc.code in (403, 429):
+                time.sleep(5)
+                opener = nse_opener()
         time.sleep(1)
     print(f"Cash delivery backfill complete: {successes} fetched, {skipped} already archived, {failed} failed.")
     ensure_backfill_complete(successes, skipped, failed)
@@ -199,6 +220,7 @@ def main():
         return
     today = dt.datetime.now(dt.timezone.utc).date()
     errors = []
+    opener = nse_opener()
     for offset in range(8):
         day = today - dt.timedelta(days=offset)
         # The scheduled daily job must be idempotent: once the latest available
