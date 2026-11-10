@@ -21,6 +21,7 @@ export default function Nifty50Stocks() {
   const [query, setQuery] = useState("");
   const [sector, setSector] = useState("ALL");
   const [sort, setSort] = useState<"symbol" | "dailyChangePct" | "deliveryPct">("symbol");
+  const [selected, setSelected] = useState<StockRow | null>(null);
   useEffect(() => {
     let active = true;
     fetch("data/nifty50-eod-latest.json", { cache: "no-store" })
@@ -45,7 +46,7 @@ export default function Nifty50Stocks() {
   return <section className="panel nifty50-page">
     <p className="eyebrow">NSE CASH MARKET · DAILY EOD INTELLIGENCE</p>
     <h2>NIFTY 50 Stock Intelligence</h2>
-    <p className="muted">50 constituents · daily and weekly technical indicators · delivery participation. EOD snapshot only; this is not a live LTP feed.</p>
+    <p className="muted">NIFTY 50 constituents · Daily / weekly technicals · volume and delivery participation. EOD close only; not an intraday live LTP feed.</p>
     <div className="nifty50-kpis">
       <article><small>Constituents</small><strong>{rows.length || "—"}</strong></article>
       <article><small>Latest market date</small><strong>{marketDate}</strong></article>
@@ -58,13 +59,14 @@ export default function Nifty50Stocks() {
       <label>Sector<select value={sector} onChange={e=>setSector(e.target.value)}>{sectors.map(x=><option key={x} value={x}>{x === "ALL" ? "All sectors" : x}</option>)}</select></label>
       <label>Sort by<select value={sort} onChange={e=>setSort(e.target.value as typeof sort)}><option value="symbol">Symbol</option><option value="dailyChangePct">Daily change %</option><option value="deliveryPct">Delivery %</option></select></label>
     </div>
+    <div className="nifty50-table-heading"><h3>Constituent market matrix</h3><span>{filtered.length} stocks shown · select a row for details</span></div>
     <div className="table-wrap nifty50-table-wrap">
       <table className="nifty50-table">
         <thead>
           <tr><th rowSpan={2}>#</th><th rowSpan={2}>Company</th><th rowSpan={2}>Symbol</th><th rowSpan={2}>Sector</th><th rowSpan={2}>EOD LTP / Close ₹</th><th rowSpan={2}>Change %</th><th colSpan={2}>RSI 14</th><th colSpan={2}>SMA 20</th><th colSpan={2}>SMA 50</th><th rowSpan={2}>Volume Qty</th><th rowSpan={2}>Delivery Qty</th><th rowSpan={2}>Delivery %</th><th rowSpan={2}>History</th></tr>
           <tr><th>Daily</th><th>Weekly</th><th>Daily</th><th>Weekly</th><th>Daily</th><th>Weekly</th></tr>
         </thead>
-        <tbody>{filtered.map((row,index)=><tr key={row.symbol}>
+        <tbody>{filtered.map((row,index)=><tr key={row.symbol} onClick={()=>setSelected(row)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSelected(row);}}} tabIndex={0} aria-label={`Open ${row.name} details`} className={selected?.symbol===row.symbol?"selected":""}>
           <td>{index+1}</td><td>{row.name}</td><td><strong>{row.symbol}</strong></td><td>{row.sector ?? "—"}</td>
           <td>{fmt(row.close)}</td><td className={row.dailyChangePct == null ? "" : row.dailyChangePct >= 0 ? "positive" : "negative"}>{pct(row.dailyChangePct)}</td>
           <td>{fmt(row.rsiDaily14)}</td><td>{fmt(row.rsiWeekly14)}</td>
