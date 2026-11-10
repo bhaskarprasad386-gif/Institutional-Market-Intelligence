@@ -293,7 +293,58 @@
             ]
           ]
         }
-      ]
+      ],
+      "actionReports": [
+        {
+          "symbol": "KOTAKBANK",
+          "bank": "Kotak Mahindra Bank",
+          "broker": "Macquarie",
+          "date": "2026-10-01",
+          "previousRating": "Neutral",
+          "currentRating": "Outperform",
+          "action": "UPGRADE",
+          "target": 500,
+          "sourceName": "NDTV Profit",
+          "sourceUrl": "https://www.ndtvprofit.com/markets/kotak-bank-of-baroda-paytm-pb-fintech-macquarie-upgrades-nine-stocks-downgrades-one-check-full-list-target-prices-12119471"
+        },
+        {
+          "symbol": "BANKBARODA",
+          "bank": "Bank of Baroda",
+          "broker": "Macquarie",
+          "date": "2026-10-01",
+          "previousRating": "Neutral",
+          "currentRating": "Outperform",
+          "action": "UPGRADE",
+          "target": 280,
+          "sourceName": "NDTV Profit",
+          "sourceUrl": "https://www.ndtvprofit.com/markets/kotak-bank-of-baroda-paytm-pb-fintech-macquarie-upgrades-nine-stocks-downgrades-one-check-full-list-target-prices-12119471"
+        },
+        {
+          "symbol": "CANBK",
+          "bank": "Canara Bank",
+          "broker": "PL Capital",
+          "date": "2026-09-06",
+          "previousRating": "Hold",
+          "currentRating": "Accumulate",
+          "action": "UPGRADE",
+          "target": null,
+          "sourceName": "PL Capital India Strategy report",
+          "sourceUrl": "https://plindia.com/ResReport/IndiaStrategy-9-6-26-PL.pdf"
+        },
+        {
+          "symbol": "FEDERALBNK",
+          "bank": "Federal Bank",
+          "broker": "PL Capital",
+          "date": "2026-09-06",
+          "previousRating": "Buy",
+          "currentRating": "Accumulate",
+          "action": "DOWNGRADE",
+          "target": null,
+          "sourceName": "PL Capital India Strategy report",
+          "sourceUrl": "https://plindia.com/ResReport/IndiaStrategy-9-6-26-PL.pdf"
+        }
+      ],
+      "actionNote": "Only explicit rating changes with both previous and current recommendations are classified as upgrades/downgrades. Other rows in reports are broker ratings/targets, not confirmed rating changes."
     },
     {
       "id": "credit",
