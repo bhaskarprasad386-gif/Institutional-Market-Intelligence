@@ -32,6 +32,8 @@ jobs:
         run: python scripts/nse/fetch_fo_bhavcopy.py
       - name: Fetch official NSE cash-market delivery and closing-price report
         run: python scripts/nse/fetch_cash_delivery.py
+      - name: Build daily banking SMA and delivery snapshot
+        run: python scripts/nse/build_bank_market_daily.py
       - name: Build compact full-history rollover metrics
         run: python scripts/nse/build_rollover_history.py
       - name: Commit dated NSE history archive
